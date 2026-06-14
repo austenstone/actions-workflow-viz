@@ -12768,8 +12768,9 @@ function broadcast(entry) {
     }
   }
 }
-async function startServer() {
+async function startServer(instanceId) {
   const entry = {
+    instanceId,
     server: null,
     url: "",
     ref: null,
@@ -12823,6 +12824,35 @@ async function startServer() {
       if (req.method === "GET" && req.url === "/favicon.ico") {
         res.writeHead(204);
         res.end();
+        return;
+      }
+      if (req.method === "POST" && req.url === "/action") {
+        let body = "";
+        req.on("data", (c) => {
+          body += c;
+        });
+        req.on("end", async () => {
+          try {
+            const { action, input } = JSON.parse(body || "{}");
+            if (action === "addContext") {
+              const result = await addJobContext(
+                entry,
+                input
+              );
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify(result));
+              return;
+            }
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: `Unknown action: ${action}` }));
+          } catch (err) {
+            const status = err instanceof CanvasError ? 400 : 500;
+            res.writeHead(status, { "Content-Type": "application/json" });
+            res.end(
+              JSON.stringify({ error: err instanceof Error ? err.message : String(err) })
+            );
+          }
+        });
         return;
       }
       res.writeHead(404);
@@ -12914,6 +12944,119 @@ async function loadRun(instanceId, input, log) {
     error: entry.state.status === "error" ? entry.state.message : void 0
   };
 }
+var FAIL_CONCLUSIONS = /* @__PURE__ */ new Set(["failure", "timed_out"]);
+function allJobIds(node) {
+  const ids = /* @__PURE__ */ new Set();
+  for (const leg of node.legs) {
+    const id = leg.url?.match(/job\/(\d+)/)?.[1];
+    if (id) ids.add(id);
+  }
+  if (!ids.size) {
+    const id = node.url?.match(/job\/(\d+)/)?.[1];
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+function nodeById(run, jobId) {
+  if (!jobId) return void 0;
+  return run.nodes.find((n) => n.id === jobId);
+}
+var LOG_TAIL_CHARS = 16e3;
+function tail(text, max) {
+  if (text.length <= max) return text;
+  return `\u2026 (truncated, showing last ${max} chars) \u2026
+${text.slice(text.length - max)}`;
+}
+async function fetchLogs(repo, targets, label, log) {
+  const [owner, name] = repo.split("/");
+  if (!owner || !name || !targets.length) return [];
+  let octokit;
+  try {
+    octokit = await getOctokit();
+  } catch {
+    return [];
+  }
+  const attachments = [];
+  for (const target of targets) {
+    try {
+      const { data } = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+        owner,
+        repo: name,
+        job_id: Number(target.jobId)
+      });
+      const text = typeof data === "string" ? data : String(data ?? "");
+      if (!text.trim()) continue;
+      attachments.push({
+        type: "blob",
+        data: Buffer.from(tail(text, LOG_TAIL_CHARS), "utf8").toString("base64"),
+        mimeType: "text/plain",
+        displayName: target.displayName
+      });
+    } catch (e) {
+      log?.(
+        `${label}: failed to fetch logs for job ${target.jobId}: ${e instanceof Error ? e.message : String(e)}`,
+        { level: "warn" }
+      );
+    }
+  }
+  return attachments;
+}
+function fetchJobLogs(run, node, log) {
+  const targets = allJobIds(node).map((jobId) => ({ jobId, displayName: `${node.label}.log` }));
+  return fetchLogs(run.repo, targets, "addContext", log);
+}
+function stepIcon(s) {
+  if (s.status !== "completed") return "\u2022";
+  return FAIL_CONCLUSIONS.has(s.conclusion ?? "") ? "\u2717" : "\u2713";
+}
+async function addJobContext(entry, input) {
+  const run = entry.state.run;
+  if (!run) {
+    throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+  }
+  const node = nodeById(run, input?.jobId);
+  if (!node) {
+    throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+  }
+  const attachments = await fetchJobLogs(run, node, sessionLog);
+  const logs = attachments.map((a) => ({
+    name: a.type === "blob" ? a.displayName : "",
+    text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : ""
+  }));
+  const workflow = run.workflowName ?? run.runName;
+  const runLabel = run.runNumber != null ? `#${run.runNumber}` : `run ${run.runId}`;
+  const steps = node.legs.flatMap((leg) => leg.steps).map((s) => ({
+    name: s.name,
+    status: s.status,
+    conclusion: s.conclusion,
+    outcome: stepIcon(s)
+  }));
+  const payload = {
+    job: node.label,
+    status: node.status,
+    conclusion: node.conclusion ?? null,
+    workflow,
+    run: `${workflow} ${runLabel}`,
+    runId: run.runId,
+    repo: run.repo,
+    url: node.url ?? null,
+    steps,
+    logs
+  };
+  const title = `${node.label} \u2014 ${workflow} ${runLabel}`;
+  try {
+    await sessionPushAttachments?.({
+      instanceId: entry.instanceId,
+      attachments: [{ type: "extension_context", title, payload }]
+    });
+  } catch (e) {
+    sessionLog?.(`addContext push failed: ${e instanceof Error ? e.message : String(e)}`, {
+      level: "warn"
+    });
+    throw new CanvasError("canvas_internal", "Failed to stage job context.");
+  }
+  return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
+}
 var loadInputSchema = {
   type: "object",
   properties: {
@@ -12929,6 +13072,7 @@ var loadInputSchema = {
   }
 };
 var sessionLog;
+var sessionPushAttachments;
 var canvas = createCanvas({
   id: "actions-workflow-viz",
   displayName: "Actions Workflow Run",
@@ -12964,7 +13108,7 @@ var canvas = createCanvas({
   open: async ({ instanceId, input }) => {
     let entry = instances.get(instanceId);
     if (!entry) {
-      entry = await startServer();
+      entry = await startServer(instanceId);
       instances.set(instanceId, entry);
     }
     const loadInput = input;
@@ -13005,3 +13149,4 @@ sessionLog = (message, opts) => {
   } catch {
   }
 };
+sessionPushAttachments = (params) => session.rpc.extensions.sendAttachmentsToMessage(params);

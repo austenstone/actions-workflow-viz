@@ -91,20 +91,6 @@
                 font-family: var(--font-mono, monospace);
                 font-size: 11px;
             }
-            .h-meta a.actor {
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-            }
-            .h-meta .avatar {
-                width: 16px;
-                height: 16px;
-                border-radius: 50%;
-                box-shadow: 0 0 0 1px var(--line);
-                background: var(--wait-bg);
-                vertical-align: text-bottom;
-                flex: 0 0 auto;
-            }
 
             /* ---- progress band ---- */
             .prog { padding: 10px 14px 11px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
@@ -191,6 +177,7 @@
                 text-decoration: none;
                 color: inherit;
                 display: block;
+                cursor: pointer;
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
                 transition: box-shadow 0.15s ease, transform 0.1s ease,
                     border-left-color 0.4s ease, background-color 0.4s ease, filter 0.4s ease;
@@ -241,6 +228,13 @@
             .c-sub .tag {
                 font-size: 10px;
                 padding: 0px 5px;
+                border-radius: 4px;
+                background: var(--wait-bg);
+                color: var(--muted);
+            }
+            .c-sub .ctx {
+                font-size: 10px;
+                padding: 1px 6px;
                 border-radius: 4px;
                 background: var(--wait-bg);
                 color: var(--muted);
@@ -453,6 +447,19 @@
                 el.className = "card";
                 el.style.opacity = "0";   // revealed by enterCard on the next frame
                 el.dataset.id = node.id;
+                el.setAttribute("role", "button");
+                el.tabIndex = 0;
+                // The card no longer navigates anywhere. Clicking (or Enter/Space on)
+                // it pushes the job's logs + metadata into the agent's context.
+                const onActivate = (e) => {
+                    e.preventDefault();
+                    addJobToContext(el, node.id);
+                };
+                el.addEventListener("click", onActivate);
+                el.addEventListener("keydown", (e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    onActivate(e);
+                });
                 const top = document.createElement("div");
                 top.className = "c-top";
                 const ico = document.createElement("span");
@@ -476,7 +483,7 @@
                 sub.append(dur);
                 el.append(top, sub);
                 el._ico = ico; el._name = name; el._dur = dur; el._sub = sub; el._mtx = mtx;
-                el._tag = null; el._step = null;
+                el._tag = null; el._step = null; el._ctx = null;
                 cardEls.set(node.id, el);
                 // Stagger the reveal; the card is appended synchronously this tick,
                 // so the rAF runs after it's in the DOM. Motion handles the tween.
@@ -497,9 +504,6 @@
                     const was = prevCls.get(node.id);
                     if (was && was !== st.cls) (st.cls === "fail" ? shakeStatus : flipStatus)(el._ico);
                     prevCls.set(node.id, st.cls);
-                }
-                if (node.url && el.getAttribute("href") !== node.url) {
-                    el.href = node.url; el.target = "_blank"; el.rel = "noreferrer";
                 }
                 const icoCls = "ico " + st.cls;
                 if (el._ico.className !== icoCls) el._ico.className = icoCls;
@@ -586,24 +590,12 @@
                 setText("pill-txt", ptxt);
 
                 const meta = document.getElementById("meta");
-                const ghBase = run.repo ? `https://github.com/${run.repo}` : null;
-                const a = (href, inner, cls) =>
-                    href ? `<a href="${href}" target="_blank" rel="noopener"${cls ? ` class="${cls}"` : ""}>${inner}</a>` : inner;
                 const bits = [];
-                if (run.repo) {
-                    const runUrl = run.htmlUrl || (run.runId ? `${ghBase}/actions/runs/${run.runId}` : null);
-                    bits.push(`${a(ghBase, run.repo)} ${a(runUrl, `#${run.runNumber}`)}`);
-                }
-                if (run.headBranch)
-                    bits.push(`⎇ ${a(`${ghBase}/tree/${encodeURIComponent(run.headBranch)}`, run.headBranch)}`);
-                if (run.headSha)
-                    bits.push(a(`${ghBase}/commit/${run.headSha}`, `<code>${run.headSha}</code>`));
-                if (run.event)
-                    bits.push(a(`https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#${run.event}`, run.event));
-                if (run.actor)
-                    bits.push(a(`https://github.com/${run.actor}`,
-                        `<img class="avatar" src="https://github.com/${run.actor}.png?size=32" alt="" width="16" height="16">${run.actor}`,
-                        "actor"));
+                if (run.repo) bits.push(`${run.repo} #${run.runNumber}`);
+                if (run.headBranch) bits.push(`⎇ ${run.headBranch}`);
+                if (run.headSha) bits.push(`<code>${run.headSha}</code>`);
+                if (run.event) bits.push(run.event);
+                if (run.actor) bits.push(`@${run.actor}`);
                 const metaHtml = bits.map((b) => `<span>${b}</span>`).join("");
                 if (meta._html !== metaHtml) { meta.innerHTML = metaHtml; meta._html = metaHtml; }
 
@@ -764,6 +756,40 @@
                     es.close();
                     setTimeout(connect, 2000);
                 };
+            }
+
+            // Click a card to push its logs + metadata into the agent's context.
+            // Debounced per-card; surfaces a small pill while the turn is sent.
+            function addJobToContext(el, jobId) {
+                if (el._ctxBusy) return;
+                el._ctxBusy = true;
+                if (!el._ctx) {
+                    el._ctx = document.createElement("span");
+                    el._ctx.className = "ctx";
+                    el._sub.append(el._ctx);
+                }
+                const pill = el._ctx;
+                pill.style.display = "";
+                pill.textContent = "Adding…";
+                callAction("addContext", { jobId })
+                    .then(() => {
+                        pill.textContent = "📎 Added ✓";
+                        setTimeout(() => { pill.style.display = "none"; }, 2000);
+                    })
+                    .catch(() => { pill.textContent = "context failed"; })
+                    .finally(() => { el._ctxBusy = false; });
+            }
+
+            function callAction(action, input) {
+                return fetch("/action", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ action, input }),
+                }).then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+                    return data;
+                });
             }
 
             fetch("/state").then((r) => r.json()).then(paint).catch(() => {});
