@@ -91,6 +91,20 @@
                 font-family: var(--font-mono, monospace);
                 font-size: 11px;
             }
+            .h-meta a.actor {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .h-meta .avatar {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                box-shadow: 0 0 0 1px var(--line);
+                background: var(--wait-bg);
+                vertical-align: text-bottom;
+                flex: 0 0 auto;
+            }
 
             /* ---- progress band ---- */
             .prog { padding: 10px 14px 11px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
@@ -590,12 +604,24 @@
                 setText("pill-txt", ptxt);
 
                 const meta = document.getElementById("meta");
+                const ghBase = run.repo ? `https://github.com/${run.repo}` : null;
+                const a = (href, inner, cls) =>
+                    href ? `<a href="${href}" target="_blank" rel="noopener"${cls ? ` class="${cls}"` : ""}>${inner}</a>` : inner;
                 const bits = [];
-                if (run.repo) bits.push(`${run.repo} #${run.runNumber}`);
-                if (run.headBranch) bits.push(`⎇ ${run.headBranch}`);
-                if (run.headSha) bits.push(`<code>${run.headSha}</code>`);
-                if (run.event) bits.push(run.event);
-                if (run.actor) bits.push(`@${run.actor}`);
+                if (run.repo) {
+                    const runUrl = run.htmlUrl || (run.runId ? `${ghBase}/actions/runs/${run.runId}` : null);
+                    bits.push(`${a(ghBase, run.repo)} ${a(runUrl, `#${run.runNumber}`)}`);
+                }
+                if (run.headBranch)
+                    bits.push(`⎇ ${a(`${ghBase}/tree/${encodeURIComponent(run.headBranch)}`, run.headBranch)}`);
+                if (run.headSha)
+                    bits.push(a(`${ghBase}/commit/${run.headSha}`, `<code>${run.headSha}</code>`));
+                if (run.event)
+                    bits.push(a(`https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#${run.event}`, run.event));
+                if (run.actor)
+                    bits.push(a(`https://github.com/${run.actor}`,
+                        `<img class="avatar" src="https://github.com/${run.actor}.png?size=32" alt="" width="16" height="16">${run.actor}`,
+                        "actor"));
                 const metaHtml = bits.map((b) => `<span>${b}</span>`).join("");
                 if (meta._html !== metaHtml) { meta.innerHTML = metaHtml; meta._html = metaHtml; }
 
