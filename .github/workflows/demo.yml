@@ -7,6 +7,11 @@ name: Demo Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      fail:
+        description: "Force security-scan to fail (exercises red/skip/notify rendering)"
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -116,6 +121,11 @@ jobs:
         run: |
           echo "Static analysis..."
           sleep 12
+      - name: Gate
+        if: inputs.fail
+        run: |
+          echo "Injected failure: vulnerability gate tripped"
+          exit 1
 
   deploy:
     name: deploy
