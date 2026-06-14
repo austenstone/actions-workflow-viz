@@ -65,10 +65,44 @@ declare module "@github/copilot-sdk/extension" {
         ephemeral?: boolean;
     }
 
+    export type MessageAttachment =
+        | { type: "file"; path: string; displayName?: string }
+        | { type: "directory"; path: string; displayName?: string }
+        | { type: "blob"; data: string; mimeType: string; displayName?: string };
+
+    export interface MessageOptions {
+        prompt: string;
+        attachments?: MessageAttachment[];
+        mode?: "enqueue" | "immediate";
+        agentMode?: "interactive" | "plan" | "autopilot" | "shell";
+        requestHeaders?: Record<string, string>;
+        displayPrompt?: string;
+    }
+
+    export interface ExtensionContextPushInput {
+        type: "extension_context";
+        title: string;
+        payload: { [k: string]: unknown };
+    }
+
+    export interface SendAttachmentsToMessageParams {
+        instanceId?: string;
+        attachments: ExtensionContextPushInput[];
+    }
+
+    export interface SessionRpc {
+        extensions: {
+            sendAttachmentsToMessage(params: SendAttachmentsToMessageParams): Promise<void>;
+        };
+    }
+
     export interface CopilotSession {
         sessionId: string;
         workspacePath?: string;
         log(message: string, opts?: LogOptions): void;
+        send(prompt: string): Promise<string>;
+        send(options: MessageOptions): Promise<string>;
+        readonly rpc: SessionRpc;
     }
 
     export interface JoinSessionConfig {
