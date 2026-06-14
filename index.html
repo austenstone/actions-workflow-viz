@@ -334,7 +334,7 @@
         </footer>
 
         <script type="module">
-            import { enterCard, flipStatus, tweenWidth, enterEdge, popPill } from "/anim.js";
+            import { enterCard, flipStatus, shakeStatus, tweenWidth, enterEdge, popPill } from "/anim.js";
             const SVGNS = "http://www.w3.org/2000/svg";
             let lastRun = null;
             let stageRows = [];          // persistent .stage row elements
@@ -481,7 +481,7 @@
                     el.classList.remove("s-ok", "s-fail", "s-run", "s-wait", "s-skip");
                     el.classList.add(cls);
                     const was = prevCls.get(node.id);
-                    if (was && was !== st.cls) flipStatus(el._ico);
+                    if (was && was !== st.cls) (st.cls === "fail" ? shakeStatus : flipStatus)(el._ico);
                     prevCls.set(node.id, st.cls);
                 }
                 if (node.url && el.getAttribute("href") !== node.url) {

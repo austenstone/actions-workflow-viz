@@ -51,6 +51,21 @@ export function flipStatus(ico: HTMLElement): void {
     clearTransformOnFinish(controls, ico);
 }
 
+// A job failed — shake its status glyph side to side. Distinct from the success
+// pop (flipStatus) so a failure reads as "something's wrong" at a glance instead
+// of the same celebratory bounce. x translateX composes cleanly with the card's
+// CSS :hover lift; we hand the committed transform back to the stylesheet on
+// settle (and on interruption) so a re-render mid-shake can't strand it offset.
+export function shakeStatus(ico: HTMLElement): void {
+    if (prefersReduced) return;
+    const controls = animate(
+        ico,
+        { x: [0, -3, 3, -2.5, 2.5, -1.5, 0] },
+        { duration: 0.44, ease: "easeInOut" },
+    );
+    clearTransformOnFinish(controls, ico);
+}
+
 // Spring a progress-bar / step-bar fill to a new width (pct: 0–100).
 export function tweenWidth(el: HTMLElement, pct: number): void {
     const target = Math.max(0, Math.min(100, pct)) + "%";
