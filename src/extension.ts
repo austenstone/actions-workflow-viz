@@ -18,16 +18,19 @@ import {
     joinSession,
     type CopilotSession,
     type LogOptions,
+    type MessageAttachment,
 } from "@github/copilot-sdk/extension";
 
 import { fetchRunGraph, parseRunRef } from "./run-data.js";
-import type { CanvasState, RunRef } from "./types.js";
+import { getOctokit } from "./github.js";
+import type { CanvasState, GraphNode, RunGraph, RunRef } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type LogFn = (message: string, opts?: LogOptions) => void;
 
 interface Instance {
+    instanceId: string;
     server: http.Server;
     url: string;
     ref: RunRef | null;
@@ -63,8 +66,9 @@ function broadcast(entry: Instance): void {
     }
 }
 
-async function startServer(): Promise<Instance> {
+async function startServer(instanceId: string): Promise<Instance> {
     const entry: Instance = {
+        instanceId,
         server: null as unknown as http.Server,
         url: "",
         ref: null,
@@ -117,6 +121,38 @@ async function startServer(): Promise<Instance> {
             if (req.method === "GET" && req.url === "/favicon.ico") {
                 res.writeHead(204);
                 res.end();
+                return;
+            }
+            if (req.method === "POST" && req.url === "/action") {
+                let body = "";
+                req.on("data", (c) => {
+                    body += c;
+                });
+                req.on("end", async () => {
+                    try {
+                        const { action, input } = JSON.parse(body || "{}") as {
+                            action?: string;
+                            input?: unknown;
+                        };
+                        if (action === "addContext") {
+                            const result = await addJobContext(
+                                entry,
+                                input as ContextInput | undefined,
+                            );
+                            res.writeHead(200, { "Content-Type": "application/json" });
+                            res.end(JSON.stringify(result));
+                            return;
+                        }
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ error: `Unknown action: ${action}` }));
+                    } catch (err) {
+                        const status = err instanceof CanvasError ? 400 : 500;
+                        res.writeHead(status, { "Content-Type": "application/json" });
+                        res.end(
+                            JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
+                        );
+                    }
+                });
                 return;
             }
             res.writeHead(404);
@@ -219,6 +255,149 @@ async function loadRun(instanceId: string, input: LoadInput | undefined, log?: L
     };
 }
 
+const FAIL_CONCLUSIONS = new Set(["failure", "timed_out"]);
+
+// Pull numeric job ids out of a node's legs (per-job URLs end in /job/<id>),
+// falling back to the node's own url.
+function allJobIds(node: GraphNode): string[] {
+    const ids = new Set<string>();
+    for (const leg of node.legs) {
+        const id = leg.url?.match(/job\/(\d+)/)?.[1];
+        if (id) ids.add(id);
+    }
+    if (!ids.size) {
+        const id = node.url?.match(/job\/(\d+)/)?.[1];
+        if (id) ids.add(id);
+    }
+    return [...ids];
+}
+
+function nodeById(run: RunGraph, jobId?: string): GraphNode | undefined {
+    if (!jobId) return undefined;
+    return run.nodes.find((n) => n.id === jobId);
+}
+
+const LOG_TAIL_CHARS = 16_000;
+
+function tail(text: string, max: number): string {
+    if (text.length <= max) return text;
+    return `… (truncated, showing last ${max} chars) …\n${text.slice(text.length - max)}`;
+}
+
+interface LogTarget {
+    jobId: string;
+    displayName: string;
+}
+
+// Shared core: best-effort download of raw job logs as base64 blob
+// attachments. Never throws — any failure yields fewer (or no) attachments.
+async function fetchLogs(
+    repo: string,
+    targets: LogTarget[],
+    label: string,
+    log?: LogFn,
+): Promise<MessageAttachment[]> {
+    const [owner, name] = repo.split("/");
+    if (!owner || !name || !targets.length) return [];
+    let octokit: Awaited<ReturnType<typeof getOctokit>>;
+    try {
+        octokit = await getOctokit();
+    } catch {
+        return [];
+    }
+    const attachments: MessageAttachment[] = [];
+    for (const target of targets) {
+        try {
+            const { data } = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+                owner,
+                repo: name,
+                job_id: Number(target.jobId),
+            });
+            const text = typeof data === "string" ? data : String(data ?? "");
+            if (!text.trim()) continue;
+            attachments.push({
+                type: "blob",
+                data: Buffer.from(tail(text, LOG_TAIL_CHARS), "utf8").toString("base64"),
+                mimeType: "text/plain",
+                displayName: target.displayName,
+            });
+        } catch (e) {
+            log?.(
+                `${label}: failed to fetch logs for job ${target.jobId}: ${
+                    e instanceof Error ? e.message : String(e)
+                }`,
+                { level: "warn" },
+            );
+        }
+    }
+    return attachments;
+}
+
+function fetchJobLogs(run: RunGraph, node: GraphNode, log?: LogFn): Promise<MessageAttachment[]> {
+    const targets = allJobIds(node).map((jobId) => ({ jobId, displayName: `${node.label}.log` }));
+    return fetchLogs(run.repo, targets, "addContext", log);
+}
+
+function stepIcon(s: { status: string; conclusion: string | null }): string {
+    if (s.status !== "completed") return "•";
+    return FAIL_CONCLUSIONS.has(s.conclusion ?? "") ? "✗" : "✓";
+}
+
+interface ContextInput {
+    jobId?: string;
+}
+
+async function addJobContext(entry: Instance, input: ContextInput | undefined) {
+    const run = entry.state.run;
+    if (!run) {
+        throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+    }
+    const node = nodeById(run, input?.jobId);
+    if (!node) {
+        throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+    }
+    const attachments = await fetchJobLogs(run, node, sessionLog);
+    const logs = attachments.map((a) => ({
+        name: a.type === "blob" ? a.displayName : "",
+        text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : "",
+    }));
+    const workflow = run.workflowName ?? run.runName;
+    const runLabel = run.runNumber != null ? `#${run.runNumber}` : `run ${run.runId}`;
+    const steps = node.legs
+        .flatMap((leg) => leg.steps)
+        .map((s) => ({
+            name: s.name,
+            status: s.status,
+            conclusion: s.conclusion,
+            outcome: stepIcon(s),
+        }));
+    const payload = {
+        job: node.label,
+        status: node.status,
+        conclusion: node.conclusion ?? null,
+        workflow,
+        run: `${workflow} ${runLabel}`,
+        runId: run.runId,
+        repo: run.repo,
+        url: node.url ?? null,
+        steps,
+        logs,
+    };
+    const title = `${node.label} — ${workflow} ${runLabel}`;
+    try {
+        await sessionPushAttachments?.({
+            instanceId: entry.instanceId,
+            attachments: [{ type: "extension_context", title, payload }],
+        });
+    } catch (e) {
+        sessionLog?.(`addContext push failed: ${e instanceof Error ? e.message : String(e)}`, {
+            level: "warn",
+        });
+        throw new CanvasError("canvas_internal", "Failed to stage job context.");
+    }
+    return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
+}
+
 const loadInputSchema = {
     type: "object",
     properties: {
@@ -236,6 +415,8 @@ const loadInputSchema = {
 };
 
 let sessionLog: LogFn | undefined;
+type PushAttachmentsFn = CopilotSession["rpc"]["extensions"]["sendAttachmentsToMessage"];
+let sessionPushAttachments: PushAttachmentsFn | undefined;
 
 const canvas = createCanvas({
     id: "actions-workflow-viz",
@@ -274,7 +455,7 @@ const canvas = createCanvas({
     open: async ({ instanceId, input }) => {
         let entry = instances.get(instanceId);
         if (!entry) {
-            entry = await startServer();
+            entry = await startServer(instanceId);
             instances.set(instanceId, entry);
         }
         const loadInput = input as LoadInput | undefined;
@@ -321,3 +502,4 @@ sessionLog = (message, opts) => {
         /* logging is best-effort */
     }
 };
+sessionPushAttachments = (params) => session.rpc.extensions.sendAttachmentsToMessage(params);
