@@ -1,0 +1,146 @@
+name: Demo Pipeline
+
+# A deliberately rich pipeline used to exercise the actions-workflow-viz canvas:
+# fan-out from setup, a 3-leg matrix, fan-in to deploy, a conditional skip, and
+# an always() notifier. Jobs sleep so the run stays live long enough to watch the
+# graph animate from queued -> in_progress -> completed.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Resolve toolchain
+        run: |
+          echo "Resolving toolchain..."
+          sleep 6
+      - name: Cache warm
+        run: |
+          echo "Warming caches..."
+          sleep 6
+
+  lint:
+    name: lint
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: ESLint
+        run: |
+          echo "Linting source..."
+          sleep 14
+      - name: Format check
+        run: |
+          echo "Checking formatting..."
+          sleep 6
+
+  test:
+    name: test
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node ${{ matrix.node }}
+        run: |
+          echo "Using Node ${{ matrix.node }}"
+          sleep 4
+      - name: Unit tests
+        run: |
+          echo "Running unit tests on Node ${{ matrix.node }}..."
+          sleep $((10 + ${{ matrix.node }} % 16))
+      - name: Coverage
+        run: |
+          echo "Collecting coverage..."
+          sleep 8
+
+  integration:
+    name: integration
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Spin up services
+        run: |
+          echo "Starting ephemeral services..."
+          sleep 10
+      - name: Integration suite
+        run: |
+          echo "Running integration suite..."
+          sleep 18
+
+  build:
+    name: build
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Compile
+        run: |
+          echo "Compiling..."
+          sleep 12
+      - name: Bundle
+        run: |
+          echo "Bundling artifacts..."
+          sleep 8
+
+  security:
+    name: security-scan
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependency audit
+        run: |
+          echo "Auditing dependencies..."
+          sleep 10
+      - name: SAST
+        run: |
+          echo "Static analysis..."
+          sleep 12
+
+  deploy:
+    name: deploy
+    needs: [build, security, integration]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push image
+        run: |
+          echo "Pushing image to registry..."
+          sleep 10
+      - name: Rollout
+        run: |
+          echo "Rolling out to staging..."
+          sleep 10
+      - name: Smoke test (prod only)
+        if: github.ref == 'refs/heads/production'
+        run: echo "Skipped unless on production"
+
+  notify:
+    name: notify
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report status
+        run: |
+          echo "Pipeline finished with status: ${{ needs.deploy.result }}"
+          sleep 4
