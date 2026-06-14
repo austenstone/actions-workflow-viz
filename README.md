@@ -9,6 +9,11 @@ A [GitHub Copilot CLI canvas extension](https://github.com/github/copilot-cli) t
 - **Matrix rollup** — matrix legs (e.g. `test (18)`, `test (20)`) roll up into their parent job node, including matrix jobs with expression `name:` values.
 - **Graceful degradation** — if the YAML can't be parsed it falls back to a flat board of jobs (no edges) rather than failing.
 
+## Inspiration
+
+The workflow parsing borrows from [github/vscode-github-actions](https://github.com/github/vscode-github-actions). Rather than hand-rolling a YAML walk, this extension uses GitHub's official [`@actions/workflow-parser`](https://github.com/actions/languageservices) (the same engine behind that extension's language server) to read the job graph, giving it schema awareness and expression handling for free.
+
+
 ## Install
 
 This is a user-scope extension. Drop the folder into `~/.copilot/extensions/actions-workflow-viz/` (or install it from a gist via the Copilot CLI), then reload extensions. It requires the `gh` CLI to be authenticated with `repo` + `workflow` scopes — all GitHub API calls go through `gh api`.
@@ -25,10 +30,15 @@ refresh   {}
 
 ## Files
 
+TypeScript in `src/` and `web/` is bundled by `build.mjs` (esbuild) into `extension.mjs` and `web/anim.js`.
+
 | File | Purpose |
 |------|---------|
-| `extension.mjs` | Entry point: canvas wiring, per-instance loopback HTTP server, SSE, polling loop, `load_run`/`refresh` actions. |
+| `src/extension.ts` | Entry point: canvas wiring, per-instance loopback HTTP server, SSE, polling loop, `load_run`/`refresh` actions. Bundled to `extension.mjs`. |
+| `src/run-data.ts` | Data layer: Octokit calls, run/graph fetching, matrix mapping, status rollup. |
+| `src/parse-needs.ts` | Reads `jobs.<id>.{name, needs, matrix}` via `@actions/workflow-parser` to build the DAG. |
+| `src/github.ts` | Octokit client backed by the authenticated `gh` token. |
+| `src/types.ts` | Shared graph/envelope types consumed by `index.html`. |
+| `web/anim.ts` | Canvas-side animation helpers. Bundled to `web/anim.js`. |
 | `index.html` | SVG DAG renderer + SSE client. |
-| `lib/run-data.mjs` | Data layer: `gh api` calls (with transient-5xx retry), run/graph fetching, matrix mapping, status rollup. |
-| `lib/parse-needs.mjs` | Dependency-free YAML extractor for `jobs.<id>.{name, needs}`. |
 | `.github/workflows/demo.yml` | A rich demo pipeline (fan-out, 3-leg matrix, fan-in, conditional skip, `always()` notifier) for exercising the visualizer end-to-end. |

@@ -1461,16 +1461,16 @@ var require_identity = __commonJS({
     var DOC = /* @__PURE__ */ Symbol.for("yaml.document");
     var MAP = /* @__PURE__ */ Symbol.for("yaml.map");
     var PAIR = /* @__PURE__ */ Symbol.for("yaml.pair");
-    var SCALAR = /* @__PURE__ */ Symbol.for("yaml.scalar");
+    var SCALAR2 = /* @__PURE__ */ Symbol.for("yaml.scalar");
     var SEQ = /* @__PURE__ */ Symbol.for("yaml.seq");
     var NODE_TYPE = /* @__PURE__ */ Symbol.for("yaml.node.type");
-    var isAlias = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === ALIAS;
-    var isDocument = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === DOC;
-    var isMap = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === MAP;
-    var isPair = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === PAIR;
-    var isScalar = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SCALAR;
-    var isSeq = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SEQ;
-    function isCollection(node) {
+    var isAlias2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === ALIAS;
+    var isDocument2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === DOC;
+    var isMap2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === MAP;
+    var isPair2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === PAIR;
+    var isScalar3 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SCALAR2;
+    var isSeq2 = (node) => !!node && typeof node === "object" && node[NODE_TYPE] === SEQ;
+    function isCollection2(node) {
       if (node && typeof node === "object")
         switch (node[NODE_TYPE]) {
           case MAP:
@@ -1484,29 +1484,29 @@ var require_identity = __commonJS({
         switch (node[NODE_TYPE]) {
           case ALIAS:
           case MAP:
-          case SCALAR:
+          case SCALAR2:
           case SEQ:
             return true;
         }
       return false;
     }
-    var hasAnchor = (node) => (isScalar(node) || isCollection(node)) && !!node.anchor;
+    var hasAnchor = (node) => (isScalar3(node) || isCollection2(node)) && !!node.anchor;
     exports.ALIAS = ALIAS;
     exports.DOC = DOC;
     exports.MAP = MAP;
     exports.NODE_TYPE = NODE_TYPE;
     exports.PAIR = PAIR;
-    exports.SCALAR = SCALAR;
+    exports.SCALAR = SCALAR2;
     exports.SEQ = SEQ;
     exports.hasAnchor = hasAnchor;
-    exports.isAlias = isAlias;
-    exports.isCollection = isCollection;
-    exports.isDocument = isDocument;
-    exports.isMap = isMap;
+    exports.isAlias = isAlias2;
+    exports.isCollection = isCollection2;
+    exports.isDocument = isDocument2;
+    exports.isMap = isMap2;
     exports.isNode = isNode;
-    exports.isPair = isPair;
-    exports.isScalar = isScalar;
-    exports.isSeq = isSeq;
+    exports.isPair = isPair2;
+    exports.isScalar = isScalar3;
+    exports.isSeq = isSeq2;
   }
 });
 
@@ -1913,12 +1913,12 @@ var require_anchors = __commonJS({
 var require_applyReviver = __commonJS({
   "node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
-    function applyReviver(reviver, obj, key, val) {
+    function applyReviver(reviver2, obj, key, val) {
       if (val && typeof val === "object") {
         if (Array.isArray(val)) {
           for (let i = 0, len = val.length; i < len; ++i) {
             const v0 = val[i];
-            const v1 = applyReviver(reviver, val, String(i), v0);
+            const v1 = applyReviver(reviver2, val, String(i), v0);
             if (v1 === void 0)
               delete val[i];
             else if (v1 !== v0)
@@ -1927,7 +1927,7 @@ var require_applyReviver = __commonJS({
         } else if (val instanceof Map) {
           for (const k of Array.from(val.keys())) {
             const v0 = val.get(k);
-            const v1 = applyReviver(reviver, val, k, v0);
+            const v1 = applyReviver(reviver2, val, k, v0);
             if (v1 === void 0)
               val.delete(k);
             else if (v1 !== v0)
@@ -1935,7 +1935,7 @@ var require_applyReviver = __commonJS({
           }
         } else if (val instanceof Set) {
           for (const v0 of Array.from(val)) {
-            const v1 = applyReviver(reviver, val, v0, v0);
+            const v1 = applyReviver(reviver2, val, v0, v0);
             if (v1 === void 0)
               val.delete(v0);
             else if (v1 !== v0) {
@@ -1945,7 +1945,7 @@ var require_applyReviver = __commonJS({
           }
         } else {
           for (const [k, v0] of Object.entries(val)) {
-            const v1 = applyReviver(reviver, val, k, v0);
+            const v1 = applyReviver(reviver2, val, k, v0);
             if (v1 === void 0)
               delete val[k];
             else if (v1 !== v0)
@@ -1953,7 +1953,7 @@ var require_applyReviver = __commonJS({
           }
         }
       }
-      return reviver.call(obj, key, val);
+      return reviver2.call(obj, key, val);
     }
     exports.applyReviver = applyReviver;
   }
@@ -2008,7 +2008,7 @@ var require_Node = __commonJS({
         return copy;
       }
       /** A plain JavaScript representation of this node. */
-      toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+      toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver: reviver2 } = {}) {
         if (!identity.isDocument(doc))
           throw new TypeError("A document argument is required");
         const ctx = {
@@ -2023,7 +2023,7 @@ var require_Node = __commonJS({
         if (typeof onAnchor === "function")
           for (const { count, res: res2 } of ctx.anchors.values())
             onAnchor(res2, count);
-        return typeof reviver === "function" ? applyReviver.applyReviver(reviver, { "": res }, "", res) : res;
+        return typeof reviver2 === "function" ? applyReviver.applyReviver(reviver2, { "": res }, "", res) : res;
       }
     };
     exports.NodeBase = NodeBase;
@@ -2207,7 +2207,7 @@ var require_createNode = __commonJS({
       if (value instanceof String || value instanceof Number || value instanceof Boolean || typeof BigInt !== "undefined" && value instanceof BigInt) {
         value = value.valueOf();
       }
-      const { aliasDuplicateObjects, onAnchor, onTagObj, schema, sourceObjects } = ctx;
+      const { aliasDuplicateObjects, onAnchor, onTagObj, schema: schema2, sourceObjects } = ctx;
       let ref = void 0;
       if (aliasDuplicateObjects && value && typeof value === "object") {
         ref = sourceObjects.get(value);
@@ -2221,7 +2221,7 @@ var require_createNode = __commonJS({
       }
       if (tagName?.startsWith("!!"))
         tagName = defaultTagPrefix + tagName.slice(2);
-      let tagObj = findTagObject(value, tagName, schema.tags);
+      let tagObj = findTagObject(value, tagName, schema2.tags);
       if (!tagObj) {
         if (value && typeof value.toJSON === "function") {
           value = value.toJSON();
@@ -2232,7 +2232,7 @@ var require_createNode = __commonJS({
             ref.node = node2;
           return node2;
         }
-        tagObj = value instanceof Map ? schema[identity.MAP] : Symbol.iterator in Object(value) ? schema[identity.SEQ] : schema[identity.MAP];
+        tagObj = value instanceof Map ? schema2[identity.MAP] : Symbol.iterator in Object(value) ? schema2[identity.SEQ] : schema2[identity.MAP];
       }
       if (onTagObj) {
         onTagObj(tagObj);
@@ -2258,7 +2258,7 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path, value) {
+    function collectionFromPath(schema2, path, value) {
       let v = value;
       for (let i = path.length - 1; i >= 0; --i) {
         const k = path[i];
@@ -2276,16 +2276,16 @@ var require_Collection = __commonJS({
         onAnchor: () => {
           throw new Error("This should not happen, please report a bug.");
         },
-        schema,
+        schema: schema2,
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
     var isEmptyPath = (path) => path == null || typeof path === "object" && !!path[Symbol.iterator]().next().done;
     var Collection2 = class extends Node.NodeBase {
-      constructor(type, schema) {
+      constructor(type, schema2) {
         super(type);
         Object.defineProperty(this, "schema", {
-          value: schema,
+          value: schema2,
           configurable: true,
           enumerable: false,
           writable: true
@@ -2296,11 +2296,11 @@ var require_Collection = __commonJS({
        *
        * @param schema - If defined, overwrites the original's schema
        */
-      clone(schema) {
+      clone(schema2) {
         const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
-        if (schema)
-          copy.schema = schema;
-        copy.items = copy.items.map((it) => identity.isNode(it) || identity.isPair(it) ? it.clone(schema) : it);
+        if (schema2)
+          copy.schema = schema2;
+        copy.items = copy.items.map((it) => identity.isNode(it) || identity.isPair(it) ? it.clone(schema2) : it);
         if (this.range)
           copy.range = this.range.slice();
         return copy;
@@ -3252,12 +3252,12 @@ var require_Pair = __commonJS({
         this.key = key;
         this.value = value;
       }
-      clone(schema) {
+      clone(schema2) {
         let { key, value } = this;
         if (identity.isNode(key))
-          key = key.clone(schema);
+          key = key.clone(schema2);
         if (identity.isNode(value))
-          value = value.clone(schema);
+          value = value.clone(schema2);
         return new _Pair(key, value);
       }
       toJSON(_, ctx) {
@@ -3450,21 +3450,21 @@ var require_YAMLMap = __commonJS({
       static get tagName() {
         return "tag:yaml.org,2002:map";
       }
-      constructor(schema) {
-        super(identity.MAP, schema);
+      constructor(schema2) {
+        super(identity.MAP, schema2);
         this.items = [];
       }
       /**
        * A generic collection parsing method that can be extended
        * to other node classes that inherit from YAMLMap
        */
-      static from(schema, obj, ctx) {
-        const { keepUndefined, replacer } = ctx;
-        const map = new this(schema);
+      static from(schema2, obj, ctx) {
+        const { keepUndefined, replacer: replacer2 } = ctx;
+        const map = new this(schema2);
         const add = (key, value) => {
-          if (typeof replacer === "function")
-            value = replacer.call(obj, key, value);
-          else if (Array.isArray(replacer) && !replacer.includes(key))
+          if (typeof replacer2 === "function")
+            value = replacer2.call(obj, key, value);
+          else if (Array.isArray(replacer2) && !replacer2.includes(key))
             return;
           if (value !== void 0 || keepUndefined)
             map.items.push(Pair.createPair(key, value, ctx));
@@ -3476,8 +3476,8 @@ var require_YAMLMap = __commonJS({
           for (const key of Object.keys(obj))
             add(key, obj[key]);
         }
-        if (typeof schema.sortMapEntries === "function") {
-          map.items.sort(schema.sortMapEntries);
+        if (typeof schema2.sortMapEntries === "function") {
+          map.items.sort(schema2.sortMapEntries);
         }
         return map;
       }
@@ -3584,7 +3584,7 @@ var require_map = __commonJS({
           onError("Expected a mapping for this tag");
         return map2;
       },
-      createNode: (schema, obj, ctx) => YAMLMap.YAMLMap.from(schema, obj, ctx)
+      createNode: (schema2, obj, ctx) => YAMLMap.YAMLMap.from(schema2, obj, ctx)
     };
     exports.map = map;
   }
@@ -3604,8 +3604,8 @@ var require_YAMLSeq = __commonJS({
       static get tagName() {
         return "tag:yaml.org,2002:seq";
       }
-      constructor(schema) {
-        super(identity.SEQ, schema);
+      constructor(schema2) {
+        super(identity.SEQ, schema2);
         this.items = [];
       }
       add(value) {
@@ -3680,15 +3680,15 @@ var require_YAMLSeq = __commonJS({
           onComment
         });
       }
-      static from(schema, obj, ctx) {
-        const { replacer } = ctx;
-        const seq = new this(schema);
+      static from(schema2, obj, ctx) {
+        const { replacer: replacer2 } = ctx;
+        const seq = new this(schema2);
         if (obj && Symbol.iterator in Object(obj)) {
           let i = 0;
           for (let it of obj) {
-            if (typeof replacer === "function") {
+            if (typeof replacer2 === "function") {
               const key = obj instanceof Set ? it : String(i++);
-              it = replacer.call(obj, key, it);
+              it = replacer2.call(obj, key, it);
             }
             seq.items.push(createNode.createNode(it, void 0, ctx));
           }
@@ -3722,7 +3722,7 @@ var require_seq = __commonJS({
           onError("Expected a sequence for this tag");
         return seq2;
       },
-      createNode: (schema, obj, ctx) => YAMLSeq.YAMLSeq.from(schema, obj, ctx)
+      createNode: (schema2, obj, ctx) => YAMLSeq.YAMLSeq.from(schema2, obj, ctx)
     };
     exports.seq = seq;
   }
@@ -3793,14 +3793,14 @@ var require_bool = __commonJS({
 var require_stringifyNumber = __commonJS({
   "node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
-    function stringifyNumber({ format, minFractionDigits, tag, value }) {
+    function stringifyNumber({ format: format2, minFractionDigits, tag, value }) {
       if (typeof value === "bigint")
         return String(value);
       const num = typeof value === "number" ? value : Number(value);
       if (!isFinite(num))
         return isNaN(num) ? ".nan" : num < 0 ? "-.inf" : ".inf";
       let n = Object.is(value, -0) ? "-0" : JSON.stringify(value);
-      if (!format && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
+      if (!format2 && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
         let i = n.indexOf(".");
         if (i < 0) {
           i = n.length;
@@ -3918,7 +3918,7 @@ var require_schema = __commonJS({
     var bool = require_bool();
     var float = require_float();
     var int = require_int();
-    var schema = [
+    var schema2 = [
       map.map,
       seq.seq,
       string.string,
@@ -3931,7 +3931,7 @@ var require_schema = __commonJS({
       float.floatExp,
       float.float
     ];
-    exports.schema = schema;
+    exports.schema = schema2;
   }
 });
 
@@ -3997,8 +3997,8 @@ var require_schema2 = __commonJS({
         return str;
       }
     };
-    var schema = [map.map, seq.seq].concat(jsonScalars, jsonError);
-    exports.schema = schema;
+    var schema2 = [map.map, seq.seq].concat(jsonScalars, jsonError);
+    exports.schema = schema2;
   }
 });
 
@@ -4102,15 +4102,15 @@ ${cn.comment}` : item.comment;
         onError("Expected a sequence for this tag");
       return seq;
     }
-    function createPairs(schema, iterable, ctx) {
-      const { replacer } = ctx;
-      const pairs2 = new YAMLSeq.YAMLSeq(schema);
+    function createPairs(schema2, iterable, ctx) {
+      const { replacer: replacer2 } = ctx;
+      const pairs2 = new YAMLSeq.YAMLSeq(schema2);
       pairs2.tag = "tag:yaml.org,2002:pairs";
       let i = 0;
       if (iterable && Symbol.iterator in Object(iterable))
         for (let it of iterable) {
-          if (typeof replacer === "function")
-            it = replacer.call(iterable, String(i++), it);
+          if (typeof replacer2 === "function")
+            it = replacer2.call(iterable, String(i++), it);
           let key, value;
           if (Array.isArray(it)) {
             if (it.length === 2) {
@@ -4189,8 +4189,8 @@ var require_omap = __commonJS({
         }
         return map;
       }
-      static from(schema, iterable, ctx) {
-        const pairs$1 = pairs.createPairs(schema, iterable, ctx);
+      static from(schema2, iterable, ctx) {
+        const pairs$1 = pairs.createPairs(schema2, iterable, ctx);
         const omap2 = new this();
         omap2.items = pairs$1.items;
         return omap2;
@@ -4217,7 +4217,7 @@ var require_omap = __commonJS({
         }
         return Object.assign(new YAMLOMap(), pairs$1);
       },
-      createNode: (schema, iterable, ctx) => YAMLOMap.from(schema, iterable, ctx)
+      createNode: (schema2, iterable, ctx) => YAMLOMap.from(schema2, iterable, ctx)
     };
     exports.YAMLOMap = YAMLOMap;
     exports.omap = omap;
@@ -4392,8 +4392,8 @@ var require_set = __commonJS({
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
     var YAMLSet = class _YAMLSet extends YAMLMap.YAMLMap {
-      constructor(schema) {
-        super(schema);
+      constructor(schema2) {
+        super(schema2);
         this.tag = _YAMLSet.tag;
       }
       add(key) {
@@ -4437,13 +4437,13 @@ var require_set = __commonJS({
         else
           throw new Error("Set items must all have null values");
       }
-      static from(schema, iterable, ctx) {
-        const { replacer } = ctx;
-        const set2 = new this(schema);
+      static from(schema2, iterable, ctx) {
+        const { replacer: replacer2 } = ctx;
+        const set2 = new this(schema2);
         if (iterable && Symbol.iterator in Object(iterable))
           for (let value of iterable) {
-            if (typeof replacer === "function")
-              value = replacer.call(iterable, value, value);
+            if (typeof replacer2 === "function")
+              value = replacer2.call(iterable, value, value);
             set2.items.push(Pair.createPair(value, null, ctx));
           }
         return set2;
@@ -4456,7 +4456,7 @@ var require_set = __commonJS({
       nodeClass: YAMLSet,
       default: false,
       tag: "tag:yaml.org,2002:set",
-      createNode: (schema, iterable, ctx) => YAMLSet.from(schema, iterable, ctx),
+      createNode: (schema2, iterable, ctx) => YAMLSet.from(schema2, iterable, ctx),
       resolve(map, onError) {
         if (identity.isMap(map)) {
           if (map.hasAllNullValues(true))
@@ -4578,7 +4578,7 @@ var require_schema3 = __commonJS({
     var pairs = require_pairs();
     var set = require_set();
     var timestamp = require_timestamp();
-    var schema = [
+    var schema2 = [
       map.map,
       seq.seq,
       string.string,
@@ -4601,7 +4601,7 @@ var require_schema3 = __commonJS({
       timestamp.floatTime,
       timestamp.timestamp
     ];
-    exports.schema = schema;
+    exports.schema = schema2;
   }
 });
 
@@ -4616,7 +4616,7 @@ var require_tags = __commonJS({
     var bool = require_bool();
     var float = require_float();
     var int = require_int();
-    var schema = require_schema();
+    var schema2 = require_schema();
     var schema$1 = require_schema2();
     var binary = require_binary();
     var merge2 = require_merge();
@@ -4626,7 +4626,7 @@ var require_tags = __commonJS({
     var set = require_set();
     var timestamp = require_timestamp();
     var schemas = /* @__PURE__ */ new Map([
-      ["core", schema.schema],
+      ["core", schema2.schema],
       ["failsafe", [map.map, seq.seq, string.string]],
       ["json", schema$1.schema],
       ["yaml11", schema$2.schema],
@@ -4710,9 +4710,9 @@ var require_Schema = __commonJS({
     var tags = require_tags();
     var sortMapEntriesByKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
     var Schema = class _Schema {
-      constructor({ compat, customTags, merge: merge2, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
+      constructor({ compat, customTags, merge: merge2, resolveKnownTags, schema: schema2, sortMapEntries, toStringDefaults }) {
         this.compat = Array.isArray(compat) ? tags.getTags(compat, "compat") : compat ? tags.getTags(null, compat) : null;
-        this.name = typeof schema === "string" && schema || "core";
+        this.name = typeof schema2 === "string" && schema2 || "core";
         this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
         this.tags = tags.getTags(customTags, this.name, merge2);
         this.toStringOptions = toStringDefaults ?? null;
@@ -4827,18 +4827,18 @@ var require_Document = __commonJS({
     var createNode = require_createNode();
     var directives = require_directives();
     var Document = class _Document {
-      constructor(value, replacer, options) {
+      constructor(value, replacer2, options) {
         this.commentBefore = null;
         this.comment = null;
         this.errors = [];
         this.warnings = [];
         Object.defineProperty(this, identity.NODE_TYPE, { value: identity.DOC });
         let _replacer = null;
-        if (typeof replacer === "function" || Array.isArray(replacer)) {
-          _replacer = replacer;
-        } else if (options === void 0 && replacer) {
-          options = replacer;
-          replacer = void 0;
+        if (typeof replacer2 === "function" || Array.isArray(replacer2)) {
+          _replacer = replacer2;
+        } else if (options === void 0 && replacer2) {
+          options = replacer2;
+          replacer2 = void 0;
         }
         const opt = Object.assign({
           intAsBigInt: false,
@@ -4910,20 +4910,20 @@ var require_Document = __commonJS({
         }
         return new Alias.Alias(node.anchor);
       }
-      createNode(value, replacer, options) {
+      createNode(value, replacer2, options) {
         let _replacer = void 0;
-        if (typeof replacer === "function") {
-          value = replacer.call({ "": value }, "", value);
-          _replacer = replacer;
-        } else if (Array.isArray(replacer)) {
+        if (typeof replacer2 === "function") {
+          value = replacer2.call({ "": value }, "", value);
+          _replacer = replacer2;
+        } else if (Array.isArray(replacer2)) {
           const keyToStr = (v) => typeof v === "number" || v instanceof String || v instanceof Number;
-          const asStr = replacer.filter(keyToStr).map(String);
+          const asStr = replacer2.filter(keyToStr).map(String);
           if (asStr.length > 0)
-            replacer = replacer.concat(asStr);
-          _replacer = replacer;
-        } else if (options === void 0 && replacer) {
-          options = replacer;
-          replacer = void 0;
+            replacer2 = replacer2.concat(asStr);
+          _replacer = replacer2;
+        } else if (options === void 0 && replacer2) {
+          options = replacer2;
+          replacer2 = void 0;
         }
         const { aliasDuplicateObjects, anchorPrefix, flow, keepUndefined, onTagObj, tag } = options ?? {};
         const { onAnchor, setAnchors, sourceObjects } = anchors.createNodeAnchors(
@@ -5076,7 +5076,7 @@ var require_Document = __commonJS({
           throw new Error(`With a null YAML version, the { schema: Schema } option is required`);
       }
       // json & jsonArg are only used from toJSON()
-      toJS({ json, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+      toJS({ json, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver: reviver2 } = {}) {
         const ctx = {
           anchors: /* @__PURE__ */ new Map(),
           doc: this,
@@ -5089,7 +5089,7 @@ var require_Document = __commonJS({
         if (typeof onAnchor === "function")
           for (const { count, res: res2 } of ctx.anchors.values())
             onAnchor(res2, count);
-        return typeof reviver === "function" ? applyReviver.applyReviver(reviver, { "": res }, "", res) : res;
+        return typeof reviver2 === "function" ? applyReviver.applyReviver(reviver2, { "": res }, "", res) : res;
       }
       /**
        * A JSON representation of the document `contents`.
@@ -5612,9 +5612,9 @@ var require_resolve_flow_collection = __commonJS({
     var blockMsg = "Block collections are not allowed within flow collections";
     var isBlock = (token) => token && (token.type === "block-map" || token.type === "block-seq");
     function resolveFlowCollection({ composeNode, composeEmptyNode }, ctx, fc, onError, tag) {
-      const isMap = fc.start.source === "{";
-      const fcName = isMap ? "flow map" : "flow sequence";
-      const NodeClass = tag?.nodeClass ?? (isMap ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
+      const isMap2 = fc.start.source === "{";
+      const fcName = isMap2 ? "flow map" : "flow sequence";
+      const NodeClass = tag?.nodeClass ?? (isMap2 ? YAMLMap.YAMLMap : YAMLSeq.YAMLSeq);
       const coll = new NodeClass(ctx.schema);
       coll.flow = true;
       const atRoot = ctx.atRoot;
@@ -5650,7 +5650,7 @@ var require_resolve_flow_collection = __commonJS({
             offset = props.end;
             continue;
           }
-          if (!isMap && ctx.options.strict && utilContainsNewline.containsNewline(key))
+          if (!isMap2 && ctx.options.strict && utilContainsNewline.containsNewline(key))
             onError(
               key,
               // checked by containsNewline()
@@ -5690,7 +5690,7 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep2 && !props.found) {
+        if (!isMap2 && !sep2 && !props.found) {
           const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
@@ -5713,7 +5713,7 @@ var require_resolve_flow_collection = __commonJS({
             startOnNewline: false
           });
           if (valueProps.found) {
-            if (!isMap && !props.found && ctx.options.strict) {
+            if (!isMap2 && !props.found && ctx.options.strict) {
               if (sep2)
                 for (const st of sep2) {
                   if (st === valueProps.found)
@@ -5745,7 +5745,7 @@ var require_resolve_flow_collection = __commonJS({
           const pair = new Pair.Pair(keyNode, valueNode);
           if (ctx.options.keepSourceTokens)
             pair.srcToken = collItem;
-          if (isMap) {
+          if (isMap2) {
             const map = coll;
             if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
               onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
@@ -5761,7 +5761,7 @@ var require_resolve_flow_collection = __commonJS({
           offset = valueNode ? valueNode.range[2] : valueProps.end;
         }
       }
-      const expectedEnd = isMap ? "}" : "]";
+      const expectedEnd = isMap2 ? "}" : "]";
       const [ce, ...ee] = fc.end;
       let cePos = offset;
       if (ce?.source === expectedEnd)
@@ -6300,11 +6300,11 @@ var require_compose_scalar = __commonJS({
         scalar.comment = comment;
       return scalar;
     }
-    function findScalarTagByName(schema, value, tagName, tagToken, onError) {
+    function findScalarTagByName(schema2, value, tagName, tagToken, onError) {
       if (tagName === "!")
-        return schema[identity.SCALAR];
+        return schema2[identity.SCALAR];
       const matchWithTest = [];
-      for (const tag of schema.tags) {
+      for (const tag of schema2.tags) {
         if (!tag.collection && tag.tag === tagName) {
           if (tag.default && tag.test)
             matchWithTest.push(tag);
@@ -6315,18 +6315,18 @@ var require_compose_scalar = __commonJS({
       for (const tag of matchWithTest)
         if (tag.test?.test(value))
           return tag;
-      const kt = schema.knownTags[tagName];
+      const kt = schema2.knownTags[tagName];
       if (kt && !kt.collection) {
-        schema.tags.push(Object.assign({}, kt, { default: false, test: void 0 }));
+        schema2.tags.push(Object.assign({}, kt, { default: false, test: void 0 }));
         return kt;
       }
       onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, tagName !== "tag:yaml.org,2002:str");
-      return schema[identity.SCALAR];
+      return schema2[identity.SCALAR];
     }
-    function findScalarTagByTest({ atKey, directives, schema }, value, token, onError) {
-      const tag = schema.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value)) || schema[identity.SCALAR];
-      if (schema.compat) {
-        const compat = schema.compat.find((tag2) => tag2.default && tag2.test?.test(value)) ?? schema[identity.SCALAR];
+    function findScalarTagByTest({ atKey, directives, schema: schema2 }, value, token, onError) {
+      const tag = schema2.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value)) || schema2[identity.SCALAR];
+      if (schema2.compat) {
+        const compat = schema2.compat.find((tag2) => tag2.default && tag2.test?.test(value)) ?? schema2[identity.SCALAR];
         if (tag.tag !== compat.tag) {
           const ts = directives.tagString(tag.tag);
           const cs = directives.tagString(compat.tag);
@@ -7045,9 +7045,9 @@ var require_cst = __commonJS({
     var BOM = "\uFEFF";
     var DOCUMENT = "";
     var FLOW_END = "";
-    var SCALAR = "";
-    var isCollection = (token) => !!token && "items" in token;
-    var isScalar = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
+    var SCALAR2 = "";
+    var isCollection2 = (token) => !!token && "items" in token;
+    var isScalar3 = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
     function prettyToken(token) {
       switch (token) {
         case BOM:
@@ -7056,7 +7056,7 @@ var require_cst = __commonJS({
           return "<DOC>";
         case FLOW_END:
           return "<FLOW_END>";
-        case SCALAR:
+        case SCALAR2:
           return "<SCALAR>";
         default:
           return JSON.stringify(token);
@@ -7070,7 +7070,7 @@ var require_cst = __commonJS({
           return "doc-mode";
         case FLOW_END:
           return "flow-error-end";
-        case SCALAR:
+        case SCALAR2:
           return "scalar";
         case "---":
           return "doc-start";
@@ -7129,9 +7129,9 @@ var require_cst = __commonJS({
     exports.BOM = BOM;
     exports.DOCUMENT = DOCUMENT;
     exports.FLOW_END = FLOW_END;
-    exports.SCALAR = SCALAR;
-    exports.isCollection = isCollection;
-    exports.isScalar = isScalar;
+    exports.SCALAR = SCALAR2;
+    exports.isCollection = isCollection2;
+    exports.isScalar = isScalar3;
     exports.prettyToken = prettyToken;
     exports.tokenType = tokenType;
   }
@@ -7159,7 +7159,7 @@ var require_lexer = __commonJS({
     var flowIndicatorChars = new Set(",[]{}");
     var invalidAnchorChars = new Set(" ,[]{}\n\r	");
     var isNotAnchorChar = (ch) => !ch || invalidAnchorChars.has(ch);
-    var Lexer = class {
+    var Lexer2 = class {
       constructor() {
         this.atEnd = false;
         this.blockScalarIndent = -1;
@@ -7722,7 +7722,7 @@ var require_lexer = __commonJS({
         return yield* this.pushToIndex(i, false);
       }
     };
-    exports.Lexer = Lexer;
+    exports.Lexer = Lexer2;
   }
 });
 
@@ -7730,7 +7730,7 @@ var require_lexer = __commonJS({
 var require_line_counter = __commonJS({
   "node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
-    var LineCounter = class {
+    var LineCounter2 = class {
       constructor() {
         this.lineStarts = [];
         this.addNewLine = (offset) => this.lineStarts.push(offset);
@@ -7753,7 +7753,7 @@ var require_line_counter = __commonJS({
         };
       }
     };
-    exports.LineCounter = LineCounter;
+    exports.LineCounter = LineCounter2;
   }
 });
 
@@ -7854,7 +7854,7 @@ var require_parser = __commonJS({
         }
       }
     }
-    var Parser = class {
+    var Parser2 = class {
       /**
        * @param onNewLine - If defined, called separately with the start position of
        *   each new line (in `parse()`, including the start of input).
@@ -8627,7 +8627,7 @@ var require_parser = __commonJS({
         }
       }
     };
-    exports.Parser = Parser;
+    exports.Parser = Parser2;
   }
 });
 
@@ -8661,7 +8661,7 @@ var require_public_api = __commonJS({
         return docs;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
-    function parseDocument(source, options = {}) {
+    function parseDocument2(source, options = {}) {
       const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
       const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
       const composer$1 = new composer.Composer(options);
@@ -8680,14 +8680,14 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse2(src, reviver, options) {
+    function parse2(src, reviver2, options) {
       let _reviver = void 0;
-      if (typeof reviver === "function") {
-        _reviver = reviver;
-      } else if (options === void 0 && reviver && typeof reviver === "object") {
-        options = reviver;
+      if (typeof reviver2 === "function") {
+        _reviver = reviver2;
+      } else if (options === void 0 && reviver2 && typeof reviver2 === "object") {
+        options = reviver2;
       }
-      const doc = parseDocument(src, options);
+      const doc = parseDocument2(src, options);
       if (!doc)
         return null;
       doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
@@ -8699,12 +8699,12 @@ var require_public_api = __commonJS({
       }
       return doc.toJS(Object.assign({ reviver: _reviver }, options));
     }
-    function stringify(value, replacer, options) {
+    function stringify(value, replacer2, options) {
       let _replacer = null;
-      if (typeof replacer === "function" || Array.isArray(replacer)) {
-        _replacer = replacer;
-      } else if (options === void 0 && replacer) {
-        options = replacer;
+      if (typeof replacer2 === "function" || Array.isArray(replacer2)) {
+        _replacer = replacer2;
+      } else if (options === void 0 && replacer2) {
+        options = replacer2;
       }
       if (typeof options === "string")
         options = options.length;
@@ -8713,7 +8713,7 @@ var require_public_api = __commonJS({
         options = indent < 1 ? void 0 : indent > 8 ? { indent: 8 } : { indent };
       }
       if (value === void 0) {
-        const { keepUndefined } = options ?? replacer ?? {};
+        const { keepUndefined } = options ?? replacer2 ?? {};
         if (!keepUndefined)
           return void 0;
       }
@@ -8723,7 +8723,7 @@ var require_public_api = __commonJS({
     }
     exports.parse = parse2;
     exports.parseAllDocuments = parseAllDocuments;
-    exports.parseDocument = parseDocument;
+    exports.parseDocument = parseDocument2;
     exports.stringify = stringify;
   }
 });
@@ -8780,9 +8780,1083 @@ var require_dist = __commonJS({
   }
 });
 
+// node_modules/cronstrue/dist/cronstrue.js
+var require_cronstrue = __commonJS({
+  "node_modules/cronstrue/dist/cronstrue.js"(exports, module) {
+    (function webpackUniversalModuleDefinition(root, factory) {
+      if (typeof exports === "object" && typeof module === "object")
+        module.exports = factory();
+      else if (typeof define === "function" && define.amd)
+        define("cronstrue", [], factory);
+      else if (typeof exports === "object")
+        exports["cronstrue"] = factory();
+      else
+        root["cronstrue"] = factory();
+    })(globalThis, () => {
+      return (
+        /******/
+        (() => {
+          "use strict";
+          var __webpack_modules__ = {
+            /***/
+            949: (
+              /***/
+              ((__unused_webpack_module, exports2, __webpack_require__2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                exports2.CronParser = void 0;
+                var rangeValidator_1 = __webpack_require__2(515);
+                var CronParser = (function() {
+                  function CronParser2(expression, dayOfWeekStartIndexZero, monthStartIndexZero) {
+                    if (dayOfWeekStartIndexZero === void 0) {
+                      dayOfWeekStartIndexZero = true;
+                    }
+                    if (monthStartIndexZero === void 0) {
+                      monthStartIndexZero = false;
+                    }
+                    this.expression = expression;
+                    this.dayOfWeekStartIndexZero = dayOfWeekStartIndexZero;
+                    this.monthStartIndexZero = monthStartIndexZero;
+                  }
+                  CronParser2.prototype.parse = function() {
+                    var _a;
+                    var parsed;
+                    var expression = (_a = this.expression) !== null && _a !== void 0 ? _a : "";
+                    if (expression.startsWith("@")) {
+                      var special = this.parseSpecial(this.expression);
+                      parsed = this.extractParts(special);
+                    } else {
+                      parsed = this.extractParts(this.expression);
+                    }
+                    this.normalize(parsed);
+                    this.validate(parsed);
+                    return parsed;
+                  };
+                  CronParser2.prototype.parseSpecial = function(expression) {
+                    var specialExpressions = {
+                      "@yearly": "0 0 1 1 *",
+                      "@annually": "0 0 1 1 *",
+                      "@monthly": "0 0 1 * *",
+                      "@weekly": "0 0 * * 0",
+                      "@daily": "0 0 * * *",
+                      "@midnight": "0 0 * * *",
+                      "@hourly": "0 * * * *"
+                    };
+                    var special = specialExpressions[expression];
+                    if (!special) {
+                      throw new Error("Unknown special expression.");
+                    }
+                    return special;
+                  };
+                  CronParser2.prototype.extractParts = function(expression) {
+                    if (!this.expression) {
+                      throw new Error("cron expression is empty");
+                    }
+                    var parsed = expression.trim().split(/[ ]+/);
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (parsed[i].includes(",")) {
+                        var arrayElement = parsed[i].split(",").map(function(item) {
+                          return item.trim();
+                        }).filter(function(item) {
+                          return item !== "";
+                        }).map(function(item) {
+                          return !isNaN(Number(item)) ? Number(item) : item;
+                        }).filter(function(item) {
+                          return item !== null && item !== "";
+                        });
+                        if (arrayElement.length === 0) {
+                          arrayElement.push("*");
+                        }
+                        arrayElement.sort(function(a, b) {
+                          return a !== null && b !== null ? a - b : 0;
+                        });
+                        parsed[i] = arrayElement.map(function(item) {
+                          return item !== null ? item.toString() : "";
+                        }).join(",");
+                      }
+                    }
+                    if (parsed.length < 5) {
+                      throw new Error("Expression has only ".concat(parsed.length, " part").concat(parsed.length == 1 ? "" : "s", ". At least 5 parts are required."));
+                    } else if (parsed.length == 5) {
+                      parsed.unshift("");
+                      parsed.push("");
+                    } else if (parsed.length == 6) {
+                      var isYearWithNoSecondsPart = /\d{4}$/.test(parsed[5]) || parsed[4] == "?" || parsed[2] == "?";
+                      if (isYearWithNoSecondsPart) {
+                        parsed.unshift("");
+                      } else {
+                        parsed.push("");
+                      }
+                    } else if (parsed.length > 7) {
+                      throw new Error("Expression has ".concat(parsed.length, " parts; too many!"));
+                    }
+                    return parsed;
+                  };
+                  CronParser2.prototype.normalize = function(expressionParts) {
+                    var _this = this;
+                    expressionParts[3] = expressionParts[3].replace("?", "*");
+                    expressionParts[5] = expressionParts[5].replace("?", "*");
+                    expressionParts[2] = expressionParts[2].replace("?", "*");
+                    if (expressionParts[0].indexOf("0/") == 0) {
+                      expressionParts[0] = expressionParts[0].replace("0/", "*/");
+                    }
+                    if (expressionParts[1].indexOf("0/") == 0) {
+                      expressionParts[1] = expressionParts[1].replace("0/", "*/");
+                    }
+                    if (expressionParts[2].indexOf("0/") == 0) {
+                      expressionParts[2] = expressionParts[2].replace("0/", "*/");
+                    }
+                    if (expressionParts[3].indexOf("1/") == 0) {
+                      expressionParts[3] = expressionParts[3].replace("1/", "*/");
+                    }
+                    if (expressionParts[4].indexOf("1/") == 0) {
+                      expressionParts[4] = expressionParts[4].replace("1/", "*/");
+                    }
+                    if (expressionParts[6].indexOf("1/") == 0) {
+                      expressionParts[6] = expressionParts[6].replace("1/", "*/");
+                    }
+                    expressionParts[5] = expressionParts[5].replace(/(^\d)|([^#/\s]\d)/g, function(t) {
+                      var dowDigits = t.replace(/\D/, "");
+                      var dowDigitsAdjusted = dowDigits;
+                      if (_this.dayOfWeekStartIndexZero) {
+                        if (dowDigits == "7") {
+                          dowDigitsAdjusted = "0";
+                        }
+                      } else {
+                        dowDigitsAdjusted = (parseInt(dowDigits) - 1).toString();
+                      }
+                      return t.replace(dowDigits, dowDigitsAdjusted);
+                    });
+                    if (expressionParts[5] == "L") {
+                      expressionParts[5] = "6";
+                    }
+                    if (expressionParts[3] == "?") {
+                      expressionParts[3] = "*";
+                    }
+                    if (expressionParts[3].indexOf("W") > -1 && (expressionParts[3].indexOf(",") > -1 || expressionParts[3].indexOf("-") > -1)) {
+                      throw new Error("The 'W' character can be specified only when the day-of-month is a single day, not a range or list of days.");
+                    }
+                    var days = {
+                      SUN: 0,
+                      MON: 1,
+                      TUE: 2,
+                      WED: 3,
+                      THU: 4,
+                      FRI: 5,
+                      SAT: 6
+                    };
+                    for (var day in days) {
+                      expressionParts[5] = expressionParts[5].replace(new RegExp(day, "gi"), days[day].toString());
+                    }
+                    expressionParts[4] = expressionParts[4].replace(/(^\d{1,2})|([^#/\s]\d{1,2})/g, function(t) {
+                      var dowDigits = t.replace(/\D/, "");
+                      var dowDigitsAdjusted = dowDigits;
+                      if (_this.monthStartIndexZero) {
+                        dowDigitsAdjusted = (parseInt(dowDigits) + 1).toString();
+                      }
+                      return t.replace(dowDigits, dowDigitsAdjusted);
+                    });
+                    var months = {
+                      JAN: 1,
+                      FEB: 2,
+                      MAR: 3,
+                      APR: 4,
+                      MAY: 5,
+                      JUN: 6,
+                      JUL: 7,
+                      AUG: 8,
+                      SEP: 9,
+                      OCT: 10,
+                      NOV: 11,
+                      DEC: 12
+                    };
+                    for (var month in months) {
+                      expressionParts[4] = expressionParts[4].replace(new RegExp(month, "gi"), months[month].toString());
+                    }
+                    if (expressionParts[0] == "0") {
+                      expressionParts[0] = "";
+                    }
+                    if (!/\*|\-|\,|\//.test(expressionParts[2]) && (/\*|\//.test(expressionParts[1]) || /\*|\//.test(expressionParts[0]))) {
+                      expressionParts[2] += "-".concat(expressionParts[2]);
+                    }
+                    for (var i = 0; i < expressionParts.length; i++) {
+                      if (expressionParts[i].indexOf(",") != -1) {
+                        expressionParts[i] = expressionParts[i].split(",").filter(function(str) {
+                          return str !== "";
+                        }).join(",") || "*";
+                      }
+                      if (expressionParts[i] == "*/1") {
+                        expressionParts[i] = "*";
+                      }
+                      if (expressionParts[i].indexOf("/") > -1 && !/^\*|\-|\,/.test(expressionParts[i])) {
+                        var stepRangeThrough = null;
+                        switch (i) {
+                          case 4:
+                            stepRangeThrough = "12";
+                            break;
+                          case 5:
+                            stepRangeThrough = "6";
+                            break;
+                          case 6:
+                            stepRangeThrough = "9999";
+                            break;
+                          default:
+                            stepRangeThrough = null;
+                            break;
+                        }
+                        if (stepRangeThrough !== null) {
+                          var parts = expressionParts[i].split("/");
+                          expressionParts[i] = "".concat(parts[0], "-").concat(stepRangeThrough, "/").concat(parts[1]);
+                        }
+                      }
+                    }
+                  };
+                  CronParser2.prototype.validate = function(parsed) {
+                    var standardCronPartCharacters = "0-9,\\-*/";
+                    this.validateOnlyExpectedCharactersFound(parsed[0], standardCronPartCharacters);
+                    this.validateOnlyExpectedCharactersFound(parsed[1], standardCronPartCharacters);
+                    this.validateOnlyExpectedCharactersFound(parsed[2], standardCronPartCharacters);
+                    this.validateOnlyExpectedCharactersFound(parsed[3], "0-9,\\-*/LW");
+                    this.validateOnlyExpectedCharactersFound(parsed[4], standardCronPartCharacters);
+                    this.validateOnlyExpectedCharactersFound(parsed[5], "0-9,\\-*/L#");
+                    this.validateOnlyExpectedCharactersFound(parsed[6], standardCronPartCharacters);
+                    this.validateAnyRanges(parsed);
+                  };
+                  CronParser2.prototype.validateAnyRanges = function(parsed) {
+                    rangeValidator_1.default.secondRange(parsed[0]);
+                    rangeValidator_1.default.minuteRange(parsed[1]);
+                    rangeValidator_1.default.hourRange(parsed[2]);
+                    rangeValidator_1.default.dayOfMonthRange(parsed[3]);
+                    rangeValidator_1.default.monthRange(parsed[4], this.monthStartIndexZero);
+                    rangeValidator_1.default.dayOfWeekRange(parsed[5], this.dayOfWeekStartIndexZero);
+                  };
+                  CronParser2.prototype.validateOnlyExpectedCharactersFound = function(cronPart, allowedCharsExpression) {
+                    var invalidChars = cronPart.match(new RegExp("[^".concat(allowedCharsExpression, "]+"), "gi"));
+                    if (invalidChars && invalidChars.length) {
+                      throw new Error("Expression contains invalid values: '".concat(invalidChars.toString(), "'"));
+                    }
+                  };
+                  return CronParser2;
+                })();
+                exports2.CronParser = CronParser;
+              })
+            ),
+            /***/
+            333: (
+              /***/
+              ((__unused_webpack_module, exports2, __webpack_require__2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                exports2.ExpressionDescriptor = void 0;
+                var stringUtilities_1 = __webpack_require__2(823);
+                var cronParser_1 = __webpack_require__2(949);
+                var ExpressionDescriptor = (function() {
+                  function ExpressionDescriptor2(expression, options) {
+                    this.expression = expression;
+                    this.options = options;
+                    this.expressionParts = new Array(5);
+                    if (!this.options.locale && ExpressionDescriptor2.defaultLocale) {
+                      this.options.locale = ExpressionDescriptor2.defaultLocale;
+                    }
+                    if (!ExpressionDescriptor2.locales[this.options.locale]) {
+                      var fallBackLocale = Object.keys(ExpressionDescriptor2.locales)[0];
+                      console.warn("Locale '".concat(this.options.locale, "' could not be found; falling back to '").concat(fallBackLocale, "'."));
+                      this.options.locale = fallBackLocale;
+                    }
+                    this.i18n = ExpressionDescriptor2.locales[this.options.locale];
+                    if (options.use24HourTimeFormat === void 0) {
+                      options.use24HourTimeFormat = this.i18n.use24HourTimeFormatByDefault();
+                    }
+                  }
+                  ExpressionDescriptor2.toString = function(expression, _a) {
+                    var _b = _a === void 0 ? {} : _a, _c = _b.throwExceptionOnParseError, throwExceptionOnParseError = _c === void 0 ? true : _c, _d = _b.verbose, verbose = _d === void 0 ? false : _d, _e = _b.dayOfWeekStartIndexZero, dayOfWeekStartIndexZero = _e === void 0 ? true : _e, _f = _b.monthStartIndexZero, monthStartIndexZero = _f === void 0 ? false : _f, use24HourTimeFormat = _b.use24HourTimeFormat, _g = _b.locale, locale = _g === void 0 ? null : _g, _h = _b.tzOffset, tzOffset = _h === void 0 ? 0 : _h;
+                    var options = {
+                      throwExceptionOnParseError,
+                      verbose,
+                      dayOfWeekStartIndexZero,
+                      monthStartIndexZero,
+                      use24HourTimeFormat,
+                      locale,
+                      tzOffset
+                    };
+                    if (options.tzOffset) {
+                      console.warn("'tzOffset' option has been deprecated and will be removed in a future release.");
+                    }
+                    var descripter = new ExpressionDescriptor2(expression, options);
+                    return descripter.getFullDescription();
+                  };
+                  ExpressionDescriptor2.initialize = function(localesLoader, defaultLocale) {
+                    if (defaultLocale === void 0) {
+                      defaultLocale = "en";
+                    }
+                    ExpressionDescriptor2.specialCharacters = ["/", "-", ",", "*"];
+                    ExpressionDescriptor2.defaultLocale = defaultLocale;
+                    localesLoader.load(ExpressionDescriptor2.locales);
+                  };
+                  ExpressionDescriptor2.prototype.getFullDescription = function() {
+                    var description = "";
+                    try {
+                      var parser = new cronParser_1.CronParser(this.expression, this.options.dayOfWeekStartIndexZero, this.options.monthStartIndexZero);
+                      this.expressionParts = parser.parse();
+                      var timeSegment = this.getTimeOfDayDescription();
+                      var dayOfMonthDesc = this.getDayOfMonthDescription();
+                      var monthDesc = this.getMonthDescription();
+                      var dayOfWeekDesc = this.getDayOfWeekDescription();
+                      var yearDesc = this.getYearDescription();
+                      description += timeSegment + dayOfMonthDesc + dayOfWeekDesc + monthDesc + yearDesc;
+                      description = this.transformVerbosity(description, !!this.options.verbose);
+                      description = description.charAt(0).toLocaleUpperCase() + description.substr(1);
+                    } catch (ex) {
+                      if (!this.options.throwExceptionOnParseError) {
+                        description = this.i18n.anErrorOccuredWhenGeneratingTheExpressionD();
+                      } else {
+                        throw "".concat(ex);
+                      }
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getTimeOfDayDescription = function() {
+                    var secondsExpression = this.expressionParts[0];
+                    var minuteExpression = this.expressionParts[1];
+                    var hourExpression = this.expressionParts[2];
+                    var description = "";
+                    if (!stringUtilities_1.StringUtilities.containsAny(minuteExpression, ExpressionDescriptor2.specialCharacters) && !stringUtilities_1.StringUtilities.containsAny(hourExpression, ExpressionDescriptor2.specialCharacters) && !stringUtilities_1.StringUtilities.containsAny(secondsExpression, ExpressionDescriptor2.specialCharacters)) {
+                      description += this.i18n.atSpace() + this.formatTime(hourExpression, minuteExpression, secondsExpression);
+                    } else if (!secondsExpression && minuteExpression.indexOf("-") > -1 && !(minuteExpression.indexOf(",") > -1) && !(minuteExpression.indexOf("/") > -1) && !stringUtilities_1.StringUtilities.containsAny(hourExpression, ExpressionDescriptor2.specialCharacters)) {
+                      var minuteParts = minuteExpression.split("-");
+                      description += stringUtilities_1.StringUtilities.format(this.i18n.everyMinuteBetweenX0AndX1(), this.formatTime(hourExpression, minuteParts[0], ""), this.formatTime(hourExpression, minuteParts[1], ""));
+                    } else if (!secondsExpression && hourExpression.indexOf(",") > -1 && hourExpression.indexOf("-") == -1 && hourExpression.indexOf("/") == -1 && !stringUtilities_1.StringUtilities.containsAny(minuteExpression, ExpressionDescriptor2.specialCharacters)) {
+                      var hourParts = hourExpression.split(",");
+                      description += this.i18n.at();
+                      for (var i = 0; i < hourParts.length; i++) {
+                        description += " ";
+                        description += this.formatTime(hourParts[i], minuteExpression, "");
+                        if (i < hourParts.length - 2) {
+                          description += ",";
+                        }
+                        if (i == hourParts.length - 2) {
+                          description += this.i18n.spaceAnd();
+                        }
+                      }
+                    } else {
+                      var secondsDescription = this.getSecondsDescription();
+                      var minutesDescription = this.getMinutesDescription();
+                      var hoursDescription = this.getHoursDescription();
+                      description += secondsDescription;
+                      if (description && minutesDescription) {
+                        description += ", ";
+                      }
+                      description += minutesDescription;
+                      if (minutesDescription === hoursDescription) {
+                        return description;
+                      }
+                      if (description && hoursDescription) {
+                        description += ", ";
+                      }
+                      description += hoursDescription;
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getSecondsDescription = function() {
+                    var _this = this;
+                    var description = this.getSegmentDescription(this.expressionParts[0], this.i18n.everySecond(), function(s) {
+                      return s;
+                    }, function(s) {
+                      return stringUtilities_1.StringUtilities.format(_this.i18n.everyX0Seconds(s), s);
+                    }, function(s) {
+                      return _this.i18n.secondsX0ThroughX1PastTheMinute();
+                    }, function(s) {
+                      return s == "0" ? "" : parseInt(s) < 20 ? _this.i18n.atX0SecondsPastTheMinute(s) : _this.i18n.atX0SecondsPastTheMinuteGt20() || _this.i18n.atX0SecondsPastTheMinute(s);
+                    });
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getMinutesDescription = function() {
+                    var _this = this;
+                    var secondsExpression = this.expressionParts[0];
+                    var hourExpression = this.expressionParts[2];
+                    var description = this.getSegmentDescription(this.expressionParts[1], this.i18n.everyMinute(), function(s) {
+                      return s;
+                    }, function(s) {
+                      return stringUtilities_1.StringUtilities.format(_this.i18n.everyX0Minutes(s), s);
+                    }, function(s) {
+                      return _this.i18n.minutesX0ThroughX1PastTheHour();
+                    }, function(s) {
+                      try {
+                        return s == "0" && hourExpression.indexOf("/") == -1 && secondsExpression == "" ? _this.i18n.everyHour() : parseInt(s) < 20 ? _this.i18n.atX0MinutesPastTheHour(s) : _this.i18n.atX0MinutesPastTheHourGt20() || _this.i18n.atX0MinutesPastTheHour(s);
+                      } catch (e) {
+                        return _this.i18n.atX0MinutesPastTheHour(s);
+                      }
+                    });
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getHoursDescription = function() {
+                    var _this = this;
+                    var expression = this.expressionParts[2];
+                    var hourIndex = 0;
+                    var rangeEndValues = [];
+                    expression.split("/")[0].split(",").forEach(function(range) {
+                      var rangeParts = range.split("-");
+                      if (rangeParts.length === 2) {
+                        rangeEndValues.push({ value: rangeParts[1], index: hourIndex + 1 });
+                      }
+                      hourIndex += rangeParts.length;
+                    });
+                    var evaluationIndex = 0;
+                    var description = this.getSegmentDescription(expression, this.i18n.everyHour(), function(s) {
+                      var match = rangeEndValues.find(function(r) {
+                        return r.value === s && r.index === evaluationIndex;
+                      });
+                      var isRangeEndWithNonZeroMinute = match && _this.expressionParts[1] !== "0";
+                      evaluationIndex++;
+                      return isRangeEndWithNonZeroMinute ? _this.formatTime(s, "59", "") : _this.formatTime(s, "0", "");
+                    }, function(s) {
+                      return stringUtilities_1.StringUtilities.format(_this.i18n.everyX0Hours(s), s);
+                    }, function(s) {
+                      return _this.i18n.betweenX0AndX1();
+                    }, function(s) {
+                      return _this.i18n.atX0();
+                    });
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getDayOfWeekDescription = function() {
+                    var _this = this;
+                    var daysOfWeekNames = this.i18n.daysOfTheWeek();
+                    var description = null;
+                    if (this.expressionParts[5] == "*") {
+                      description = "";
+                    } else {
+                      description = this.getSegmentDescription(this.expressionParts[5], this.i18n.commaEveryDay(), function(s, form) {
+                        var exp = s;
+                        if (s.indexOf("#") > -1) {
+                          exp = s.substring(0, s.indexOf("#"));
+                        } else if (s.indexOf("L") > -1) {
+                          exp = exp.replace("L", "");
+                        }
+                        var parsedExp = parseInt(exp);
+                        if (_this.options.tzOffset) {
+                          var hourExpression = _this.expressionParts[2];
+                          var hour = parseInt(hourExpression) + (_this.options.tzOffset ? _this.options.tzOffset : 0);
+                          if (hour >= 24) {
+                            parsedExp++;
+                          } else if (hour < 0) {
+                            parsedExp--;
+                          }
+                          if (parsedExp > 6) {
+                            parsedExp = 0;
+                          } else if (parsedExp < 0) {
+                            parsedExp = 6;
+                          }
+                        }
+                        var description2 = _this.i18n.daysOfTheWeekInCase ? _this.i18n.daysOfTheWeekInCase(form)[parsedExp] : daysOfWeekNames[parsedExp];
+                        if (s.indexOf("#") > -1) {
+                          var dayOfWeekOfMonthDescription = null;
+                          var dayOfWeekOfMonthNumber = s.substring(s.indexOf("#") + 1);
+                          var dayOfWeekNumber = s.substring(0, s.indexOf("#"));
+                          switch (dayOfWeekOfMonthNumber) {
+                            case "1":
+                              dayOfWeekOfMonthDescription = _this.i18n.first(dayOfWeekNumber);
+                              break;
+                            case "2":
+                              dayOfWeekOfMonthDescription = _this.i18n.second(dayOfWeekNumber);
+                              break;
+                            case "3":
+                              dayOfWeekOfMonthDescription = _this.i18n.third(dayOfWeekNumber);
+                              break;
+                            case "4":
+                              dayOfWeekOfMonthDescription = _this.i18n.fourth(dayOfWeekNumber);
+                              break;
+                            case "5":
+                              dayOfWeekOfMonthDescription = _this.i18n.fifth(dayOfWeekNumber);
+                              break;
+                          }
+                          description2 = dayOfWeekOfMonthDescription + " " + description2;
+                        }
+                        return description2;
+                      }, function(s) {
+                        if (parseInt(s) == 1) {
+                          return "";
+                        } else {
+                          return stringUtilities_1.StringUtilities.format(_this.i18n.commaEveryX0DaysOfTheWeek(s), s);
+                        }
+                      }, function(s) {
+                        var beginFrom = s.substring(0, s.indexOf("-"));
+                        var domSpecified = _this.expressionParts[3] != "*";
+                        return domSpecified ? _this.i18n.commaAndX0ThroughX1(beginFrom) : _this.i18n.commaX0ThroughX1(beginFrom);
+                      }, function(s) {
+                        var format2 = null;
+                        if (s.indexOf("#") > -1) {
+                          var dayOfWeekOfMonthNumber = s.substring(s.indexOf("#") + 1);
+                          var dayOfWeek = s.substring(0, s.indexOf("#"));
+                          format2 = _this.i18n.commaOnThe(dayOfWeekOfMonthNumber, dayOfWeek).trim() + _this.i18n.spaceX0OfTheMonth();
+                        } else if (s.indexOf("L") > -1) {
+                          format2 = _this.i18n.commaOnTheLastX0OfTheMonth(s.replace("L", ""));
+                        } else {
+                          var domSpecified = _this.expressionParts[3] != "*";
+                          format2 = domSpecified ? _this.i18n.commaAndOnX0() : _this.i18n.commaOnlyOnX0(s);
+                        }
+                        return format2;
+                      });
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getMonthDescription = function() {
+                    var _this = this;
+                    var monthNames = this.i18n.monthsOfTheYear();
+                    var description = this.getSegmentDescription(this.expressionParts[4], "", function(s, form) {
+                      return form && _this.i18n.monthsOfTheYearInCase ? _this.i18n.monthsOfTheYearInCase(form)[parseInt(s) - 1] : monthNames[parseInt(s) - 1];
+                    }, function(s) {
+                      if (parseInt(s) == 1) {
+                        return "";
+                      } else {
+                        return stringUtilities_1.StringUtilities.format(_this.i18n.commaEveryX0Months(s), s);
+                      }
+                    }, function(s) {
+                      return _this.i18n.commaMonthX0ThroughMonthX1() || _this.i18n.commaX0ThroughX1();
+                    }, function(s) {
+                      return _this.i18n.commaOnlyInMonthX0 ? _this.i18n.commaOnlyInMonthX0() : _this.i18n.commaOnlyInX0();
+                    });
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getDayOfMonthDescription = function() {
+                    var _this = this;
+                    var description = null;
+                    var expression = this.expressionParts[3];
+                    switch (expression) {
+                      case "L":
+                        description = this.i18n.commaOnTheLastDayOfTheMonth();
+                        break;
+                      case "WL":
+                      case "LW":
+                        description = this.i18n.commaOnTheLastWeekdayOfTheMonth();
+                        break;
+                      default:
+                        var weekDayNumberMatches = expression.match(/(\d{1,2}W)|(W\d{1,2})/);
+                        if (weekDayNumberMatches) {
+                          var dayNumber = parseInt(weekDayNumberMatches[0].replace("W", ""));
+                          var dayString = dayNumber == 1 ? this.i18n.firstWeekday() : stringUtilities_1.StringUtilities.format(this.i18n.weekdayNearestDayX0(), dayNumber.toString());
+                          description = stringUtilities_1.StringUtilities.format(this.i18n.commaOnTheX0OfTheMonth(), dayString);
+                          break;
+                        } else {
+                          var lastDayOffSetMatches = expression.match(/L-(\d{1,2})/);
+                          if (lastDayOffSetMatches) {
+                            var offSetDays = lastDayOffSetMatches[1];
+                            description = stringUtilities_1.StringUtilities.format(this.i18n.commaDaysBeforeTheLastDayOfTheMonth(offSetDays), offSetDays);
+                            break;
+                          } else if (expression == "*" && this.expressionParts[5] != "*") {
+                            return "";
+                          } else {
+                            description = this.getSegmentDescription(expression, this.i18n.commaEveryDay(), function(s) {
+                              return s == "L" ? _this.i18n.lastDay() : _this.i18n.dayX0 ? stringUtilities_1.StringUtilities.format(_this.i18n.dayX0(), s) : s;
+                            }, function(s) {
+                              return s == "1" ? _this.i18n.commaEveryDay() : _this.i18n.commaEveryX0Days(s);
+                            }, function(s) {
+                              return _this.i18n.commaBetweenDayX0AndX1OfTheMonth(s);
+                            }, function(s) {
+                              return _this.i18n.commaOnDayX0OfTheMonth(s);
+                            });
+                          }
+                          break;
+                        }
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getYearDescription = function() {
+                    var _this = this;
+                    var description = this.getSegmentDescription(this.expressionParts[6], "", function(s) {
+                      return /^\d+$/.test(s) ? new Date(parseInt(s), 1).getFullYear().toString() : s;
+                    }, function(s) {
+                      return stringUtilities_1.StringUtilities.format(_this.i18n.commaEveryX0Years(s), s);
+                    }, function(s) {
+                      return _this.i18n.commaYearX0ThroughYearX1() || _this.i18n.commaX0ThroughX1();
+                    }, function(s) {
+                      return _this.i18n.commaOnlyInYearX0 ? _this.i18n.commaOnlyInYearX0() : _this.i18n.commaOnlyInX0();
+                    });
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getSegmentDescription = function(expression, allDescription, getSingleItemDescription, getIncrementDescriptionFormat, getRangeDescriptionFormat, getDescriptionFormat) {
+                    var description = null;
+                    var doesExpressionContainIncrement = expression.indexOf("/") > -1;
+                    var doesExpressionContainRange = expression.indexOf("-") > -1;
+                    var doesExpressionContainMultipleValues = expression.indexOf(",") > -1;
+                    if (!expression) {
+                      description = "";
+                    } else if (expression === "*") {
+                      description = allDescription;
+                    } else if (!doesExpressionContainIncrement && !doesExpressionContainRange && !doesExpressionContainMultipleValues) {
+                      description = stringUtilities_1.StringUtilities.format(getDescriptionFormat(expression), getSingleItemDescription(expression));
+                    } else if (doesExpressionContainMultipleValues) {
+                      var segments = expression.split(",");
+                      var descriptionContent = "";
+                      for (var i = 0; i < segments.length; i++) {
+                        if (i > 0 && segments.length > 2) {
+                          descriptionContent += ",";
+                          if (i < segments.length - 1) {
+                            descriptionContent += " ";
+                          }
+                        }
+                        if (i > 0 && segments.length > 1 && (i == segments.length - 1 || segments.length == 2)) {
+                          descriptionContent += "".concat(this.i18n.spaceAnd(), " ");
+                        }
+                        if (segments[i].indexOf("/") > -1 || segments[i].indexOf("-") > -1) {
+                          var isSegmentRangeWithoutIncrement = segments[i].indexOf("-") > -1 && segments[i].indexOf("/") == -1;
+                          var currentDescriptionContent = this.getSegmentDescription(segments[i], allDescription, getSingleItemDescription, getIncrementDescriptionFormat, isSegmentRangeWithoutIncrement ? this.i18n.commaX0ThroughX1 : getRangeDescriptionFormat, getDescriptionFormat);
+                          if (isSegmentRangeWithoutIncrement) {
+                            currentDescriptionContent = currentDescriptionContent.replace(", ", "");
+                          }
+                          descriptionContent += currentDescriptionContent;
+                        } else if (!doesExpressionContainIncrement) {
+                          descriptionContent += getSingleItemDescription(segments[i]);
+                        } else {
+                          descriptionContent += this.getSegmentDescription(segments[i], allDescription, getSingleItemDescription, getIncrementDescriptionFormat, getRangeDescriptionFormat, getDescriptionFormat);
+                        }
+                      }
+                      if (!doesExpressionContainIncrement) {
+                        description = stringUtilities_1.StringUtilities.format(getDescriptionFormat(expression), descriptionContent);
+                      } else {
+                        description = descriptionContent;
+                      }
+                    } else if (doesExpressionContainIncrement) {
+                      var segments = expression.split("/");
+                      description = stringUtilities_1.StringUtilities.format(getIncrementDescriptionFormat(segments[1]), segments[1]);
+                      if (segments[0].indexOf("-") > -1) {
+                        var rangeSegmentDescription = this.generateRangeSegmentDescription(segments[0], getRangeDescriptionFormat, getSingleItemDescription);
+                        if (rangeSegmentDescription.indexOf(", ") != 0) {
+                          description += ", ";
+                        }
+                        description += rangeSegmentDescription;
+                      } else if (segments[0].indexOf("*") == -1) {
+                        var rangeItemDescription = stringUtilities_1.StringUtilities.format(getDescriptionFormat(segments[0]), getSingleItemDescription(segments[0]));
+                        rangeItemDescription = rangeItemDescription.replace(", ", "");
+                        description += stringUtilities_1.StringUtilities.format(this.i18n.commaStartingX0(), rangeItemDescription);
+                      }
+                    } else if (doesExpressionContainRange) {
+                      description = this.generateRangeSegmentDescription(expression, getRangeDescriptionFormat, getSingleItemDescription);
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.generateRangeSegmentDescription = function(rangeExpression, getRangeDescriptionFormat, getSingleItemDescription) {
+                    var description = "";
+                    var rangeSegments = rangeExpression.split("-");
+                    var rangeSegment1Description = getSingleItemDescription(rangeSegments[0], 1);
+                    var rangeSegment2Description = getSingleItemDescription(rangeSegments[1], 2);
+                    var rangeDescriptionFormat = getRangeDescriptionFormat(rangeExpression);
+                    description += stringUtilities_1.StringUtilities.format(rangeDescriptionFormat, rangeSegment1Description, rangeSegment2Description);
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.formatTime = function(hourExpression, minuteExpression, secondExpression) {
+                    var hourOffset = 0;
+                    var minuteOffset = 0;
+                    if (this.options.tzOffset) {
+                      hourOffset = this.options.tzOffset > 0 ? Math.floor(this.options.tzOffset) : Math.ceil(this.options.tzOffset);
+                      minuteOffset = parseFloat((this.options.tzOffset % 1).toFixed(2));
+                      if (minuteOffset != 0) {
+                        minuteOffset *= 60;
+                      }
+                    }
+                    var hour = parseInt(hourExpression) + hourOffset;
+                    var minute = parseInt(minuteExpression) + minuteOffset;
+                    if (minute >= 60) {
+                      minute -= 60;
+                      hour += 1;
+                    } else if (minute < 0) {
+                      minute += 60;
+                      hour -= 1;
+                    }
+                    if (hour >= 24) {
+                      hour = hour - 24;
+                    } else if (hour < 0) {
+                      hour = 24 + hour;
+                    }
+                    var period = "";
+                    var setPeriodBeforeTime = false;
+                    if (!this.options.use24HourTimeFormat) {
+                      setPeriodBeforeTime = !!(this.i18n.setPeriodBeforeTime && this.i18n.setPeriodBeforeTime());
+                      period = setPeriodBeforeTime ? "".concat(this.getPeriod(hour), " ") : " ".concat(this.getPeriod(hour));
+                      if (hour > 12) {
+                        hour -= 12;
+                      }
+                      if (hour === 0) {
+                        hour = 12;
+                      }
+                    }
+                    var second = "";
+                    if (secondExpression) {
+                      second = ":".concat(("00" + secondExpression).substring(secondExpression.length));
+                    }
+                    return "".concat(setPeriodBeforeTime ? period : "").concat(("00" + hour.toString()).substring(hour.toString().length), ":").concat(("00" + minute.toString()).substring(minute.toString().length)).concat(second).concat(!setPeriodBeforeTime ? period : "");
+                  };
+                  ExpressionDescriptor2.prototype.transformVerbosity = function(description, useVerboseFormat) {
+                    if (!useVerboseFormat) {
+                      description = description.replace(new RegExp(", ".concat(this.i18n.everyMinute()), "g"), "");
+                      description = description.replace(new RegExp(", ".concat(this.i18n.everyHour()), "g"), "");
+                      description = description.replace(new RegExp(this.i18n.commaEveryDay(), "g"), "");
+                      description = description.replace(/\, ?$/, "");
+                      if (this.i18n.conciseVerbosityReplacements) {
+                        for (var _i = 0, _a = Object.entries(this.i18n.conciseVerbosityReplacements()); _i < _a.length; _i++) {
+                          var _b = _a[_i], key = _b[0], value = _b[1];
+                          description = description.replace(new RegExp(key, "g"), value);
+                        }
+                      }
+                    }
+                    return description;
+                  };
+                  ExpressionDescriptor2.prototype.getPeriod = function(hour) {
+                    return hour >= 12 ? this.i18n.pm && this.i18n.pm() || "PM" : this.i18n.am && this.i18n.am() || "AM";
+                  };
+                  ExpressionDescriptor2.locales = {};
+                  return ExpressionDescriptor2;
+                })();
+                exports2.ExpressionDescriptor = ExpressionDescriptor;
+              })
+            ),
+            /***/
+            747: (
+              /***/
+              ((__unused_webpack_module, exports2, __webpack_require__2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                exports2.enLocaleLoader = void 0;
+                var en_1 = __webpack_require__2(486);
+                var enLocaleLoader = (function() {
+                  function enLocaleLoader2() {
+                  }
+                  enLocaleLoader2.prototype.load = function(availableLocales) {
+                    availableLocales["en"] = new en_1.en();
+                  };
+                  return enLocaleLoader2;
+                })();
+                exports2.enLocaleLoader = enLocaleLoader;
+              })
+            ),
+            /***/
+            486: (
+              /***/
+              ((__unused_webpack_module, exports2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                exports2.en = void 0;
+                var en = (function() {
+                  function en2() {
+                  }
+                  en2.prototype.atX0SecondsPastTheMinuteGt20 = function() {
+                    return null;
+                  };
+                  en2.prototype.atX0MinutesPastTheHourGt20 = function() {
+                    return null;
+                  };
+                  en2.prototype.commaMonthX0ThroughMonthX1 = function() {
+                    return null;
+                  };
+                  en2.prototype.commaYearX0ThroughYearX1 = function() {
+                    return null;
+                  };
+                  en2.prototype.use24HourTimeFormatByDefault = function() {
+                    return false;
+                  };
+                  en2.prototype.anErrorOccuredWhenGeneratingTheExpressionD = function() {
+                    return "An error occurred when generating the expression description. Check the cron expression syntax.";
+                  };
+                  en2.prototype.everyMinute = function() {
+                    return "every minute";
+                  };
+                  en2.prototype.everyHour = function() {
+                    return "every hour";
+                  };
+                  en2.prototype.atSpace = function() {
+                    return "At ";
+                  };
+                  en2.prototype.everyMinuteBetweenX0AndX1 = function() {
+                    return "Every minute between %s and %s";
+                  };
+                  en2.prototype.at = function() {
+                    return "At";
+                  };
+                  en2.prototype.spaceAnd = function() {
+                    return " and";
+                  };
+                  en2.prototype.everySecond = function() {
+                    return "every second";
+                  };
+                  en2.prototype.everyX0Seconds = function() {
+                    return "every %s seconds";
+                  };
+                  en2.prototype.secondsX0ThroughX1PastTheMinute = function() {
+                    return "seconds %s through %s past the minute";
+                  };
+                  en2.prototype.atX0SecondsPastTheMinute = function() {
+                    return "at %s seconds past the minute";
+                  };
+                  en2.prototype.everyX0Minutes = function() {
+                    return "every %s minutes";
+                  };
+                  en2.prototype.minutesX0ThroughX1PastTheHour = function() {
+                    return "minutes %s through %s past the hour";
+                  };
+                  en2.prototype.atX0MinutesPastTheHour = function() {
+                    return "at %s minutes past the hour";
+                  };
+                  en2.prototype.everyX0Hours = function() {
+                    return "every %s hours";
+                  };
+                  en2.prototype.betweenX0AndX1 = function() {
+                    return "between %s and %s";
+                  };
+                  en2.prototype.atX0 = function() {
+                    return "at %s";
+                  };
+                  en2.prototype.commaEveryDay = function() {
+                    return ", every day";
+                  };
+                  en2.prototype.commaEveryX0DaysOfTheWeek = function() {
+                    return ", every %s days of the week";
+                  };
+                  en2.prototype.commaX0ThroughX1 = function() {
+                    return ", %s through %s";
+                  };
+                  en2.prototype.commaAndX0ThroughX1 = function() {
+                    return ", %s through %s";
+                  };
+                  en2.prototype.first = function() {
+                    return "first";
+                  };
+                  en2.prototype.second = function() {
+                    return "second";
+                  };
+                  en2.prototype.third = function() {
+                    return "third";
+                  };
+                  en2.prototype.fourth = function() {
+                    return "fourth";
+                  };
+                  en2.prototype.fifth = function() {
+                    return "fifth";
+                  };
+                  en2.prototype.commaOnThe = function() {
+                    return ", on the ";
+                  };
+                  en2.prototype.spaceX0OfTheMonth = function() {
+                    return " %s of the month";
+                  };
+                  en2.prototype.lastDay = function() {
+                    return "the last day";
+                  };
+                  en2.prototype.commaOnTheLastX0OfTheMonth = function() {
+                    return ", on the last %s of the month";
+                  };
+                  en2.prototype.commaOnlyOnX0 = function() {
+                    return ", only on %s";
+                  };
+                  en2.prototype.commaAndOnX0 = function() {
+                    return ", and on %s";
+                  };
+                  en2.prototype.commaEveryX0Months = function() {
+                    return ", every %s months";
+                  };
+                  en2.prototype.commaOnlyInX0 = function() {
+                    return ", only in %s";
+                  };
+                  en2.prototype.commaOnTheLastDayOfTheMonth = function() {
+                    return ", on the last day of the month";
+                  };
+                  en2.prototype.commaOnTheLastWeekdayOfTheMonth = function() {
+                    return ", on the last weekday of the month";
+                  };
+                  en2.prototype.commaDaysBeforeTheLastDayOfTheMonth = function() {
+                    return ", %s days before the last day of the month";
+                  };
+                  en2.prototype.firstWeekday = function() {
+                    return "first weekday";
+                  };
+                  en2.prototype.weekdayNearestDayX0 = function() {
+                    return "weekday nearest day %s";
+                  };
+                  en2.prototype.commaOnTheX0OfTheMonth = function() {
+                    return ", on the %s of the month";
+                  };
+                  en2.prototype.commaEveryX0Days = function() {
+                    return ", every %s days";
+                  };
+                  en2.prototype.commaBetweenDayX0AndX1OfTheMonth = function() {
+                    return ", between day %s and %s of the month";
+                  };
+                  en2.prototype.commaOnDayX0OfTheMonth = function() {
+                    return ", on day %s of the month";
+                  };
+                  en2.prototype.commaEveryHour = function() {
+                    return ", every hour";
+                  };
+                  en2.prototype.commaEveryX0Years = function() {
+                    return ", every %s years";
+                  };
+                  en2.prototype.commaStartingX0 = function() {
+                    return ", starting %s";
+                  };
+                  en2.prototype.daysOfTheWeek = function() {
+                    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                  };
+                  en2.prototype.monthsOfTheYear = function() {
+                    return [
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December"
+                    ];
+                  };
+                  return en2;
+                })();
+                exports2.en = en;
+              })
+            ),
+            /***/
+            515: (
+              /***/
+              ((__unused_webpack_module, exports2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                function assert(value, message) {
+                  if (!value) {
+                    throw new Error(message);
+                  }
+                }
+                var RangeValidator = (function() {
+                  function RangeValidator2() {
+                  }
+                  RangeValidator2.secondRange = function(parse2) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var second = parseInt(parsed[i], 10);
+                        assert(second >= 0 && second <= 59, "seconds part must be >= 0 and <= 59");
+                      }
+                    }
+                  };
+                  RangeValidator2.minuteRange = function(parse2) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var minute = parseInt(parsed[i], 10);
+                        assert(minute >= 0 && minute <= 59, "minutes part must be >= 0 and <= 59");
+                      }
+                    }
+                  };
+                  RangeValidator2.hourRange = function(parse2) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var hour = parseInt(parsed[i], 10);
+                        assert(hour >= 0 && hour <= 23, "hours part must be >= 0 and <= 23");
+                      }
+                    }
+                  };
+                  RangeValidator2.dayOfMonthRange = function(parse2) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var dayOfMonth = parseInt(parsed[i], 10);
+                        assert(dayOfMonth >= 1 && dayOfMonth <= 31, "DOM part must be >= 1 and <= 31");
+                      }
+                    }
+                  };
+                  RangeValidator2.monthRange = function(parse2, monthStartIndexZero) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var month = parseInt(parsed[i], 10);
+                        assert(month >= 1 && month <= 12, monthStartIndexZero ? "month part must be >= 0 and <= 11" : "month part must be >= 1 and <= 12");
+                      }
+                    }
+                  };
+                  RangeValidator2.dayOfWeekRange = function(parse2, dayOfWeekStartIndexZero) {
+                    var parsed = parse2.split(",");
+                    for (var i = 0; i < parsed.length; i++) {
+                      if (!isNaN(parseInt(parsed[i], 10))) {
+                        var dayOfWeek = parseInt(parsed[i], 10);
+                        assert(dayOfWeek >= 0 && dayOfWeek <= 6, dayOfWeekStartIndexZero ? "DOW part must be >= 0 and <= 6" : "DOW part must be >= 1 and <= 7");
+                      }
+                    }
+                  };
+                  return RangeValidator2;
+                })();
+                exports2["default"] = RangeValidator;
+              })
+            ),
+            /***/
+            823: (
+              /***/
+              ((__unused_webpack_module, exports2) => {
+                Object.defineProperty(exports2, "__esModule", { value: true });
+                exports2.StringUtilities = void 0;
+                var StringUtilities = (function() {
+                  function StringUtilities2() {
+                  }
+                  StringUtilities2.format = function(template) {
+                    var values = [];
+                    for (var _i = 1; _i < arguments.length; _i++) {
+                      values[_i - 1] = arguments[_i];
+                    }
+                    return template.replace(/%s/g, function(substring) {
+                      var args = [];
+                      for (var _i2 = 1; _i2 < arguments.length; _i2++) {
+                        args[_i2 - 1] = arguments[_i2];
+                      }
+                      return values.shift();
+                    });
+                  };
+                  StringUtilities2.containsAny = function(text, searchStrings) {
+                    return searchStrings.some(function(c) {
+                      return text.indexOf(c) > -1;
+                    });
+                  };
+                  return StringUtilities2;
+                })();
+                exports2.StringUtilities = StringUtilities;
+              })
+            )
+            /******/
+          };
+          var __webpack_module_cache__ = {};
+          function __webpack_require__(moduleId) {
+            var cachedModule = __webpack_module_cache__[moduleId];
+            if (cachedModule !== void 0) {
+              return cachedModule.exports;
+            }
+            var module2 = __webpack_module_cache__[moduleId] = {
+              /******/
+              // no module.id needed
+              /******/
+              // no module.loaded needed
+              /******/
+              exports: {}
+              /******/
+            };
+            __webpack_modules__[moduleId](module2, module2.exports, __webpack_require__);
+            return module2.exports;
+          }
+          var __webpack_exports__ = {};
+          (() => {
+            var exports2 = __webpack_exports__;
+            Object.defineProperty(exports2, "__esModule", { value: true });
+            exports2.toString = void 0;
+            var expressionDescriptor_1 = __webpack_require__(333);
+            var enLocaleLoader_1 = __webpack_require__(747);
+            expressionDescriptor_1.ExpressionDescriptor.initialize(new enLocaleLoader_1.enLocaleLoader());
+            exports2["default"] = expressionDescriptor_1.ExpressionDescriptor;
+            var toString = expressionDescriptor_1.ExpressionDescriptor.toString;
+            exports2.toString = toString;
+          })();
+          return __webpack_exports__;
+        })()
+      );
+    });
+  }
+});
+
 // src/extension.ts
 import http from "node:http";
-import { dirname, join } from "node:path";
+import { dirname, join as join2 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 import {
@@ -9171,7 +10245,7 @@ function parse(options) {
   if (!isBinaryRequest) {
     if (options.mediaType.format) {
       headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
+        (format2) => format2.replace(
           /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
           `application/vnd$1$2.${options.mediaType.format}`
         )
@@ -9181,8 +10255,8 @@ function parse(options) {
       if (options.mediaType.previews?.length) {
         const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
+          const format2 = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
+          return `application/vnd.github.${preview}-preview${format2}`;
         }).join(",");
       }
     }
@@ -12482,37 +13556,5495 @@ function getOctokit() {
   return clientPromise;
 }
 
-// src/parse-needs.ts
-var import_yaml = __toESM(require_dist(), 1);
-var EMPTY = { jobs: {}, order: [] };
-function toNeeds(value) {
-  if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
-  if (value == null || value === "") return [];
-  return [String(value)].filter(Boolean);
+// node_modules/@actions/expressions/dist/features.js
+var allFeatureKeys = [
+  "missingInputsQuickfix",
+  "blockScalarChompingWarning",
+  "allowCaseFunction",
+  "allowCopilotRequestsPermission",
+  "allowConcurrencyQueue",
+  "allowBackgroundSteps"
+];
+var FeatureFlags = class {
+  constructor(features) {
+    this.features = features ?? {};
+  }
+  /**
+   * Check if an experimental feature is enabled.
+   *
+   * Resolution order:
+   * 1. Explicit feature flag (if set)
+   * 2. `all` flag (if set)
+   * 3. false (default)
+   */
+  isEnabled(feature) {
+    const explicit = this.features[feature];
+    if (explicit !== void 0) {
+      return explicit;
+    }
+    return this.features.all ?? false;
+  }
+  /**
+   * Returns list of all enabled experimental features.
+   */
+  getEnabledFeatures() {
+    return allFeatureKeys.filter((key) => this.isEnabled(key));
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/types.js
+var TokenType;
+(function(TokenType3) {
+  TokenType3[TokenType3["String"] = 0] = "String";
+  TokenType3[TokenType3["Sequence"] = 1] = "Sequence";
+  TokenType3[TokenType3["Mapping"] = 2] = "Mapping";
+  TokenType3[TokenType3["BasicExpression"] = 3] = "BasicExpression";
+  TokenType3[TokenType3["InsertExpression"] = 4] = "InsertExpression";
+  TokenType3[TokenType3["Boolean"] = 5] = "Boolean";
+  TokenType3[TokenType3["Number"] = 6] = "Number";
+  TokenType3[TokenType3["Null"] = 7] = "Null";
+})(TokenType || (TokenType = {}));
+function tokenTypeName(type) {
+  switch (type) {
+    case TokenType.String:
+      return "StringToken";
+    case TokenType.Sequence:
+      return "SequenceToken";
+    case TokenType.Mapping:
+      return "MappingToken";
+    case TokenType.BasicExpression:
+      return "BasicExpressionToken";
+    case TokenType.InsertExpression:
+      return "InsertExpressionToken";
+    case TokenType.Boolean:
+      return "BooleanToken";
+    case TokenType.Number:
+      return "NumberToken";
+    case TokenType.Null:
+      return "NullToken";
+    default: {
+      const exhaustiveCheck = type;
+      throw new Error(`Unhandled token type: ${type} ${exhaustiveCheck}}`);
+    }
+  }
 }
-function parseJobsNeeds(yamlText) {
-  let doc;
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/traversal-state.js
+var TraversalState = class {
+  constructor(parent, token) {
+    this.index = -1;
+    this.isKey = false;
+    this.parent = parent;
+    this._token = token;
+    this.current = token;
+  }
+  moveNext(omitKeys) {
+    switch (this._token.templateTokenType) {
+      case TokenType.Sequence: {
+        const sequence = this._token;
+        if (++this.index < sequence.count) {
+          this.current = sequence.get(this.index);
+          return true;
+        }
+        this.current = void 0;
+        return false;
+      }
+      case TokenType.Mapping: {
+        const mapping = this._token;
+        if (this.isKey) {
+          this.isKey = false;
+          this.currentKey = this.current;
+          this.current = mapping.get(this.index).value;
+          return true;
+        }
+        if (++this.index < mapping.count) {
+          if (omitKeys) {
+            this.isKey = false;
+            this.currentKey = mapping.get(this.index).key;
+            this.current = mapping.get(this.index).value;
+            return true;
+          }
+          this.isKey = true;
+          this.currentKey = void 0;
+          this.current = mapping.get(this.index).key;
+          return true;
+        }
+        this.currentKey = void 0;
+        this.current = void 0;
+        return false;
+      }
+      default:
+        throw new Error(`Unexpected token type '${this._token.templateTokenType}' when traversing state`);
+    }
+  }
+  /**
+   * Returns the ancestor tokens from root to the current token's parent container.
+   */
+  getAncestors() {
+    const ancestors = [];
+    let state = this.parent;
+    while (state) {
+      if (state.current) {
+        ancestors.unshift(state.current);
+      }
+      state = state.parent;
+    }
+    return ancestors;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/template-token.js
+var TemplateTokenError = class extends Error {
+  constructor(message, token) {
+    super(message);
+    this.token = token;
+  }
+};
+var TemplateToken = class {
+  /**
+   * Base class for all template tokens
+   */
+  constructor(type, file, range, definitionInfo) {
+    this.type = type;
+    this.file = file;
+    this.range = range;
+    this.definitionInfo = definitionInfo;
+  }
+  get templateTokenType() {
+    return this.type;
+  }
+  get line() {
+    return this.range?.start.line;
+  }
+  get col() {
+    return this.range?.start.column;
+  }
+  get definition() {
+    return this.definitionInfo?.definition;
+  }
+  get description() {
+    return this._description || this.propertyDefinition?.description || this.definition?.description;
+  }
+  set description(description) {
+    this._description = description;
+  }
+  typeName() {
+    return tokenTypeName(this.type);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertNull(objectDescription) {
+    if (this.type === TokenType.Null) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.Null)}' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertBoolean(objectDescription) {
+    if (this.type === TokenType.Boolean) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.Boolean)}' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertNumber(objectDescription) {
+    if (this.type === TokenType.Number) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.Number)}' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertString(objectDescription) {
+    if (this.type === TokenType.String) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.String)}' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertScalar(objectDescription) {
+    if (this?.isScalar === true) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type 'ScalarToken' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertSequence(objectDescription) {
+    if (this.type === TokenType.Sequence) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.Sequence)}' was expected.`, this);
+  }
+  /**
+   * Asserts expected type and throws a good debug message if unexpected
+   */
+  assertMapping(objectDescription) {
+    if (this.type === TokenType.Mapping) {
+      return this;
+    }
+    throw new TemplateTokenError(`Unexpected type '${this.typeName()}' encountered while reading '${objectDescription}'. The type '${tokenTypeName(TokenType.Mapping)}' was expected.`, this);
+  }
+  /**
+   * Returns all tokens (depth first)
+   * @param value The object to traverse
+   * @param omitKeys Whether to omit mapping keys
+   * @yields A tuple of [parent, token, keyToken, ancestors] for each token in the tree
+   */
+  static *traverse(value, omitKeys) {
+    yield [void 0, value, void 0, []];
+    switch (value.templateTokenType) {
+      case TokenType.Sequence:
+      case TokenType.Mapping: {
+        let state = new TraversalState(void 0, value);
+        state = new TraversalState(state, value);
+        while (state.parent) {
+          if (state.moveNext(omitKeys ?? false)) {
+            value = state.current;
+            yield [state.parent?.current, value, state.currentKey, state.getAncestors()];
+            switch (value.type) {
+              case TokenType.Sequence:
+              case TokenType.Mapping:
+                state = new TraversalState(state, value);
+                break;
+            }
+          } else {
+            state = state.parent;
+          }
+        }
+        break;
+      }
+    }
+  }
+  toJSON() {
+    return void 0;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/workflows/file-reference.js
+function parseFileReference(ref) {
+  if (ref.startsWith("./")) {
+    return {
+      path: ref.substring(2)
+    };
+  }
+  const [remotePath, version] = ref.split("@");
+  const [owner, repository, ...pathSegments] = remotePath.split("/").filter((s) => s.length > 0);
+  if (!owner || !repository || !version) {
+    throw new Error(`Invalid file reference: ${ref}`);
+  }
+  return {
+    repository,
+    owner,
+    path: pathSegments.join("/"),
+    version
+  };
+}
+
+// node_modules/@actions/workflow-parser/dist/templates/template-validation-error.js
+var TemplateValidationError = class {
+  constructor(rawMessage, prefix, code, range) {
+    this.rawMessage = rawMessage;
+    this.prefix = prefix;
+    this.code = code;
+    this.range = range;
+  }
+  get message() {
+    if (this.prefix) {
+      return `${this.prefix}: ${this.rawMessage}`;
+    }
+    return this.rawMessage;
+  }
+  toString() {
+    return this.message;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/template-context.js
+var TemplateContext = class {
+  constructor(errors, schema2, trace) {
+    this._fileIds = {};
+    this._fileNames = [];
+    this.expressionFunctions = [];
+    this.expressionNamedContexts = [];
+    this.state = {};
+    this.errors = errors;
+    this.schema = schema2;
+    this.trace = trace;
+  }
+  error(tokenOrFileId, err, tokenRange) {
+    const token = tokenOrFileId;
+    const range = tokenRange || token?.range;
+    const prefix = this.getErrorPrefix(token?.file ?? tokenOrFileId, token?.line, token?.col);
+    const message = err?.message ?? String(err);
+    const e = new TemplateValidationError(message, prefix, void 0, range);
+    this.errors.add(e);
+    this.trace.error(e.message);
+  }
+  /**
+   * Gets or adds the file ID
+   */
+  getFileId(file) {
+    const key = file.toUpperCase();
+    let id = this._fileIds[key];
+    if (id === void 0) {
+      id = this._fileNames.length + 1;
+      this._fileIds[key] = id;
+      this._fileNames.push(file);
+    }
+    return id;
+  }
+  /**
+   * Looks up a file name by ID. Returns undefined if not found.
+   */
+  getFileName(fileId) {
+    return this._fileNames.length >= fileId ? this._fileNames[fileId - 1] : void 0;
+  }
+  /**
+   * Gets a copy of the file table
+   */
+  getFileTable() {
+    return this._fileNames.slice();
+  }
+  getErrorPrefix(fileId, line, column) {
+    const fileName = fileId !== void 0 ? this.getFileName(fileId) : void 0;
+    if (fileName) {
+      if (line !== void 0 && column !== void 0) {
+        return `${fileName} (Line: ${line}, Col: ${column})`;
+      } else {
+        return fileName;
+      }
+    } else if (line !== void 0 && column !== void 0) {
+      return `(Line: ${line}, Col: ${column})`;
+    } else {
+      return "";
+    }
+  }
+};
+var TemplateValidationErrors = class {
+  constructor(maxErrors, maxMessageLength) {
+    this._errors = [];
+    this._maxErrors = maxErrors ?? 0;
+    this._maxMessageLength = maxMessageLength ?? 0;
+  }
+  get count() {
+    return this._errors.length;
+  }
+  add(err) {
+    for (let e of Array.isArray(err) ? err : [err]) {
+      if (this._maxErrors <= 0 || this._errors.length < this._maxErrors) {
+        if (this._maxMessageLength > 0 && e.message.length > this._maxMessageLength) {
+          e = new TemplateValidationError(e.message.substring(0, this._maxMessageLength) + "[...]", e.prefix, e.code, e.range);
+        }
+        this._errors.push(e);
+      }
+    }
+  }
+  /**
+   * Throws if any errors
+   * @param prefix The error message prefix
+   */
+  check(prefix) {
+    if (this._errors.length <= 0) {
+      return;
+    }
+    if (!prefix) {
+      prefix = "The template is not valid.";
+    }
+    throw new Error(`${prefix} ${this._errors.map((x) => x.message).join(",")}`);
+  }
+  clear() {
+    this._errors = [];
+  }
+  getErrors() {
+    return this._errors.slice();
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/definition-info.js
+var DefinitionInfo = class {
+  constructor(schemaOrParent, nameOrDefinition) {
+    this.isDefinitionInfo = true;
+    const parent = schemaOrParent?.isDefinitionInfo === true ? schemaOrParent : void 0;
+    this._schema = parent === void 0 ? schemaOrParent : parent._schema;
+    this.definition = typeof nameOrDefinition === "string" ? this._schema.getDefinition(nameOrDefinition) : nameOrDefinition;
+    if (this.definition.readerContext.length > 0) {
+      this.allowedContext = [];
+      const upperSeen = {};
+      for (const context of parent?.allowedContext ?? []) {
+        this.allowedContext.push(context);
+        upperSeen[context.toUpperCase()] = true;
+      }
+      for (const context of this.definition.readerContext) {
+        const upper = context.toUpperCase();
+        if (!upperSeen[upper]) {
+          this.allowedContext.push(context);
+          upperSeen[upper] = true;
+        }
+      }
+    } else {
+      this.allowedContext = parent?.allowedContext ?? [];
+    }
+  }
+  getScalarDefinitions() {
+    return this._schema.getScalarDefinitions(this.definition);
+  }
+  getDefinitionsOfType(type) {
+    return this._schema.getDefinitionsOfType(this.definition, type);
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/definition-type.js
+var DefinitionType;
+(function(DefinitionType2) {
+  DefinitionType2[DefinitionType2["Null"] = 0] = "Null";
+  DefinitionType2[DefinitionType2["Boolean"] = 1] = "Boolean";
+  DefinitionType2[DefinitionType2["Number"] = 2] = "Number";
+  DefinitionType2[DefinitionType2["String"] = 3] = "String";
+  DefinitionType2[DefinitionType2["Sequence"] = 4] = "Sequence";
+  DefinitionType2[DefinitionType2["Mapping"] = 5] = "Mapping";
+  DefinitionType2[DefinitionType2["OneOf"] = 6] = "OneOf";
+  DefinitionType2[DefinitionType2["AllowedValues"] = 7] = "AllowedValues";
+})(DefinitionType || (DefinitionType = {}));
+
+// node_modules/@actions/workflow-parser/dist/templates/template-constants.js
+var ALLOWED_VALUES = "allowed-values";
+var ANY = "any";
+var BOOLEAN = "boolean";
+var BOOLEAN_DEFINITION = "boolean-definition";
+var BOOLEAN_DEFINITION_PROPERTIES = "boolean-definition-properties";
+var CLOSE_EXPRESSION = "}}";
+var CONSTANT = "constant";
+var CONTEXT = "context";
+var DEFINITION = "definition";
+var DEFINITIONS = "definitions";
+var DESCRIPTION = "description";
+var IGNORE_CASE = "ignore-case";
+var INSERT_DIRECTIVE = "insert";
+var IS_EXPRESSION = "is-expression";
+var ITEM_TYPE = "item-type";
+var LOOSE_KEY_TYPE = "loose-key-type";
+var LOOSE_VALUE_TYPE = "loose-value-type";
+var MAX_CONSTANT = "MAX";
+var MAPPING = "mapping";
+var MAPPING_DEFINITION = "mapping-definition";
+var MAPPING_DEFINITION_PROPERTIES = "mapping-definition-properties";
+var MAPPING_PROPERTY_VALUE = "mapping-property-value";
+var NON_EMPTY_STRING = "non-empty-string";
+var NULL = "null";
+var NULL_DEFINITION = "null-definition";
+var NULL_DEFINITION_PROPERTIES = "null-definition-properties";
+var NUMBER = "number";
+var NUMBER_DEFINITION = "number-definition";
+var NUMBER_DEFINITION_PROPERTIES = "number-definition-properties";
+var ONE_OF = "one-of";
+var ONE_OF_DEFINITION = "one-of-definition";
+var OPEN_EXPRESSION = "${{";
+var PROPERTY_VALUE = "property-value";
+var PROPERTIES = "properties";
+var REQUIRED = "required";
+var REQUIRE_NON_EMPTY = "require-non-empty";
+var SCALAR = "scalar";
+var SEQUENCE = "sequence";
+var SEQUENCE_DEFINITION = "sequence-definition";
+var SEQUENCE_DEFINITION_PROPERTIES = "sequence-definition-properties";
+var TYPE = "type";
+var SEQUENCE_OF_NON_EMPTY_STRING = "sequence-of-non-empty-string";
+var STRING = "string";
+var STRING_DEFINITION = "string-definition";
+var STRING_DEFINITION_PROPERTIES = "string-definition-properties";
+var TEMPLATE_SCHEMA = "template-schema";
+var VERSION10 = "version";
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/scalar-token.js
+var ScalarToken = class extends TemplateToken {
+  constructor(type, file, range, definitionInfo) {
+    super(type, file, range, definitionInfo);
+  }
+  get isScalar() {
+    return true;
+  }
+  static trimDisplayString(displayString) {
+    let firstLine = displayString.trimStart();
+    const firstNewLine = firstLine.indexOf("\n");
+    const firstCarriageReturn = firstLine.indexOf("\r");
+    if (firstNewLine >= 0 || firstCarriageReturn >= 0) {
+      firstLine = firstLine.substr(0, Math.min(firstNewLine >= 0 ? firstNewLine : Number.MAX_VALUE, firstCarriageReturn >= 0 ? firstCarriageReturn : Number.MAX_VALUE));
+    }
+    return firstLine;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/literal-token.js
+var LiteralToken = class extends ScalarToken {
+  constructor(type, file, range, definitionInfo) {
+    super(type, file, range, definitionInfo);
+  }
+  get isLiteral() {
+    return true;
+  }
+  get isExpression() {
+    return false;
+  }
+  toDisplayString() {
+    return ScalarToken.trimDisplayString(this.toString());
+  }
+  /**
+   * Throws a good debug message when an unexpected literal value is encountered
+   */
+  assertUnexpectedValue(objectDescription) {
+    throw new Error(`Error while reading '${objectDescription}'. Unexpected value '${this.toString()}'`);
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/string-token.js
+var StringToken = class _StringToken extends LiteralToken {
+  constructor(file, range, value, definitionInfo, source, blockScalarHeader) {
+    super(TokenType.String, file, range, definitionInfo);
+    this.value = value;
+    this.source = source;
+    this.blockScalarHeader = blockScalarHeader;
+  }
+  clone(omitSource) {
+    return omitSource ? new _StringToken(void 0, void 0, this.value, this.definitionInfo, this.source, this.blockScalarHeader) : new _StringToken(this.file, this.range, this.value, this.definitionInfo, this.source, this.blockScalarHeader);
+  }
+  toString() {
+    return this.value;
+  }
+  toJSON() {
+    return this.value;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/number-token.js
+var NumberToken = class _NumberToken extends LiteralToken {
+  constructor(file, range, value, definitionInfo) {
+    super(TokenType.Number, file, range, definitionInfo);
+    this.num = value;
+  }
+  get value() {
+    return this.num;
+  }
+  clone(omitSource) {
+    return omitSource ? new _NumberToken(void 0, void 0, this.num, this.definitionInfo) : new _NumberToken(this.file, this.range, this.num, this.definitionInfo);
+  }
+  toString() {
+    return `${this.num}`;
+  }
+  toJSON() {
+    return this.num;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/boolean-token.js
+var BooleanToken = class _BooleanToken extends LiteralToken {
+  constructor(file, range, value, definitionInfo) {
+    super(TokenType.Boolean, file, range, definitionInfo);
+    this.bool = value;
+  }
+  get value() {
+    return this.bool;
+  }
+  clone(omitSource) {
+    return omitSource ? new _BooleanToken(void 0, void 0, this.bool, this.definitionInfo) : new _BooleanToken(this.file, this.range, this.bool, this.definitionInfo);
+  }
+  toString() {
+    return this.bool ? "true" : "false";
+  }
+  toJSON() {
+    return this.bool;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/null-token.js
+var NullToken = class _NullToken extends LiteralToken {
+  constructor(file, range, definitionInfo) {
+    super(TokenType.Null, file, range, definitionInfo);
+  }
+  clone(omitSource) {
+    return omitSource ? new _NullToken(void 0, void 0, this.definitionInfo) : new _NullToken(this.file, this.range, this.definitionInfo);
+  }
+  toString() {
+    return "";
+  }
+  toJSON() {
+    return null;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/key-value-pair.js
+var KeyValuePair = class {
+  constructor(key, value) {
+    this.key = key;
+    this.value = value;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/sequence-token.js
+var SequenceToken = class _SequenceToken extends TemplateToken {
+  constructor(file, range, definitionInfo) {
+    super(TokenType.Sequence, file, range, definitionInfo);
+    this.seq = [];
+  }
+  get count() {
+    return this.seq.length;
+  }
+  get isScalar() {
+    return false;
+  }
+  get isLiteral() {
+    return false;
+  }
+  get isExpression() {
+    return false;
+  }
+  add(value) {
+    this.seq.push(value);
+  }
+  get(index) {
+    return this.seq[index];
+  }
+  clone(omitSource) {
+    const result = omitSource ? new _SequenceToken(void 0, void 0, this.definitionInfo) : new _SequenceToken(this.file, this.range, this.definitionInfo);
+    for (const item of this.seq) {
+      result.add(item.clone(omitSource));
+    }
+    return result;
+  }
+  toJSON() {
+    return {
+      type: TokenType.Sequence,
+      seq: this.seq
+    };
+  }
+  *[Symbol.iterator]() {
+    for (const item of this.seq) {
+      yield item;
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/mapping-token.js
+var MappingToken = class _MappingToken extends TemplateToken {
+  constructor(file, range, definitionInfo) {
+    super(TokenType.Mapping, file, range, definitionInfo);
+    this.map = [];
+  }
+  get count() {
+    return this.map.length;
+  }
+  get isScalar() {
+    return false;
+  }
+  get isLiteral() {
+    return false;
+  }
+  get isExpression() {
+    return false;
+  }
+  add(key, value) {
+    this.map.push(new KeyValuePair(key, value));
+  }
+  get(index) {
+    return this.map[index];
+  }
+  find(key) {
+    const pair = this.map.find((pair2) => pair2.key.toString() === key);
+    return pair?.value;
+  }
+  remove(index) {
+    this.map.splice(index, 1);
+  }
+  clone(omitSource) {
+    const result = omitSource ? new _MappingToken(void 0, void 0, this.definitionInfo) : new _MappingToken(this.file, this.range, this.definitionInfo);
+    for (const item of this.map) {
+      result.add(item.key.clone(omitSource), item.value.clone(omitSource));
+    }
+    return result;
+  }
+  toJSON() {
+    const items = [];
+    for (const item of this.map) {
+      items.push({ Key: item.key, Value: item.value });
+    }
+    return {
+      type: TokenType.Mapping,
+      map: items
+    };
+  }
+  *[Symbol.iterator]() {
+    for (const item of this.map) {
+      yield item;
+    }
+  }
+};
+
+// node_modules/@actions/expressions/dist/ast.js
+var Expr = class {
+};
+var Literal = class extends Expr {
+  constructor(literal, token) {
+    super();
+    this.literal = literal;
+    this.token = token;
+  }
+  accept(v) {
+    return v.visitLiteral(this);
+  }
+};
+var Unary = class extends Expr {
+  constructor(operator, expr) {
+    super();
+    this.operator = operator;
+    this.expr = expr;
+  }
+  accept(v) {
+    return v.visitUnary(this);
+  }
+};
+var FunctionCall = class extends Expr {
+  constructor(functionName, args) {
+    super();
+    this.functionName = functionName;
+    this.args = args;
+  }
+  accept(v) {
+    return v.visitFunctionCall(this);
+  }
+};
+var Binary = class extends Expr {
+  constructor(left, operator, right) {
+    super();
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+  accept(v) {
+    return v.visitBinary(this);
+  }
+};
+var Logical = class extends Expr {
+  constructor(operator, args) {
+    super();
+    this.operator = operator;
+    this.args = args;
+  }
+  accept(v) {
+    return v.visitLogical(this);
+  }
+};
+var Grouping = class extends Expr {
+  constructor(group) {
+    super();
+    this.group = group;
+  }
+  accept(v) {
+    return v.visitGrouping(this);
+  }
+};
+var ContextAccess = class extends Expr {
+  constructor(name) {
+    super();
+    this.name = name;
+  }
+  accept(v) {
+    return v.visitContextAccess(this);
+  }
+};
+var IndexAccess = class extends Expr {
+  constructor(expr, index) {
+    super();
+    this.expr = expr;
+    this.index = index;
+  }
+  accept(v) {
+    return v.visitIndexAccess(this);
+  }
+};
+var Star = class extends Expr {
+  accept() {
+    throw new Error("Method not implemented.");
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/expressiondata.js
+var Kind;
+(function(Kind2) {
+  Kind2[Kind2["String"] = 0] = "String";
+  Kind2[Kind2["Array"] = 1] = "Array";
+  Kind2[Kind2["Dictionary"] = 2] = "Dictionary";
+  Kind2[Kind2["Boolean"] = 3] = "Boolean";
+  Kind2[Kind2["Number"] = 4] = "Number";
+  Kind2[Kind2["CaseSensitiveDictionary"] = 5] = "CaseSensitiveDictionary";
+  Kind2[Kind2["Null"] = 6] = "Null";
+})(Kind || (Kind = {}));
+function kindStr(k) {
+  switch (k) {
+    case Kind.Array:
+      return "Array";
+    case Kind.Boolean:
+      return "Boolean";
+    case Kind.Null:
+      return "Null";
+    case Kind.Number:
+      return "Number";
+    case Kind.Dictionary:
+      return "Object";
+    case Kind.String:
+      return "String";
+  }
+  return "unknown";
+}
+
+// node_modules/@actions/expressions/dist/data/dictionary.js
+var Dictionary = class {
+  constructor(...pairs) {
+    this.keys = [];
+    this.v = [];
+    this.indexMap = {};
+    this.kind = Kind.Dictionary;
+    this.primitive = false;
+    for (const p of pairs) {
+      this.add(p.key, p.value);
+    }
+  }
+  coerceString() {
+    return kindStr(this.kind);
+  }
+  number() {
+    return NaN;
+  }
+  add(key, value) {
+    if (key.toLowerCase() in this.indexMap) {
+      return;
+    }
+    this.keys.push(key);
+    this.v.push(value);
+    this.indexMap[key.toLowerCase()] = this.v.length - 1;
+  }
+  get(key) {
+    const index = this.indexMap[key.toLowerCase()];
+    if (index === void 0) {
+      return void 0;
+    }
+    return this.v[index];
+  }
+  values() {
+    return this.v;
+  }
+  pairs() {
+    const result = [];
+    for (const key of this.keys) {
+      result.push({ key, value: this.v[this.indexMap[key.toLowerCase()]] });
+    }
+    return result;
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/array.js
+var Array2 = class {
+  constructor(...data) {
+    this.v = [];
+    this.kind = Kind.Array;
+    this.primitive = false;
+    for (const d of data) {
+      this.add(d);
+    }
+  }
+  coerceString() {
+    return kindStr(this.kind);
+  }
+  number() {
+    return NaN;
+  }
+  add(value) {
+    this.v.push(value);
+  }
+  get(index) {
+    return this.v[index];
+  }
+  values() {
+    return this.v;
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/boolean.js
+var BooleanData = class {
+  constructor(value) {
+    this.value = value;
+    this.kind = Kind.Boolean;
+    this.primitive = true;
+  }
+  coerceString() {
+    if (this.value) {
+      return "true";
+    }
+    return "false";
+  }
+  number() {
+    if (this.value) {
+      return 1;
+    }
+    return 0;
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/null.js
+var Null = class {
+  constructor() {
+    this.kind = Kind.Null;
+    this.primitive = true;
+  }
+  coerceString() {
+    return "";
+  }
+  number() {
+    return 0;
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/number.js
+var NumberData = class {
+  constructor(value) {
+    this.value = value;
+    this.kind = Kind.Number;
+    this.primitive = true;
+  }
+  coerceString() {
+    if (this.value === 0) {
+      return "0";
+    }
+    return (+this.value.toFixed(15)).toString();
+  }
+  number() {
+    return this.value;
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/string.js
+var StringData = class {
+  constructor(value) {
+    this.value = value;
+    this.kind = Kind.String;
+    this.primitive = true;
+  }
+  coerceString() {
+    return this.value;
+  }
+  number() {
+    return Number(this.value);
+  }
+};
+
+// node_modules/@actions/expressions/dist/data/replacer.js
+function replacer(_key, value) {
+  if (value instanceof Null) {
+    return null;
+  }
+  if (value instanceof BooleanData) {
+    return value.value;
+  }
+  if (value instanceof NumberData) {
+    return value.number();
+  }
+  if (value instanceof StringData) {
+    return value.coerceString();
+  }
+  if (value instanceof Array2) {
+    return value.values();
+  }
+  if (value instanceof Dictionary) {
+    const pairs = value.pairs();
+    const r = {};
+    for (const p of pairs) {
+      r[p.key] = p.value;
+    }
+    return r;
+  }
+  return value;
+}
+
+// node_modules/@actions/expressions/dist/data/reviver.js
+function reviver(_key, val) {
+  if (val === null) {
+    return new Null();
+  }
+  if (typeof val === "string") {
+    return new StringData(val);
+  }
+  if (typeof val === "number") {
+    return new NumberData(val);
+  }
+  if (typeof val === "boolean") {
+    return new BooleanData(val);
+  }
+  if (Array.isArray(val)) {
+    return new Array2(...val);
+  }
+  if (typeof val === "object") {
+    return new Dictionary(...Object.keys(val).map((k) => ({
+      key: k,
+      value: val[k]
+    })));
+  }
+  return val;
+}
+
+// node_modules/@actions/expressions/dist/lexer.js
+var TokenType2;
+(function(TokenType3) {
+  TokenType3[TokenType3["UNKNOWN"] = 0] = "UNKNOWN";
+  TokenType3[TokenType3["LEFT_PAREN"] = 1] = "LEFT_PAREN";
+  TokenType3[TokenType3["RIGHT_PAREN"] = 2] = "RIGHT_PAREN";
+  TokenType3[TokenType3["LEFT_BRACKET"] = 3] = "LEFT_BRACKET";
+  TokenType3[TokenType3["RIGHT_BRACKET"] = 4] = "RIGHT_BRACKET";
+  TokenType3[TokenType3["COMMA"] = 5] = "COMMA";
+  TokenType3[TokenType3["DOT"] = 6] = "DOT";
+  TokenType3[TokenType3["BANG"] = 7] = "BANG";
+  TokenType3[TokenType3["BANG_EQUAL"] = 8] = "BANG_EQUAL";
+  TokenType3[TokenType3["EQUAL_EQUAL"] = 9] = "EQUAL_EQUAL";
+  TokenType3[TokenType3["GREATER"] = 10] = "GREATER";
+  TokenType3[TokenType3["GREATER_EQUAL"] = 11] = "GREATER_EQUAL";
+  TokenType3[TokenType3["LESS"] = 12] = "LESS";
+  TokenType3[TokenType3["LESS_EQUAL"] = 13] = "LESS_EQUAL";
+  TokenType3[TokenType3["AND"] = 14] = "AND";
+  TokenType3[TokenType3["OR"] = 15] = "OR";
+  TokenType3[TokenType3["STAR"] = 16] = "STAR";
+  TokenType3[TokenType3["NUMBER"] = 17] = "NUMBER";
+  TokenType3[TokenType3["STRING"] = 18] = "STRING";
+  TokenType3[TokenType3["IDENTIFIER"] = 19] = "IDENTIFIER";
+  TokenType3[TokenType3["TRUE"] = 20] = "TRUE";
+  TokenType3[TokenType3["FALSE"] = 21] = "FALSE";
+  TokenType3[TokenType3["NULL"] = 22] = "NULL";
+  TokenType3[TokenType3["EOF"] = 23] = "EOF";
+})(TokenType2 || (TokenType2 = {}));
+function tokenString(tok) {
+  switch (tok.type) {
+    case TokenType2.EOF:
+      return "EOF";
+    case TokenType2.NUMBER:
+      return tok.lexeme;
+    case TokenType2.STRING:
+      return tok.value.toString();
+    default:
+      return tok.lexeme;
+  }
+}
+var Lexer = class {
+  constructor(input) {
+    this.input = input;
+    this.start = 0;
+    this.offset = 0;
+    this.line = 0;
+    this.lastLineOffset = 0;
+    this.tokens = [];
+  }
+  lex() {
+    if (this.input.length > MAX_EXPRESSION_LENGTH) {
+      throw new Error("ErrorExceededMaxLength");
+    }
+    while (!this.atEnd()) {
+      this.start = this.offset;
+      const c = this.next();
+      switch (c) {
+        case "(":
+          this.addToken(TokenType2.LEFT_PAREN);
+          break;
+        case ")":
+          this.addToken(TokenType2.RIGHT_PAREN);
+          break;
+        case "[":
+          this.addToken(TokenType2.LEFT_BRACKET);
+          break;
+        case "]":
+          this.addToken(TokenType2.RIGHT_BRACKET);
+          break;
+        case ",":
+          this.addToken(TokenType2.COMMA);
+          break;
+        case ".":
+          if (this.previous() != TokenType2.IDENTIFIER && this.previous() != TokenType2.RIGHT_BRACKET && this.previous() != TokenType2.RIGHT_PAREN && this.previous() != TokenType2.STAR) {
+            this.consumeNumber();
+          } else {
+            this.addToken(TokenType2.DOT);
+          }
+          break;
+        case "-":
+        case "+":
+          this.consumeNumber();
+          break;
+        case "!":
+          this.addToken(this.match("=") ? TokenType2.BANG_EQUAL : TokenType2.BANG);
+          break;
+        case "=":
+          if (!this.match("=")) {
+            this.consumeIdentifier();
+            break;
+          }
+          this.addToken(TokenType2.EQUAL_EQUAL);
+          break;
+        case "<":
+          this.addToken(this.match("=") ? TokenType2.LESS_EQUAL : TokenType2.LESS);
+          break;
+        case ">":
+          this.addToken(this.match("=") ? TokenType2.GREATER_EQUAL : TokenType2.GREATER);
+          break;
+        case "&":
+          if (!this.match("&")) {
+            this.consumeIdentifier();
+            break;
+          }
+          this.addToken(TokenType2.AND);
+          break;
+        case "|":
+          if (!this.match("|")) {
+            this.consumeIdentifier();
+            break;
+          }
+          this.addToken(TokenType2.OR);
+          break;
+        case "*":
+          this.addToken(TokenType2.STAR);
+          break;
+        // Ignore whitespace.
+        case " ":
+        case "\r":
+        case "	":
+          break;
+        case "\n":
+          ++this.line;
+          this.lastLineOffset = this.offset;
+          break;
+        case "'":
+          this.consumeString();
+          break;
+        default:
+          switch (true) {
+            case isDigit(c):
+              this.consumeNumber();
+              break;
+            default:
+              this.consumeIdentifier();
+              break;
+          }
+      }
+    }
+    this.tokens.push({
+      type: TokenType2.EOF,
+      lexeme: "",
+      range: this.range()
+    });
+    return {
+      tokens: this.tokens
+    };
+  }
+  pos() {
+    return {
+      line: this.line,
+      column: this.start - this.lastLineOffset
+    };
+  }
+  endPos() {
+    return {
+      line: this.line,
+      column: this.offset - this.lastLineOffset
+    };
+  }
+  range() {
+    return {
+      start: this.pos(),
+      end: this.endPos()
+    };
+  }
+  atEnd() {
+    return this.offset >= this.input.length;
+  }
+  peek() {
+    if (this.atEnd()) {
+      return "\0";
+    }
+    return this.input[this.offset];
+  }
+  peekNext() {
+    if (this.offset + 1 >= this.input.length) {
+      return "\0";
+    }
+    return this.input[this.offset + 1];
+  }
+  previous() {
+    const l = this.tokens.length;
+    if (l == 0) {
+      return TokenType2.EOF;
+    }
+    return this.tokens[l - 1].type;
+  }
+  next() {
+    return this.input[this.offset++];
+  }
+  match(expected) {
+    if (this.atEnd()) {
+      return false;
+    }
+    if (this.input[this.offset] !== expected) {
+      return false;
+    }
+    this.offset++;
+    return true;
+  }
+  addToken(type, value) {
+    this.tokens.push({
+      type,
+      lexeme: this.input.substring(this.start, this.offset),
+      range: this.range(),
+      value
+    });
+  }
+  consumeNumber() {
+    while (!this.atEnd() && (!isBoundary(this.peek()) || this.peek() == ".")) {
+      this.next();
+    }
+    const lexeme = this.input.substring(this.start, this.offset);
+    const value = new StringData(lexeme).number();
+    if (isNaN(value)) {
+      throw new Error(`Unexpected symbol: '${lexeme}'. Located at position ${this.start + 1} within expression: ${this.input}`);
+    }
+    this.addToken(TokenType2.NUMBER, value);
+  }
+  consumeString() {
+    while ((this.peek() !== "'" || this.peekNext() === "'") && !this.atEnd()) {
+      if (this.peek() === "\n")
+        this.line++;
+      if (this.peek() === "'" && this.peekNext() === "'") {
+        this.next();
+      }
+      this.next();
+    }
+    if (this.atEnd()) {
+      throw new Error(`Unexpected symbol: '${this.input.substring(this.start)}'. Located at position ${this.start + 1} within expression: ${this.input}`);
+    }
+    this.next();
+    let value = this.input.substring(this.start + 1, this.offset - 1);
+    value = value.replace("''", "'");
+    this.addToken(TokenType2.STRING, value);
+  }
+  consumeIdentifier() {
+    while (!this.atEnd() && !isBoundary(this.peek())) {
+      this.next();
+    }
+    let tokenType = TokenType2.IDENTIFIER;
+    let tokenValue = void 0;
+    const lexeme = this.input.substring(this.start, this.offset);
+    if (this.previous() != TokenType2.DOT) {
+      switch (lexeme) {
+        case "true":
+          tokenType = TokenType2.TRUE;
+          break;
+        case "false":
+          tokenType = TokenType2.FALSE;
+          break;
+        case "null":
+          tokenType = TokenType2.NULL;
+          break;
+        case "NaN":
+          tokenType = TokenType2.NUMBER;
+          tokenValue = NaN;
+          break;
+        case "Infinity":
+          tokenType = TokenType2.NUMBER;
+          tokenValue = Infinity;
+          break;
+      }
+    }
+    if (!isLegalIdentifier(lexeme)) {
+      throw new Error(`Unexpected symbol: '${lexeme}'. Located at position ${this.start + 1} within expression: ${this.input}`);
+    }
+    this.addToken(tokenType, tokenValue);
+  }
+};
+function isDigit(c) {
+  return c >= "0" && c <= "9";
+}
+function isBoundary(c) {
+  switch (c) {
+    case "(":
+    case "[":
+    case ")":
+    case "]":
+    case ",":
+    case ".":
+    case "!":
+    case ">":
+    case "<":
+    case "=":
+    case "&":
+    case "|":
+      return true;
+  }
+  return /\s/.test(c);
+}
+function isLegalIdentifier(str) {
+  if (str == "") {
+    return false;
+  }
+  const first = str[0];
+  if (first >= "a" && first <= "z" || first >= "A" && first <= "Z" || first == "_") {
+    for (const c of str.substring(1).split("")) {
+      if (c >= "a" && c <= "z" || c >= "A" && c <= "Z" || c >= "0" && c <= "9" || c == "_" || c == "-") {
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+// node_modules/@actions/expressions/dist/errors.js
+var MAX_PARSER_DEPTH = 50;
+var MAX_EXPRESSION_LENGTH = 21e3;
+var ErrorType;
+(function(ErrorType2) {
+  ErrorType2[ErrorType2["ErrorUnexpectedSymbol"] = 0] = "ErrorUnexpectedSymbol";
+  ErrorType2[ErrorType2["ErrorUnrecognizedNamedValue"] = 1] = "ErrorUnrecognizedNamedValue";
+  ErrorType2[ErrorType2["ErrorUnexpectedEndOfExpression"] = 2] = "ErrorUnexpectedEndOfExpression";
+  ErrorType2[ErrorType2["ErrorExceededMaxDepth"] = 3] = "ErrorExceededMaxDepth";
+  ErrorType2[ErrorType2["ErrorExceededMaxLength"] = 4] = "ErrorExceededMaxLength";
+  ErrorType2[ErrorType2["ErrorTooFewParameters"] = 5] = "ErrorTooFewParameters";
+  ErrorType2[ErrorType2["ErrorTooManyParameters"] = 6] = "ErrorTooManyParameters";
+  ErrorType2[ErrorType2["ErrorEvenParameters"] = 7] = "ErrorEvenParameters";
+  ErrorType2[ErrorType2["ErrorUnrecognizedContext"] = 8] = "ErrorUnrecognizedContext";
+  ErrorType2[ErrorType2["ErrorUnrecognizedFunction"] = 9] = "ErrorUnrecognizedFunction";
+})(ErrorType || (ErrorType = {}));
+var ExpressionError = class extends Error {
+  constructor(typ, tok) {
+    super(`${errorDescription(typ)}: '${tokenString(tok)}'`);
+    this.typ = typ;
+    this.tok = tok;
+    this.pos = this.tok.range.start;
+  }
+};
+function errorDescription(typ) {
+  switch (typ) {
+    case ErrorType.ErrorUnexpectedEndOfExpression:
+      return "Unexpected end of expression";
+    case ErrorType.ErrorUnexpectedSymbol:
+      return "Unexpected symbol";
+    case ErrorType.ErrorUnrecognizedNamedValue:
+      return "Unrecognized named-value";
+    case ErrorType.ErrorExceededMaxDepth:
+      return `Exceeded max expression depth ${MAX_PARSER_DEPTH}`;
+    case ErrorType.ErrorExceededMaxLength:
+      return `Exceeded max expression length ${MAX_EXPRESSION_LENGTH}`;
+    case ErrorType.ErrorTooFewParameters:
+      return "Too few parameters supplied";
+    case ErrorType.ErrorTooManyParameters:
+      return "Too many parameters supplied";
+    case ErrorType.ErrorEvenParameters:
+      return "Even number of parameters supplied, requires an odd number of parameters";
+    case ErrorType.ErrorUnrecognizedContext:
+      return "Unrecognized named-value";
+    case ErrorType.ErrorUnrecognizedFunction:
+      return "Unrecognized function";
+    default:
+      return "Unknown error";
+  }
+}
+var ExpressionEvaluationError = class extends Error {
+};
+
+// node_modules/@actions/expressions/dist/funcs/case.js
+var caseFunc = {
+  name: "case",
+  description: "`case( pred1, val1, pred2, val2, ..., default )`\n\nEvaluates predicates in order and returns the value corresponding to the first predicate that evaluates to `true`. If no predicate matches, it returns the last argument as the default value.",
+  minArgs: 3,
+  maxArgs: Number.MAX_SAFE_INTEGER,
+  call: (...args) => {
+    for (let i = 0; i < args.length - 1; i += 2) {
+      const predicate = args[i];
+      if (predicate.kind !== Kind.Boolean) {
+        throw new Error("case predicate must evaluate to a boolean value");
+      }
+      if (predicate.value) {
+        return args[i + 1];
+      }
+    }
+    return args[args.length - 1];
+  }
+};
+
+// node_modules/@actions/expressions/dist/result.js
+function coerceTypes(li, ri) {
+  let lv = li;
+  let rv = ri;
+  if (li.kind === ri.kind) {
+    return [lv, rv];
+  }
+  switch (li.kind) {
+    // Number, String
+    case Kind.Number:
+      if (ri.kind === Kind.String) {
+        rv = new NumberData(ri.number());
+        return [lv, rv];
+      }
+      break;
+    // String, Number
+    case Kind.String:
+      if (ri.kind === Kind.Number) {
+        lv = new NumberData(li.number());
+        return [lv, rv];
+      }
+      break;
+    // Boolean|Null, Any
+    case Kind.Null:
+    case Kind.Boolean:
+      lv = new NumberData(li.number());
+      return coerceTypes(lv, rv);
+  }
+  switch (ri.kind) {
+    case Kind.Null:
+    case Kind.Boolean:
+      rv = new NumberData(ri.number());
+      return coerceTypes(lv, rv);
+  }
+  return [lv, rv];
+}
+function equals(lhs, rhs) {
+  const [lv, rv] = coerceTypes(lhs, rhs);
+  if (lv.kind != rv.kind) {
+    return false;
+  }
+  switch (lv.kind) {
+    // Null, Null
+    case Kind.Null:
+      return true;
+    // Number, Number
+    case Kind.Number: {
+      const ld = lv.value;
+      const rd = rv.value;
+      if (isNaN(ld) || isNaN(rd)) {
+        return false;
+      }
+      return ld == rd;
+    }
+    // String, String
+    case Kind.String: {
+      const ls = lv.value;
+      const rs = rv.value;
+      return toUpperSpecial(ls) === toUpperSpecial(rs);
+    }
+    // Boolean, Boolean
+    case Kind.Boolean: {
+      const lb = lv.value;
+      const rb = rv.value;
+      return lb == rb;
+    }
+    // Object, Object
+    case Kind.Dictionary:
+    case Kind.Array:
+      return lv === rv;
+  }
+  return false;
+}
+function toUpperSpecial(s) {
+  const sb = [];
+  let i = 0;
+  const len = s.length;
+  let found = s.indexOf("\u0131");
+  while (i < len) {
+    if (i < found) {
+      sb.push(s.substring(i, found).toUpperCase());
+      i = found;
+    } else if (i == found) {
+      sb.push(s.substring(i, i + 1));
+      i += 1;
+      found = s.indexOf("\u0131", i);
+    } else {
+      sb.push(s.substring(i).toUpperCase());
+      break;
+    }
+  }
+  return sb.join("");
+}
+
+// node_modules/@actions/expressions/dist/funcs/contains.js
+var contains = {
+  name: "contains",
+  description: "`contains( search, item )`\n\nReturns `true` if `search` contains `item`. If `search` is an array, this function returns `true` if the `item` is an element in the array. If `search` is a string, this function returns `true` if the `item` is a substring of `search`. This function is not case sensitive. Casts values to a string.",
+  minArgs: 2,
+  maxArgs: 2,
+  call: (...args) => {
+    const left = args[0];
+    const right = args[1];
+    if (left.primitive) {
+      const ls = left.coerceString();
+      if (right.primitive) {
+        const rs = right.coerceString();
+        return new BooleanData(ls.toLowerCase().includes(rs.toLowerCase()));
+      }
+    } else if (left.kind === Kind.Array) {
+      const la = left;
+      if (la.values().length === 0) {
+        return new BooleanData(false);
+      }
+      for (const v of la.values()) {
+        if (equals(right, v)) {
+          return new BooleanData(true);
+        }
+      }
+    }
+    return new BooleanData(false);
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs/endswith.js
+var endswith = {
+  name: "endsWith",
+  description: "`endsWith( searchString, searchValue )`\n\nReturns `true` if `searchString` ends with `searchValue`. This function is not case sensitive. Casts values to a string.",
+  minArgs: 2,
+  maxArgs: 2,
+  call: (...args) => {
+    const left = args[0];
+    if (!left.primitive) {
+      return new BooleanData(false);
+    }
+    const right = args[1];
+    if (!right.primitive) {
+      return new BooleanData(false);
+    }
+    const ls = toUpperSpecial(left.coerceString());
+    const rs = toUpperSpecial(right.coerceString());
+    return new BooleanData(ls.endsWith(rs));
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs/format.js
+var format = {
+  name: "format",
+  description: "`format( string, replaceValue0, replaceValue1, ..., replaceValueN)`\n\nReplaces values in the `string`, with the variable `replaceValueN`. Variables in the `string` are specified using the `{N}` syntax, where `N` is an integer. You must specify at least one `replaceValue` and `string`. There is no maximum for the number of variables (`replaceValueN`) you can use. Escape curly braces using double braces.",
+  minArgs: 1,
+  maxArgs: 255,
+  call: (...args) => {
+    const fs = args[0].coerceString();
+    const result = [];
+    let index = 0;
+    while (index < fs.length) {
+      const lbrace = fs.indexOf("{", index);
+      const rbrace = fs.indexOf("}", index);
+      if (lbrace >= 0 && (rbrace < 0 || rbrace > lbrace)) {
+        if (safeCharAt(fs, lbrace + 1) === "{") {
+          result.push(fs.substr(index, lbrace - index + 1));
+          index = lbrace + 2;
+          continue;
+        }
+        if (rbrace > lbrace + 1) {
+          const argIndex = readArgIndex(fs, lbrace + 1);
+          if (argIndex.success) {
+            if (1 + argIndex.result > args.length - 1) {
+              throw new Error(`The following format string references more arguments than were supplied: ${fs}`);
+            }
+            if (lbrace > index) {
+              result.push(fs.substr(index, lbrace - index));
+            }
+            result.push(`${args[1 + argIndex.result].coerceString()}`);
+            index = rbrace + 1;
+            continue;
+          }
+        }
+        throw new Error(`The following format string is invalid: ${fs}`);
+      } else if (rbrace >= 0) {
+        if (safeCharAt(fs, rbrace + 1) === "}") {
+          result.push(fs.substr(index, rbrace - index + 1));
+          index = rbrace + 2;
+        } else {
+          throw new Error(`The following format string is invalid: ${fs}`);
+        }
+      } else {
+        result.push(fs.substr(index));
+        break;
+      }
+    }
+    return new StringData(result.join(""));
+  }
+};
+function safeCharAt(string, index) {
+  if (string.length > index) {
+    return string[index];
+  }
+  return "\0";
+}
+function readArgIndex(string, startIndex) {
+  let length = 0;
+  for (; ; ) {
+    const nextChar = safeCharAt(string, startIndex + length);
+    if (nextChar >= "0" && nextChar <= "9") {
+      length++;
+    } else {
+      break;
+    }
+  }
+  if (length < 1) {
+    return {
+      success: false
+    };
+  }
+  const endIndex = startIndex + length - 1;
+  const result = parseInt(string.substr(startIndex, length));
+  return {
+    success: !isNaN(result),
+    result,
+    endIndex
+  };
+}
+
+// node_modules/@actions/expressions/dist/funcs/fromjson.js
+var fromjson = {
+  name: "fromJson",
+  description: "`fromJSON(value)`\n\nReturns a JSON object or JSON data type for `value`. You can use this function to provide a JSON object as an evaluated expression or to convert environment variables from a string.",
+  minArgs: 1,
+  maxArgs: 1,
+  call: (...args) => {
+    const input = args[0];
+    const is = input.coerceString();
+    if (is.trim() === "") {
+      throw new Error("empty input");
+    }
+    try {
+      return JSON.parse(is, reviver);
+    } catch (e) {
+      throw new ExpressionEvaluationError("Error parsing JSON when evaluating fromJson", { cause: e });
+    }
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs/join.js
+var join = {
+  name: "join",
+  description: "`join( array, optionalSeparator )`\n\nThe value for `array` can be an array or a string. All values in `array` are concatenated into a string. If you provide `optionalSeparator`, it is inserted between the concatenated values. Otherwise, the default separator `,` is used. Casts values to a string.",
+  minArgs: 1,
+  maxArgs: 2,
+  call: (...args) => {
+    if (args[0].primitive) {
+      return new StringData(args[0].coerceString());
+    }
+    if (args[0].kind === Kind.Array) {
+      let separator = ",";
+      if (args.length > 1 && args[1].primitive) {
+        separator = args[1].coerceString();
+      }
+      return new StringData(args[0].values().map((item) => item.coerceString()).join(separator));
+    }
+    return new StringData("");
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs/startswith.js
+var startswith = {
+  name: "startsWith",
+  description: "`startsWith( searchString, searchValue )`\n\nReturns `true` when `searchString` starts with `searchValue`. This function is not case sensitive. Casts values to a string.",
+  minArgs: 2,
+  maxArgs: 2,
+  call: (...args) => {
+    const left = args[0];
+    if (!left.primitive) {
+      return new BooleanData(false);
+    }
+    const right = args[1];
+    if (!right.primitive) {
+      return new BooleanData(false);
+    }
+    const ls = toUpperSpecial(left.coerceString());
+    const rs = toUpperSpecial(right.coerceString());
+    return new BooleanData(ls.startsWith(rs));
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs/tojson.js
+var tojson = {
+  name: "toJson",
+  description: "`toJSON(value)`\n\nReturns a pretty-print JSON representation of `value`. You can use this function to debug the information provided in contexts.",
+  minArgs: 1,
+  maxArgs: 1,
+  call: (...args) => {
+    return new StringData(JSON.stringify(args[0], replacer, "  "));
+  }
+};
+
+// node_modules/@actions/expressions/dist/funcs.js
+var wellKnownFunctions = {
+  case: caseFunc,
+  contains,
+  endswith,
+  format,
+  fromjson,
+  join,
+  startswith,
+  tojson
+};
+function validateFunction(context, identifier, argCount) {
+  const name = identifier.lexeme.toLowerCase();
+  let f;
+  f = wellKnownFunctions[name];
+  if (!f) {
+    f = context.extensionFunctions.get(name);
+    if (!f) {
+      if (!context.allowUnknownKeywords) {
+        throw new ExpressionError(ErrorType.ErrorUnrecognizedFunction, identifier);
+      }
+      return;
+    }
+  }
+  if (argCount < f.minArgs) {
+    throw new ExpressionError(ErrorType.ErrorTooFewParameters, identifier);
+  }
+  if (argCount > f.maxArgs) {
+    throw new ExpressionError(ErrorType.ErrorTooManyParameters, identifier);
+  }
+  if (name === "case" && argCount % 2 === 0) {
+    throw new ExpressionError(ErrorType.ErrorEvenParameters, identifier);
+  }
+}
+
+// node_modules/@actions/expressions/dist/parser.js
+var Parser = class {
+  /**
+   * Constructs a new parser for the given tokens
+   *
+   * @param tokens Tokens to build a parse tree from
+   * @param extensionContexts Available context names
+   * @param extensionFunctions Available functions (beyond the built-in ones)
+   */
+  constructor(tokens, extensionContexts, extensionFunctions) {
+    this.tokens = tokens;
+    this.offset = 0;
+    this.depth = 0;
+    this.extContexts = /* @__PURE__ */ new Map();
+    this.extFuncs = /* @__PURE__ */ new Map();
+    for (const contextName of extensionContexts) {
+      this.extContexts.set(contextName.toLowerCase(), true);
+    }
+    for (const { name, func } of extensionFunctions.map((x) => ({
+      name: x.name,
+      func: x
+    }))) {
+      this.extFuncs.set(name.toLowerCase(), func);
+    }
+    this.context = {
+      allowUnknownKeywords: false,
+      extensionContexts: this.extContexts,
+      extensionFunctions: this.extFuncs
+    };
+  }
+  parse() {
+    let result;
+    if (this.atEnd()) {
+      return result;
+    }
+    result = this.expression();
+    if (!this.atEnd()) {
+      throw this.buildError(ErrorType.ErrorUnexpectedSymbol, this.peek());
+    }
+    return result;
+  }
+  expression() {
+    this.incrDepth();
+    try {
+      return this.logicalOr();
+    } finally {
+      this.decrDepth();
+    }
+  }
+  logicalOr() {
+    let expr = this.logicalAnd();
+    if (this.check(TokenType2.OR)) {
+      this.incrDepth();
+      try {
+        const logical = new Logical(this.peek(), [expr]);
+        expr = logical;
+        while (this.match(TokenType2.OR)) {
+          const right = this.logicalAnd();
+          logical.args.push(right);
+        }
+      } finally {
+        this.decrDepth();
+      }
+    }
+    return expr;
+  }
+  logicalAnd() {
+    let expr = this.equality();
+    if (this.check(TokenType2.AND)) {
+      this.incrDepth();
+      try {
+        const logical = new Logical(this.peek(), [expr]);
+        expr = logical;
+        while (this.match(TokenType2.AND)) {
+          const right = this.equality();
+          logical.args.push(right);
+        }
+      } finally {
+        this.decrDepth();
+      }
+    }
+    return expr;
+  }
+  equality() {
+    let expr = this.comparison();
+    while (this.match(TokenType2.BANG_EQUAL, TokenType2.EQUAL_EQUAL)) {
+      const operator = this.previous();
+      const right = this.comparison();
+      expr = new Binary(expr, operator, right);
+    }
+    return expr;
+  }
+  comparison() {
+    let expr = this.unary();
+    while (this.match(TokenType2.GREATER, TokenType2.GREATER_EQUAL, TokenType2.LESS, TokenType2.LESS_EQUAL)) {
+      const operator = this.previous();
+      const right = this.unary();
+      expr = new Binary(expr, operator, right);
+    }
+    return expr;
+  }
+  unary() {
+    if (this.match(TokenType2.BANG)) {
+      this.incrDepth();
+      const operator = this.previous();
+      const unary = this.unary();
+      try {
+        return new Unary(operator, unary);
+      } finally {
+        this.decrDepth();
+      }
+    }
+    return this.index();
+  }
+  index() {
+    let expr = this.call();
+    let depthIncreased = 0;
+    if (expr instanceof Grouping || expr instanceof FunctionCall || expr instanceof ContextAccess) {
+      let cont = true;
+      while (cont) {
+        switch (true) {
+          case this.match(TokenType2.LEFT_BRACKET): {
+            let indexExpr;
+            if (this.match(TokenType2.STAR)) {
+              indexExpr = new Star();
+            } else {
+              indexExpr = this.expression();
+            }
+            this.consume(TokenType2.RIGHT_BRACKET, ErrorType.ErrorUnexpectedSymbol);
+            this.incrDepth();
+            depthIncreased++;
+            expr = new IndexAccess(expr, indexExpr);
+            break;
+          }
+          case this.match(TokenType2.DOT):
+            this.incrDepth();
+            depthIncreased++;
+            if (this.match(TokenType2.IDENTIFIER)) {
+              const property = this.previous();
+              expr = new IndexAccess(expr, new Literal(new StringData(property.lexeme), property));
+            } else if (this.match(TokenType2.STAR)) {
+              expr = new IndexAccess(expr, new Star());
+            } else {
+              throw this.buildError(ErrorType.ErrorUnexpectedSymbol, this.peek());
+            }
+            break;
+          default:
+            cont = false;
+        }
+      }
+    }
+    for (let i = 0; i < depthIncreased; i++) {
+      this.decrDepth();
+    }
+    return expr;
+  }
+  call() {
+    if (!this.check(TokenType2.IDENTIFIER)) {
+      return this.primary();
+    }
+    const identifier = this.next();
+    if (!this.match(TokenType2.LEFT_PAREN)) {
+      if (!this.extContexts.has(identifier.lexeme.toLowerCase())) {
+        throw this.buildError(ErrorType.ErrorUnrecognizedContext, identifier);
+      }
+      return new ContextAccess(identifier);
+    }
+    const args = [];
+    while (!this.match(TokenType2.RIGHT_PAREN)) {
+      const aexp = this.expression();
+      args.push(aexp);
+      if (!this.check(TokenType2.RIGHT_PAREN)) {
+        this.consume(TokenType2.COMMA, ErrorType.ErrorUnexpectedSymbol);
+      }
+    }
+    validateFunction(this.context, identifier, args.length);
+    return new FunctionCall(identifier, args);
+  }
+  primary() {
+    switch (true) {
+      case this.match(TokenType2.FALSE):
+        return new Literal(new BooleanData(false), this.previous());
+      case this.match(TokenType2.TRUE):
+        return new Literal(new BooleanData(true), this.previous());
+      case this.match(TokenType2.NULL):
+        return new Literal(new Null(), this.previous());
+      case this.match(TokenType2.NUMBER):
+        return new Literal(new NumberData(this.previous().value), this.previous());
+      case this.match(TokenType2.STRING):
+        return new Literal(new StringData(this.previous().value), this.previous());
+      case this.match(TokenType2.LEFT_PAREN): {
+        const expr = this.expression();
+        if (this.atEnd()) {
+          throw this.buildError(ErrorType.ErrorUnexpectedEndOfExpression, this.previous());
+        }
+        this.consume(TokenType2.RIGHT_PAREN, ErrorType.ErrorUnexpectedSymbol);
+        return new Grouping(expr);
+      }
+      case this.atEnd():
+        throw this.buildError(ErrorType.ErrorUnexpectedEndOfExpression, this.previous());
+    }
+    throw this.buildError(ErrorType.ErrorUnexpectedSymbol, this.peek());
+  }
+  // match consumes the next token if it matches any of the given types
+  match(...tokenTypes) {
+    for (const tokenType of tokenTypes) {
+      if (this.check(tokenType)) {
+        this.next();
+        return true;
+      }
+    }
+    return false;
+  }
+  // check peeks whether the next token is of the given type
+  check(tokenType) {
+    if (this.atEnd()) {
+      return false;
+    }
+    return this.peek().type == tokenType;
+  }
+  // atEnd peeks whether the next token is EOF
+  atEnd() {
+    return this.peek().type == TokenType2.EOF;
+  }
+  next() {
+    if (!this.atEnd()) {
+      this.offset++;
+    }
+    return this.previous();
+  }
+  peek() {
+    return this.tokens[this.offset];
+  }
+  // previous returns the previous token
+  previous() {
+    return this.tokens[this.offset - 1];
+  }
+  // consume attempts to consume the next token if it matches the given type. It returns an error of
+  // the given ParseErrorKind otherwise.
+  consume(tokenType, errorType) {
+    if (this.check(tokenType)) {
+      this.next();
+      return;
+    }
+    throw this.buildError(errorType, this.peek());
+  }
+  incrDepth() {
+    this.depth++;
+    if (this.depth > MAX_PARSER_DEPTH) {
+      throw this.buildError(ErrorType.ErrorExceededMaxDepth, this.peek());
+    }
+  }
+  decrDepth() {
+    this.depth--;
+  }
+  buildError(errType, token) {
+    return new ExpressionError(errType, token);
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/allowed-context.js
+function splitAllowedContext(allowedContext) {
+  const FUNCTION_REGEXP = /^([a-zA-Z0-9_]+)\(([0-9]+),([0-9]+|MAX)\)$/;
+  const namedContexts = [];
+  const functions = [];
+  if (allowedContext.length > 0) {
+    for (const contextItem of allowedContext) {
+      const match = contextItem.match(FUNCTION_REGEXP);
+      if (match) {
+        const functionName = match[1];
+        const minParameters = Number.parseInt(match[2]);
+        const maxParametersRaw = match[3];
+        const maxParameters = maxParametersRaw === MAX_CONSTANT ? Number.MAX_SAFE_INTEGER : Number.parseInt(maxParametersRaw);
+        functions.push({
+          name: functionName,
+          minArgs: minParameters,
+          maxArgs: maxParameters
+        });
+      } else {
+        namedContexts.push(contextItem);
+      }
+    }
+  }
+  return {
+    namedContexts,
+    functions
+  };
+}
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/expression-token.js
+var ExpressionToken = class extends ScalarToken {
+  constructor(type, file, range, directive, definitionInfo) {
+    super(type, file, range, definitionInfo);
+    this.directive = directive;
+  }
+  get isLiteral() {
+    return false;
+  }
+  get isExpression() {
+    return true;
+  }
+  static validateExpression(expression, allowedContext) {
+    const { namedContexts, functions } = splitAllowedContext(allowedContext);
+    const lexer = new Lexer(expression);
+    const result = lexer.lex();
+    const p = new Parser(result.tokens, namedContexts, functions);
+    p.parse();
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/basic-expression-token.js
+var BasicExpressionToken = class _BasicExpressionToken extends ExpressionToken {
+  /**
+   * @param file The file ID where this token originated
+   * @param range The range of the entire expression including `${{` and `}}`
+   * @param expression The expression string without `${{` and `}}` markers
+   * @param definitionInfo Schema definition info for this token
+   * @param originalExpressions If transformed from individual expressions (e.g., format()), these are the originals
+   * @param source The original source string from the YAML
+   * @param expressionRange The range of just the expression, excluding `${{` and `}}`
+   * @param blockScalarHeader The block scalar header (e.g., "|", "|-") if parsed from a YAML block scalar
+   */
+  constructor(file, range, expression, definitionInfo, originalExpressions, source, expressionRange, blockScalarHeader) {
+    super(TokenType.BasicExpression, file, range, void 0, definitionInfo);
+    this.expr = expression;
+    this.source = source;
+    this.originalExpressions = originalExpressions;
+    this.expressionRange = expressionRange;
+    this.blockScalarHeader = blockScalarHeader;
+  }
+  get expression() {
+    return this.expr;
+  }
+  clone(omitSource) {
+    return omitSource ? new _BasicExpressionToken(void 0, void 0, this.expr, this.definitionInfo, this.originalExpressions, this.source, this.expressionRange, this.blockScalarHeader) : new _BasicExpressionToken(this.file, this.range, this.expr, this.definitionInfo, this.originalExpressions, this.source, this.expressionRange, this.blockScalarHeader);
+  }
+  toString() {
+    return `${OPEN_EXPRESSION} ${this.expr} ${CLOSE_EXPRESSION}`;
+  }
+  toDisplayString() {
+    return ScalarToken.trimDisplayString(this.toString());
+  }
+  toJSON() {
+    return {
+      type: TokenType.BasicExpression,
+      expr: this.expr
+    };
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/insert-expression-token.js
+var InsertExpressionToken = class _InsertExpressionToken extends ExpressionToken {
+  constructor(file, range, definitionInfo) {
+    super(TokenType.InsertExpression, file, range, INSERT_DIRECTIVE, definitionInfo);
+  }
+  clone(omitSource) {
+    return omitSource ? new _InsertExpressionToken(void 0, void 0, this.definitionInfo) : new _InsertExpressionToken(this.file, this.range, this.definitionInfo);
+  }
+  toString() {
+    return `${OPEN_EXPRESSION} ${INSERT_DIRECTIVE} ${CLOSE_EXPRESSION}`;
+  }
+  toDisplayString() {
+    return ScalarToken.trimDisplayString(this.toString());
+  }
+  toJSON() {
+    return {
+      type: TokenType.InsertExpression,
+      expr: "insert"
+    };
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/tokens/type-guards.js
+function isLiteral(t) {
+  return t.isLiteral;
+}
+function isScalar(t) {
+  return t.isScalar;
+}
+function isString(t) {
+  return isLiteral(t) && t.templateTokenType === TokenType.String;
+}
+function isBasicExpression(t) {
+  return isScalar(t) && t.templateTokenType === TokenType.BasicExpression;
+}
+function isSequence(t) {
+  return t instanceof SequenceToken;
+}
+function isMapping(t) {
+  return t instanceof MappingToken;
+}
+
+// node_modules/@actions/workflow-parser/dist/templates/template-reader.js
+var WHITESPACE_PATTERN = /\s/;
+var backgroundStepProperties = /* @__PURE__ */ new Set(["background", "wait", "wait-all", "cancel"]);
+var backgroundStepOnlyProperties = /* @__PURE__ */ new Set(["wait", "wait-all", "cancel"]);
+function readTemplate(context, type, objectReader, fileId) {
+  const reader = new TemplateReader(context, objectReader, fileId);
+  let value;
   try {
-    doc = (0, import_yaml.parse)(yamlText);
+    objectReader.validateStart();
+    const definition = new DefinitionInfo(context.schema, type);
+    value = reader.readValue(definition);
+    objectReader.validateEnd();
+  } catch (err) {
+    context.error(fileId, err);
+  }
+  return value;
+}
+var TemplateReader = class {
+  constructor(context, objectReader, fileId) {
+    this._context = context;
+    this._schema = context.schema;
+    this._objectReader = objectReader;
+    this._fileId = fileId;
+  }
+  readValue(definition) {
+    const literal = this._objectReader.allowLiteral();
+    if (literal) {
+      let scalar = this.parseScalar(literal, definition);
+      scalar = this.validate(scalar, definition);
+      return scalar;
+    }
+    const sequence = this._objectReader.allowSequenceStart();
+    if (sequence) {
+      const sequenceDefinition = definition.getDefinitionsOfType(DefinitionType.Sequence)[0];
+      if (sequenceDefinition) {
+        const itemDefinition = new DefinitionInfo(definition, sequenceDefinition.itemType);
+        while (!this._objectReader.allowSequenceEnd()) {
+          const item = this.readValue(itemDefinition);
+          sequence.add(item);
+        }
+      } else {
+        this._context.error(sequence, "A sequence was not expected");
+        while (!this._objectReader.allowSequenceEnd()) {
+          this.skipValue();
+        }
+      }
+      sequence.definitionInfo = definition;
+      return sequence;
+    }
+    const mapping = this._objectReader.allowMappingStart();
+    if (mapping) {
+      const mappingDefinitions = definition.getDefinitionsOfType(DefinitionType.Mapping);
+      if (mappingDefinitions.length > 0) {
+        if (mappingDefinitions.length > 1 || Object.keys(mappingDefinitions[0].properties).length > 0 || !mappingDefinitions[0].looseKeyType) {
+          this.handleMappingWithWellKnownProperties(definition, mappingDefinitions, mapping);
+        } else {
+          const keyDefinition = new DefinitionInfo(definition, mappingDefinitions[0].looseKeyType);
+          const valueDefinition = new DefinitionInfo(definition, mappingDefinitions[0].looseValueType);
+          this.handleMappingWithAllLooseProperties(definition, keyDefinition, valueDefinition, mappingDefinitions[0], mapping);
+        }
+      } else {
+        this._context.error(mapping, "A mapping was not expected");
+        while (!this._objectReader.allowMappingEnd()) {
+          this.skipValue();
+          this.skipValue();
+        }
+      }
+      if (!mapping.definitionInfo) {
+        mapping.definitionInfo = definition;
+      }
+      return mapping;
+    }
+    throw new Error("Expected a scalar value, a sequence, or a mapping");
+  }
+  handleMappingWithWellKnownProperties(definition, mappingDefinitions, mapping) {
+    let looseKeyType;
+    let looseValueType;
+    let looseKeyDefinition;
+    let looseValueDefinition;
+    if (mappingDefinitions[0].looseKeyType) {
+      looseKeyType = mappingDefinitions[0].looseKeyType;
+      looseValueType = mappingDefinitions[0].looseValueType;
+    }
+    const upperKeys = {};
+    let hasExpressionKey = false;
+    let rawLiteral;
+    while (rawLiteral = this._objectReader.allowLiteral()) {
+      const nextKeyScalar = this.parseScalar(rawLiteral, definition);
+      if (nextKeyScalar.isExpression) {
+        hasExpressionKey = true;
+        if (definition.allowedContext.length > 0) {
+          const anyDefinition = new DefinitionInfo(definition, ANY);
+          mapping.add(nextKeyScalar, this.readValue(anyDefinition));
+        } else {
+          this._context.error(nextKeyScalar, "A template expression is not allowed in this context");
+          this.skipValue();
+        }
+        continue;
+      }
+      const nextKey = nextKeyScalar.templateTokenType === TokenType.String ? nextKeyScalar : new StringToken(nextKeyScalar.file, nextKeyScalar.range, nextKeyScalar.toString(), nextKeyScalar.definitionInfo);
+      if (nextKey.value) {
+        const upperKey = nextKey.value.toUpperCase();
+        if (upperKeys[upperKey]) {
+          this._context.error(nextKey, `'${nextKey.value}' is already defined`);
+          this.skipValue();
+          continue;
+        }
+        upperKeys[upperKey] = true;
+      }
+      const nextPropertyDef = this._schema.matchPropertyAndFilter(mappingDefinitions, nextKey.value);
+      if (nextPropertyDef) {
+        if (!this.backgroundStepsEnabled() && backgroundStepProperties.has(nextKey.value)) {
+          this._context.error(nextKey, `Unexpected value '${nextKey.value}'`);
+          this.skipValue();
+          continue;
+        }
+        const nextDefinition = new DefinitionInfo(definition, nextPropertyDef.type);
+        nextKey.definitionInfo = nextDefinition;
+        if (nextPropertyDef.description) {
+          nextKey.description = nextPropertyDef.description;
+        }
+        const nextValue = this.readValue(nextDefinition);
+        mapping.add(nextKey, nextValue);
+        continue;
+      }
+      if (looseKeyType) {
+        if (!looseKeyDefinition) {
+          looseKeyDefinition = new DefinitionInfo(definition, looseKeyType);
+          looseValueDefinition = new DefinitionInfo(definition, looseValueType);
+        }
+        this.validate(nextKey, looseKeyDefinition);
+        const nextDefinition = new DefinitionInfo(definition, mappingDefinitions[0].looseValueType);
+        nextKey.definitionInfo = nextDefinition;
+        const nextValue = this.readValue(looseValueDefinition);
+        mapping.add(nextKey, nextValue);
+        continue;
+      }
+      this._context.error(nextKey, `Unexpected value '${nextKey.value}'`);
+      this.skipValue();
+    }
+    if (mappingDefinitions.length === 1) {
+      mapping.definitionInfo = new DefinitionInfo(definition, mappingDefinitions[0]);
+    }
+    if (mappingDefinitions.length > 1) {
+      const hitCount = {};
+      for (const mappingDefinition of mappingDefinitions) {
+        for (const key of Object.keys(mappingDefinition.properties)) {
+          hitCount[key] = (hitCount[key] ?? 0) + 1;
+        }
+      }
+      const nonDuplicates = [];
+      for (const key of Object.keys(hitCount)) {
+        if (hitCount[key] === 1) {
+          nonDuplicates.push(key);
+        }
+      }
+      const properties = this.backgroundStepsEnabled() ? nonDuplicates : nonDuplicates.filter((property) => !backgroundStepOnlyProperties.has(property));
+      this._context.error(mapping, `There's not enough info to determine what you meant. Add one of these properties: ${properties.sort().join(", ")}`);
+    } else if (mappingDefinitions.length === 1 && !hasExpressionKey) {
+      for (const propertyName of Object.keys(mappingDefinitions[0].properties)) {
+        const propertyDef = mappingDefinitions[0].properties[propertyName];
+        if (propertyDef.required && !upperKeys[propertyName.toUpperCase()]) {
+          this._context.error(mapping, `Required property is missing: ${propertyName}`);
+        }
+      }
+    }
+    this.expectMappingEnd();
+  }
+  handleMappingWithAllLooseProperties(definition, keyDefinition, valueDefinition, mappingDefinition, mapping) {
+    let nextValue;
+    const upperKeys = {};
+    let rawLiteral;
+    while (rawLiteral = this._objectReader.allowLiteral()) {
+      const nextKeyScalar = this.parseScalar(rawLiteral, definition);
+      nextKeyScalar.definitionInfo = keyDefinition;
+      if (nextKeyScalar.isExpression) {
+        if (definition.allowedContext.length > 0) {
+          nextValue = this.readValue(valueDefinition);
+          mapping.add(nextKeyScalar, nextValue);
+        } else {
+          this._context.error(nextKeyScalar, "A template expression is not allowed in this context");
+          this.skipValue();
+        }
+        continue;
+      }
+      const nextKey = nextKeyScalar.templateTokenType === TokenType.String ? nextKeyScalar : new StringToken(nextKeyScalar.file, nextKeyScalar.range, nextKeyScalar.toString(), nextKeyScalar.definitionInfo);
+      if (nextKey.value) {
+        const upperKey = nextKey.value.toUpperCase();
+        if (upperKeys[upperKey]) {
+          this._context.error(nextKey, `'${nextKey.value}' is already defined`);
+          this.skipValue();
+          continue;
+        }
+        upperKeys[upperKey] = true;
+      }
+      this.validate(nextKey, keyDefinition);
+      const nextDefinition = new DefinitionInfo(definition, mappingDefinition.looseValueType);
+      nextKey.definitionInfo = nextDefinition;
+      nextValue = this.readValue(valueDefinition);
+      mapping.add(nextKey, nextValue);
+    }
+    this.expectMappingEnd();
+  }
+  expectMappingEnd() {
+    if (!this._objectReader.allowMappingEnd()) {
+      throw new Error("Expected mapping end");
+    }
+  }
+  skipValue() {
+    if (this._objectReader.allowLiteral()) {
+    } else if (this._objectReader.allowSequenceStart()) {
+      while (!this._objectReader.allowSequenceEnd()) {
+        this.skipValue();
+      }
+    } else if (this._objectReader.allowMappingStart()) {
+      while (!this._objectReader.allowMappingEnd()) {
+        this.skipValue();
+        this.skipValue();
+      }
+    } else {
+      throw new Error("Expected a scalar value, a sequence, or a mapping");
+    }
+  }
+  validate(scalar, definition) {
+    switch (scalar.templateTokenType) {
+      case TokenType.Null:
+      case TokenType.Boolean:
+      case TokenType.Number:
+      case TokenType.String: {
+        const literal = scalar;
+        const scalarDefinitions = definition.getScalarDefinitions();
+        let relevantDefinition;
+        if (relevantDefinition = scalarDefinitions.find((x) => x.isMatch(literal))) {
+          scalar.definitionInfo = new DefinitionInfo(definition, relevantDefinition);
+          return scalar;
+        }
+        if (literal.templateTokenType !== TokenType.String) {
+          const stringLiteral = new StringToken(literal.file, literal.range, literal.toString(), literal.definitionInfo);
+          if (relevantDefinition = scalarDefinitions.find((x) => x.isMatch(stringLiteral))) {
+            stringLiteral.definitionInfo = new DefinitionInfo(definition, relevantDefinition);
+            return stringLiteral;
+          }
+        }
+        this._context.error(literal, `Unexpected value '${literal.toString()}'`);
+        return scalar;
+      }
+      case TokenType.BasicExpression:
+        if (definition.allowedContext.length === 0) {
+          this._context.error(scalar, "A template expression is not allowed in this context");
+        }
+        return scalar;
+      default:
+        this._context.error(scalar, `Unexpected value '${scalar.toString()}'`);
+        return scalar;
+    }
+  }
+  parseScalar(token, definitionInfo) {
+    if (!isString(token) || !token.value) {
+      return token;
+    }
+    const allowedContext = definitionInfo.allowedContext;
+    const isSingleLine = token.range === void 0 || token.range.start.line === token.range.end.line;
+    const raw = isSingleLine ? token.value : token.source ?? token.value;
+    let startExpression = raw.indexOf(OPEN_EXPRESSION);
+    if (startExpression < 0) {
+      return token;
+    }
+    let encounteredError = false;
+    const segments = [];
+    let i = 0;
+    while (i < raw.length) {
+      if (i === startExpression) {
+        startExpression = i;
+        let endExpression = -1;
+        let inString = false;
+        for (i += OPEN_EXPRESSION.length; i < raw.length; i++) {
+          if (raw[i] === "'") {
+            inString = !inString;
+          } else if (!inString && raw[i] === "}" && raw[i - 1] === "}") {
+            endExpression = i;
+            i++;
+            break;
+          }
+        }
+        if (endExpression < startExpression) {
+          this._context.error(token, "The expression is not closed. An unescaped ${{ sequence was found, but the closing }} sequence was not found.");
+          return token;
+        }
+        const rawExpression = raw.substr(startExpression + OPEN_EXPRESSION.length, endExpression - startExpression + 1 - OPEN_EXPRESSION.length - CLOSE_EXPRESSION.length);
+        let tr = token.range;
+        if (isSingleLine) {
+          const offset = (token.source ?? raw).indexOf(OPEN_EXPRESSION) - raw.indexOf(OPEN_EXPRESSION);
+          tr = {
+            start: { line: tr.start.line, column: tr.start.column + startExpression + offset },
+            end: { line: tr.end.line, column: tr.start.column + endExpression + 1 + offset }
+          };
+        } else {
+          const startRaw = raw.substring(0, startExpression);
+          const adjustedStartLine = startRaw.split("\n").length;
+          const beginningOfLine = startRaw.lastIndexOf("\n");
+          const adjustedStart = startExpression - beginningOfLine;
+          const adjustedEnd = endExpression - beginningOfLine + 1;
+          tr = {
+            start: { line: tr.start.line + adjustedStartLine, column: adjustedStart },
+            end: { line: tr.start.line + adjustedStartLine, column: adjustedEnd }
+          };
+        }
+        const expression = this.parseIntoExpressionToken(tr, rawExpression, allowedContext, token, definitionInfo);
+        if (!expression) {
+          encounteredError = true;
+        } else {
+          if (expression.directive && (startExpression !== 0 || i < raw.length)) {
+            this._context.error(token, `The directive '${expression.directive}' is not allowed in this context. Directives are not supported for expressions that are embedded within a string. Directives are only supported when the entire value is an expression.`);
+            return token;
+          }
+          segments.push(expression);
+        }
+        startExpression = raw.indexOf(OPEN_EXPRESSION, i);
+      } else if (i < startExpression) {
+        this.addString(segments, token.range, raw.substr(i, startExpression - i), token.definitionInfo);
+        i = startExpression;
+      } else {
+        this.addString(segments, token.range, raw.substr(i), token.definitionInfo);
+        break;
+      }
+    }
+    if (encounteredError) {
+      return token;
+    }
+    if (segments.length === 1 && segments[0].templateTokenType === TokenType.BasicExpression) {
+      const basicExpression = segments[0];
+      const str = this.getExpressionString(basicExpression.expression);
+      if (str !== void 0) {
+        return new StringToken(this._fileId, token.range, str, token.definitionInfo);
+      }
+    }
+    if (segments.length === 1) {
+      return segments[0];
+    }
+    const format2 = [];
+    const args = [];
+    const expressionTokens = [];
+    let argIndex = 0;
+    for (const segment of segments) {
+      if (isString(segment)) {
+        const text = segment.value.replace(/'/g, "''").replace(/\{/g, "{{").replace(/\}/g, "}}");
+        format2.push(text);
+      } else {
+        format2.push(`{${argIndex}}`);
+        argIndex++;
+        const expression = segment;
+        args.push(", ");
+        args.push(expression.expression);
+        expressionTokens.push(expression);
+      }
+    }
+    return new BasicExpressionToken(this._fileId, token.range, `format('${format2.join("")}'${args.join("")})`, definitionInfo, expressionTokens, raw, void 0, token.blockScalarHeader);
+  }
+  parseIntoExpressionToken(tr, rawExpression, allowedContext, token, definitionInfo) {
+    const parseExpressionResult = this.parseExpression(tr, token, rawExpression, allowedContext, definitionInfo);
+    if (parseExpressionResult.error) {
+      this._context.error(token, parseExpressionResult.error, tr);
+      return void 0;
+    }
+    return parseExpressionResult.expression;
+  }
+  parseExpression(range, token, value, allowedContext, definitionInfo) {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return {
+        error: new Error("An expression was expected")
+      };
+    }
+    const matchDirectiveResult = this.matchDirective(trimmed, INSERT_DIRECTIVE, 0);
+    if (matchDirectiveResult.isMatch) {
+      return {
+        expression: new InsertExpressionToken(this._fileId, range, definitionInfo)
+      };
+    } else if (matchDirectiveResult.error) {
+      return {
+        error: matchDirectiveResult.error
+      };
+    }
+    try {
+      ExpressionToken.validateExpression(trimmed, allowedContext);
+    } catch (err) {
+      return {
+        error: err
+      };
+    }
+    const startTrim = value.length - value.trimStart().length;
+    const endTrim = value.length - value.trimEnd().length;
+    const expressionRange = {
+      start: {
+        ...range.start,
+        column: range.start.column + OPEN_EXPRESSION.length + startTrim
+      },
+      end: {
+        ...range.end,
+        column: range.end.column - CLOSE_EXPRESSION.length - endTrim
+      }
+    };
+    return {
+      expression: new BasicExpressionToken(this._fileId, range, trimmed, definitionInfo, void 0, token.source, expressionRange, token.blockScalarHeader),
+      error: void 0
+    };
+  }
+  addString(segments, range, value, definition) {
+    if (segments.length > 0 && segments[segments.length - 1].templateTokenType === TokenType.String) {
+      const lastSegment = segments[segments.length - 1];
+      segments[segments.length - 1] = new StringToken(this._fileId, range, `${lastSegment.value}${value}`, definition);
+    } else {
+      segments.push(new StringToken(this._fileId, range, value, definition));
+    }
+  }
+  matchDirective(trimmed, directive, expectedParameters) {
+    const parameters = [];
+    if (trimmed.startsWith(directive) && (trimmed.length === directive.length || WHITESPACE_PATTERN.test(trimmed[directive.length]))) {
+      let startIndex = directive.length;
+      let inString = false;
+      let parens = 0;
+      for (let i = startIndex; i < trimmed.length; i++) {
+        const c = trimmed[i];
+        if (WHITESPACE_PATTERN.test(c) && !inString && parens == 0) {
+          if (startIndex < 1) {
+            parameters.push(trimmed.substr(startIndex, i - startIndex));
+          }
+          startIndex = i + 1;
+        } else if (c === "'") {
+          inString = !inString;
+        } else if (c === "(" && !inString) {
+          parens++;
+        } else if (c === ")" && !inString) {
+          parens--;
+        }
+      }
+      if (startIndex < trimmed.length) {
+        parameters.push(trimmed.substr(startIndex));
+      }
+      if (expectedParameters != parameters.length) {
+        return {
+          isMatch: false,
+          parameters: [],
+          error: new Error(`Exactly ${expectedParameters} parameter(s) were expected following the directive '${directive}'. Actual parameter count: ${parameters.length}`)
+        };
+      }
+      return {
+        isMatch: true,
+        parameters
+      };
+    }
+    return {
+      isMatch: false,
+      parameters
+    };
+  }
+  getExpressionString(trimmed) {
+    const result = [];
+    let inString = false;
+    for (let i = 0; i < trimmed.length; i++) {
+      const c = trimmed[i];
+      if (c === "'") {
+        inString = !inString;
+        if (inString && i !== 0) {
+          result.push(c);
+        }
+      } else if (!inString) {
+        return void 0;
+      } else {
+        result.push(c);
+      }
+    }
+    return result.join("");
+  }
+  backgroundStepsEnabled() {
+    return this._context.state.featureFlags?.isEnabled("allowBackgroundSteps") ?? false;
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/workflows/workflow-constants.js
+var WORKFLOW_ROOT = "workflow-root-strict";
+
+// node_modules/@actions/workflow-parser/dist/templates/parse-event.js
+var ParseEvent = class {
+  constructor(type, token) {
+    this.type = type;
+    this.token = token;
+  }
+};
+var EventType;
+(function(EventType2) {
+  EventType2[EventType2["Literal"] = 0] = "Literal";
+  EventType2[EventType2["SequenceStart"] = 1] = "SequenceStart";
+  EventType2[EventType2["SequenceEnd"] = 2] = "SequenceEnd";
+  EventType2[EventType2["MappingStart"] = 3] = "MappingStart";
+  EventType2[EventType2["MappingEnd"] = 4] = "MappingEnd";
+  EventType2[EventType2["DocumentStart"] = 5] = "DocumentStart";
+  EventType2[EventType2["DocumentEnd"] = 6] = "DocumentEnd";
+})(EventType || (EventType = {}));
+
+// node_modules/@actions/workflow-parser/dist/templates/json-object-reader.js
+var JSONObjectReader = class {
+  constructor(fileId, input) {
+    this._fileId = fileId;
+    const value = JSON.parse(input);
+    this._generator = this.getParseEvents(value, true);
+    this._current = this._generator.next();
+  }
+  allowLiteral() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.Literal) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowSequenceStart() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.SequenceStart) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowSequenceEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.SequenceEnd) {
+        this._current = this._generator.next();
+        return true;
+      }
+    }
+    return false;
+  }
+  allowMappingStart() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.MappingStart) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowMappingEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.MappingEnd) {
+        this._current = this._generator.next();
+        return true;
+      }
+    }
+    return false;
+  }
+  validateEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.DocumentEnd) {
+        this._current = this._generator.next();
+        return;
+      }
+    }
+    throw new Error("Expected end of reader");
+  }
+  validateStart() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.DocumentStart) {
+        this._current = this._generator.next();
+        return;
+      }
+    }
+    throw new Error("Expected start of reader");
+  }
+  /**
+   * Returns all tokens (depth first)
+   */
+  *getParseEvents(value, root) {
+    if (root) {
+      yield new ParseEvent(EventType.DocumentStart, void 0);
+    }
+    switch (typeof value) {
+      case "undefined":
+        yield new ParseEvent(EventType.Literal, new NullToken(this._fileId, void 0, void 0));
+        break;
+      case "boolean":
+        yield new ParseEvent(EventType.Literal, new BooleanToken(this._fileId, void 0, value, void 0));
+        break;
+      case "number":
+        yield new ParseEvent(EventType.Literal, new NumberToken(this._fileId, void 0, value, void 0));
+        break;
+      case "string":
+        yield new ParseEvent(EventType.Literal, new StringToken(this._fileId, void 0, value, void 0));
+        break;
+      case "object":
+        if (value === null) {
+          yield new ParseEvent(EventType.Literal, new NullToken(this._fileId, void 0, void 0));
+        } else if (Array.isArray(value)) {
+          yield new ParseEvent(EventType.SequenceStart, new SequenceToken(this._fileId, void 0, void 0));
+          for (const item of value) {
+            for (const e of this.getParseEvents(item)) {
+              yield e;
+            }
+          }
+          yield new ParseEvent(EventType.SequenceEnd, void 0);
+        } else {
+          yield new ParseEvent(EventType.MappingStart, new MappingToken(this._fileId, void 0, void 0));
+          for (const key of Object.keys(value)) {
+            yield new ParseEvent(EventType.Literal, new StringToken(this._fileId, void 0, key, void 0));
+            for (const e of this.getParseEvents(value[key])) {
+              yield e;
+            }
+          }
+          yield new ParseEvent(EventType.MappingEnd, void 0);
+        }
+        break;
+      default:
+        throw new Error(`Unexpected value type '${typeof value}' when reading object`);
+    }
+    if (root) {
+      yield new ParseEvent(EventType.DocumentEnd, void 0);
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/trace-writer.js
+var NoOperationTraceWriter = class {
+  error() {
+  }
+  info() {
+  }
+  verbose() {
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/definition.js
+var Definition = class {
+  constructor(key, definition) {
+    this.readerContext = [];
+    this.evaluatorContext = [];
+    this.key = key;
+    if (definition) {
+      for (let i = 0; i < definition.count; ) {
+        const definitionKey = definition.get(i).key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case CONTEXT: {
+            const context = definition.get(i).value.assertSequence(`${DEFINITION} ${CONTEXT}`);
+            definition.remove(i);
+            const seenReaderContext = {};
+            const seenEvaluatorContext = {};
+            for (const item of context) {
+              const itemStr = item.assertString(`${CONTEXT} item`).value;
+              const upperItemStr = itemStr.toUpperCase();
+              if (seenReaderContext[upperItemStr]) {
+                throw new Error(`Duplicate context item '${itemStr}'`);
+              }
+              seenReaderContext[upperItemStr] = true;
+              this.readerContext.push(itemStr);
+              const paramIndex = itemStr.indexOf("(");
+              const modifiedItemStr = paramIndex > 0 ? itemStr.substr(0, paramIndex + 1) + ")" : itemStr;
+              const upperModifiedItemStr = modifiedItemStr.toUpperCase();
+              if (seenEvaluatorContext[upperModifiedItemStr]) {
+                throw new Error(`Duplicate context item '${modifiedItemStr}'`);
+              }
+              seenEvaluatorContext[upperModifiedItemStr] = true;
+              this.evaluatorContext.push(modifiedItemStr);
+            }
+            break;
+          }
+          case DESCRIPTION: {
+            const value = definition.get(i).value;
+            this.description = value.assertString(DESCRIPTION).value;
+            definition.remove(i);
+            break;
+          }
+          default: {
+            i++;
+            break;
+          }
+        }
+      }
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/scalar-definition.js
+var ScalarDefinition = class extends Definition {
+  constructor(key, definition) {
+    super(key, definition);
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/boolean-definition.js
+var BooleanDefinition = class extends ScalarDefinition {
+  constructor(key, definition) {
+    super(key, definition);
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case BOOLEAN: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${BOOLEAN}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${BOOLEAN} key`);
+              switch (mappingKey.value) {
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${BOOLEAN} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.Boolean;
+  }
+  isMatch(literal) {
+    return literal.templateTokenType === TokenType.Boolean;
+  }
+  validate() {
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/property-definition.js
+var PropertyDefinition = class {
+  constructor(token) {
+    this.type = "";
+    this.required = false;
+    if (token.templateTokenType === TokenType.String) {
+      this.type = token.value;
+    } else {
+      const mapping = token.assertMapping(MAPPING_PROPERTY_VALUE);
+      for (const mappingPair of mapping) {
+        const mappingKey = mappingPair.key.assertString(`${MAPPING_PROPERTY_VALUE} key`);
+        switch (mappingKey.value) {
+          case TYPE:
+            this.type = mappingPair.value.assertString(`${MAPPING_PROPERTY_VALUE} ${TYPE}`).value;
+            break;
+          case REQUIRED:
+            this.required = mappingPair.value.assertBoolean(`${MAPPING_PROPERTY_VALUE} ${REQUIRED}`).value;
+            break;
+          case DESCRIPTION:
+            this.description = mappingPair.value.assertString(`${MAPPING_PROPERTY_VALUE} ${DESCRIPTION}`).value;
+            break;
+          default:
+            mappingKey.assertUnexpectedValue(`${MAPPING_PROPERTY_VALUE} key`);
+        }
+      }
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/mapping-definition.js
+var MappingDefinition = class extends Definition {
+  constructor(key, definition) {
+    super(key, definition);
+    this.properties = {};
+    this.looseKeyType = "";
+    this.looseValueType = "";
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case MAPPING: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${MAPPING}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${MAPPING} key`);
+              switch (mappingKey.value) {
+                case PROPERTIES: {
+                  const properties = mappingPair.value.assertMapping(`${DEFINITION} ${MAPPING} ${PROPERTIES}`);
+                  for (const propertiesPair of properties) {
+                    const propertyName = propertiesPair.key.assertString(`${DEFINITION} ${MAPPING} ${PROPERTIES} key`);
+                    this.properties[propertyName.value] = new PropertyDefinition(propertiesPair.value);
+                  }
+                  break;
+                }
+                case LOOSE_KEY_TYPE: {
+                  const looseKeyType = mappingPair.value.assertString(`${DEFINITION} ${MAPPING} ${LOOSE_KEY_TYPE}`);
+                  this.looseKeyType = looseKeyType.value;
+                  break;
+                }
+                case LOOSE_VALUE_TYPE: {
+                  const looseValueType = mappingPair.value.assertString(`${DEFINITION} ${MAPPING} ${LOOSE_VALUE_TYPE}`);
+                  this.looseValueType = looseValueType.value;
+                  break;
+                }
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${MAPPING} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.Mapping;
+  }
+  validate(schema2, name) {
+    if (this.looseKeyType) {
+      schema2.getDefinition(this.looseKeyType);
+      if (this.looseValueType) {
+        schema2.getDefinition(this.looseValueType);
+      } else {
+        throw new Error(`Property '${LOOSE_KEY_TYPE}' is defined but '${LOOSE_VALUE_TYPE}' is not defined on '${name}'`);
+      }
+    } else if (this.looseValueType) {
+      throw new Error(`Property '${LOOSE_VALUE_TYPE}' is defined but '${LOOSE_KEY_TYPE}' is not defined on '${name}'`);
+    }
+    for (const propertyName of Object.keys(this.properties)) {
+      const propertyDef = this.properties[propertyName];
+      if (!propertyDef.type) {
+        throw new Error(`Type not specified for the property '${propertyName}' on '${name}'`);
+      }
+      schema2.getDefinition(propertyDef.type);
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/null-definition.js
+var NullDefinition = class extends ScalarDefinition {
+  constructor(key, definition) {
+    super(key, definition);
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case NULL: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${NULL}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${NULL} key`);
+              switch (mappingKey.value) {
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${NULL} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.Null;
+  }
+  isMatch(literal) {
+    return literal.templateTokenType === TokenType.Null;
+  }
+  validate() {
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/number-definition.js
+var NumberDefinition = class extends ScalarDefinition {
+  constructor(key, definition) {
+    super(key, definition);
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case NUMBER: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${NUMBER}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${NUMBER} key`);
+              switch (mappingKey.value) {
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${NUMBER} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.Number;
+  }
+  isMatch(literal) {
+    return literal.templateTokenType === TokenType.Number;
+  }
+  validate() {
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/one-of-definition.js
+var OneOfDefinition = class extends Definition {
+  constructor(key, definition) {
+    super(key, definition);
+    this.oneOf = [];
+    this.oneOfPrefix = [];
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case ONE_OF: {
+            const oneOf = definitionPair.value.assertSequence(`${DEFINITION} ${ONE_OF}`);
+            for (const item of oneOf) {
+              const oneOfItem = item.assertString(`${DEFINITION} ${ONE_OF} item`);
+              this.oneOf.push(oneOfItem.value);
+            }
+            break;
+          }
+          case ALLOWED_VALUES: {
+            const oneOf = definitionPair.value.assertSequence(`${DEFINITION} ${ALLOWED_VALUES}`);
+            for (const item of oneOf) {
+              const oneOfItem = item.assertString(`${DEFINITION} ${ONE_OF} item`);
+              this.oneOf.push(this.key + "-" + oneOfItem.value);
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+            break;
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.OneOf;
+  }
+  validate(schema2, name) {
+    if (this.oneOf.length === 0) {
+      throw new Error(`'${name}' does not contain any references`);
+    }
+    let foundLooseKeyType = false;
+    const mappingDefinitions = [];
+    let allowedValuesDefinition;
+    let sequenceDefinition;
+    let nullDefinition;
+    let booleanDefinition;
+    let numberDefinition;
+    const stringDefinitions = [];
+    const seenNestedTypes = {};
+    for (const nestedType of this.oneOf) {
+      if (seenNestedTypes[nestedType]) {
+        throw new Error(`'${name}' contains duplicate nested type '${nestedType}'`);
+      }
+      seenNestedTypes[nestedType] = true;
+      const nestedDefinition = schema2.getDefinition(nestedType);
+      if (nestedDefinition.readerContext.length > 0) {
+        throw new Error(`'${name}' is a one-of definition and references another definition that defines context. This is currently not supported.`);
+      }
+      switch (nestedDefinition.definitionType) {
+        case DefinitionType.Mapping: {
+          const mappingDefinition = nestedDefinition;
+          mappingDefinitions.push(mappingDefinition);
+          if (mappingDefinition.looseKeyType) {
+            foundLooseKeyType = true;
+          }
+          break;
+        }
+        case DefinitionType.Sequence: {
+          if (sequenceDefinition) {
+            throw new Error(`'${name}' refers to more than one definition of type '${SEQUENCE}'`);
+          }
+          sequenceDefinition = nestedDefinition;
+          break;
+        }
+        case DefinitionType.Null: {
+          if (nullDefinition) {
+            throw new Error(`'${name}' refers to more than one definition of type '${NULL}'`);
+          }
+          nullDefinition = nestedDefinition;
+          break;
+        }
+        case DefinitionType.Boolean: {
+          if (booleanDefinition) {
+            throw new Error(`'${name}' refers to more than one definition of type '${BOOLEAN}'`);
+          }
+          booleanDefinition = nestedDefinition;
+          break;
+        }
+        case DefinitionType.Number: {
+          if (numberDefinition) {
+            throw new Error(`'${name}' refers to more than one definition of type '${NUMBER}'`);
+          }
+          numberDefinition = nestedDefinition;
+          break;
+        }
+        case DefinitionType.String: {
+          const stringDefinition = nestedDefinition;
+          if (stringDefinitions.length > 0 && (!stringDefinitions[0].constant || !stringDefinition.constant)) {
+            throw new Error(`'${name}' refers to more than one '${SCALAR}', but some do not set '${CONSTANT}'`);
+          }
+          stringDefinitions.push(stringDefinition);
+          break;
+        }
+        case DefinitionType.OneOf: {
+          if (allowedValuesDefinition) {
+            throw new Error(`'${name}' contains multiple allowed-values definitions`);
+          }
+          allowedValuesDefinition = nestedDefinition;
+          break;
+        }
+        default:
+          throw new Error(`'${name}' refers to a definition with type '${nestedDefinition.definitionType}'`);
+      }
+    }
+    if (mappingDefinitions.length > 1) {
+      if (foundLooseKeyType) {
+        throw new Error(`'${name}' refers to two mappings and at least one sets '${LOOSE_KEY_TYPE}'. This is not currently supported.`);
+      }
+      const seenProperties = {};
+      for (const mappingDefinition of mappingDefinitions) {
+        for (const propertyName of Object.keys(mappingDefinition.properties)) {
+          const newPropertyDef = mappingDefinition.properties[propertyName];
+          const existingPropertyDef = seenProperties[propertyName];
+          if (existingPropertyDef) {
+            if (existingPropertyDef.type === newPropertyDef.type) {
+              continue;
+            }
+            throw new Error(`'${name}' contains two mappings with the same property, but each refers to a different type. All matching properties must refer to the same type.`);
+          } else {
+            seenProperties[propertyName] = newPropertyDef;
+          }
+        }
+      }
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/sequence-definition.js
+var SequenceDefinition = class extends Definition {
+  constructor(key, definition) {
+    super(key, definition);
+    this.itemType = "";
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case SEQUENCE: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${SEQUENCE}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${SEQUENCE} key`);
+              switch (mappingKey.value) {
+                case ITEM_TYPE: {
+                  const itemType = mappingPair.value.assertString(`${DEFINITION} ${SEQUENCE} ${ITEM_TYPE}`);
+                  this.itemType = itemType.value;
+                  break;
+                }
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${SEQUENCE} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.Sequence;
+  }
+  validate(schema2, name) {
+    if (!this.itemType) {
+      throw new Error(`'${name}' does not defined '${ITEM_TYPE}'`);
+    }
+    schema2.getDefinition(this.itemType);
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/string-definition.js
+var StringDefinition = class extends ScalarDefinition {
+  constructor(key, definition) {
+    super(key, definition);
+    this.constant = "";
+    this.ignoreCase = false;
+    this.requireNonEmpty = false;
+    this.isExpression = false;
+    if (definition) {
+      for (const definitionPair of definition) {
+        const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+        switch (definitionKey.value) {
+          case STRING: {
+            const mapping = definitionPair.value.assertMapping(`${DEFINITION} ${STRING}`);
+            for (const mappingPair of mapping) {
+              const mappingKey = mappingPair.key.assertString(`${DEFINITION} ${STRING} key`);
+              switch (mappingKey.value) {
+                case CONSTANT: {
+                  const constantStringToken = mappingPair.value.assertString(`${DEFINITION} ${STRING} ${CONSTANT}`);
+                  this.constant = constantStringToken.value;
+                  break;
+                }
+                case IGNORE_CASE: {
+                  const ignoreCaseBooleanToken = mappingPair.value.assertBoolean(`${DEFINITION} ${STRING} ${IGNORE_CASE}`);
+                  this.ignoreCase = ignoreCaseBooleanToken.value;
+                  break;
+                }
+                case REQUIRE_NON_EMPTY: {
+                  const requireNonEmptyBooleanToken = mappingPair.value.assertBoolean(`${DEFINITION} ${STRING} ${REQUIRE_NON_EMPTY}`);
+                  this.requireNonEmpty = requireNonEmptyBooleanToken.value;
+                  break;
+                }
+                case IS_EXPRESSION: {
+                  const isExpressionToken = mappingPair.value.assertBoolean(`${DEFINITION} ${STRING} ${IS_EXPRESSION}`);
+                  this.isExpression = isExpressionToken.value;
+                  break;
+                }
+                default:
+                  mappingKey.assertUnexpectedValue(`${DEFINITION} ${STRING} key`);
+                  break;
+              }
+            }
+            break;
+          }
+          default:
+            definitionKey.assertUnexpectedValue(`${DEFINITION} key`);
+        }
+      }
+    }
+  }
+  get definitionType() {
+    return DefinitionType.String;
+  }
+  isMatch(literal) {
+    if (literal.templateTokenType === TokenType.String) {
+      const value = literal.value;
+      if (this.constant) {
+        return this.ignoreCase ? this.constant.toUpperCase() === value.toUpperCase() : this.constant === value;
+      } else if (this.requireNonEmpty) {
+        return !!value;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+  validate() {
+    if (this.constant && this.requireNonEmpty) {
+      throw new Error(`Properties '${CONSTANT}' and '${REQUIRE_NON_EMPTY}' cannot both be set`);
+    }
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/templates/schema/template-schema.js
+var TemplateSchema = class _TemplateSchema {
+  constructor(mapping) {
+    this.definitions = {};
+    this.version = "";
+    this.definitions[NULL] = new NullDefinition(NULL);
+    this.definitions[BOOLEAN] = new BooleanDefinition(BOOLEAN);
+    this.definitions[NUMBER] = new NumberDefinition(NUMBER);
+    this.definitions[STRING] = new StringDefinition(STRING);
+    const sequenceDefinition = new SequenceDefinition(SEQUENCE);
+    sequenceDefinition.itemType = ANY;
+    this.definitions[sequenceDefinition.key] = sequenceDefinition;
+    const mappingDefinition = new MappingDefinition(MAPPING);
+    mappingDefinition.looseKeyType = STRING;
+    mappingDefinition.looseValueType = ANY;
+    this.definitions[mappingDefinition.key] = mappingDefinition;
+    const anyDefinition = new OneOfDefinition(ANY);
+    anyDefinition.oneOf.push(NULL);
+    anyDefinition.oneOf.push(BOOLEAN);
+    anyDefinition.oneOf.push(NUMBER);
+    anyDefinition.oneOf.push(STRING);
+    anyDefinition.oneOf.push(SEQUENCE);
+    anyDefinition.oneOf.push(MAPPING);
+    this.definitions[anyDefinition.key] = anyDefinition;
+    if (mapping) {
+      for (const pair of mapping) {
+        const key = pair.key.assertString(`${TEMPLATE_SCHEMA} key`);
+        switch (key.value) {
+          case VERSION10: {
+            this.version = pair.value.assertString(`${TEMPLATE_SCHEMA} ${VERSION10}`).value;
+            break;
+          }
+          case DEFINITIONS: {
+            const definitions = pair.value.assertMapping(`${TEMPLATE_SCHEMA} ${DEFINITIONS}`);
+            for (const definitionsPair of definitions) {
+              const definitionsKey = definitionsPair.key.assertString(`${TEMPLATE_SCHEMA} ${DEFINITIONS} key`);
+              const definitionsValue = definitionsPair.value.assertMapping(`${TEMPLATE_SCHEMA} ${DEFINITIONS} value`);
+              let definition;
+              for (const definitionPair of definitionsValue) {
+                const definitionKey = definitionPair.key.assertString(`${DEFINITION} key`);
+                const mappingToken = definitionsPair.value;
+                switch (definitionKey.value) {
+                  case NULL:
+                    definition = new NullDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case BOOLEAN:
+                    definition = new BooleanDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case NUMBER:
+                    definition = new NumberDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case STRING:
+                    definition = new StringDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case SEQUENCE:
+                    definition = new SequenceDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case MAPPING:
+                    definition = new MappingDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case ONE_OF:
+                    definition = new OneOfDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case ALLOWED_VALUES:
+                    for (const item of mappingToken) {
+                      if (item.value.templateTokenType === TokenType.Sequence) {
+                        const sequenceToken = item.value;
+                        for (const activity of sequenceToken) {
+                          if (activity.templateTokenType === TokenType.String) {
+                            const stringToken = activity;
+                            const allowedValuesKey = definitionsKey.value + "-" + stringToken.value;
+                            const allowedValuesDef = new StringDefinition(allowedValuesKey);
+                            allowedValuesDef.constant = stringToken.toDisplayString();
+                            this.definitions[allowedValuesKey] = allowedValuesDef;
+                          }
+                        }
+                      }
+                    }
+                    definition = new OneOfDefinition(definitionsKey.value, definitionsValue);
+                    break;
+                  case CONTEXT:
+                  case DESCRIPTION:
+                    continue;
+                  default:
+                    definitionKey.assertUnexpectedValue(`${DEFINITION} mapping key`);
+                    break;
+                }
+                break;
+              }
+              if (!definition) {
+                throw new Error(`Not enough information to construct definition '${definitionsKey.value}'`);
+              }
+              this.definitions[definitionsKey.value] = definition;
+            }
+            break;
+          }
+          default:
+            key.assertUnexpectedValue(`${TEMPLATE_SCHEMA} key`);
+            break;
+        }
+      }
+    }
+  }
+  /**
+   * Looks up a definition by name
+   */
+  getDefinition(name) {
+    const result = this.definitions[name];
+    if (result) {
+      return result;
+    }
+    throw new Error(`Schema definition '${name}' not found`);
+  }
+  /**
+   * Expands one-of definitions and returns all scalar definitions
+   */
+  getScalarDefinitions(definition) {
+    const result = [];
+    switch (definition.definitionType) {
+      case DefinitionType.Null:
+      case DefinitionType.Boolean:
+      case DefinitionType.Number:
+      case DefinitionType.String:
+        result.push(definition);
+        break;
+      case DefinitionType.OneOf: {
+        const oneOf = definition;
+        for (const nestedName of oneOf.oneOf) {
+          const nestedDefinition = this.getDefinition(nestedName);
+          result.push(...this.getScalarDefinitions(nestedDefinition));
+        }
+        break;
+      }
+    }
+    return result;
+  }
+  /**
+   * Expands one-of definitions and returns all matching definitions by type
+   */
+  getDefinitionsOfType(definition, type) {
+    const result = [];
+    if (definition.definitionType === type) {
+      result.push(definition);
+    } else if (definition.definitionType === DefinitionType.OneOf) {
+      const oneOf = definition;
+      for (const nestedName of oneOf.oneOf) {
+        const nestedDefinition = this.getDefinition(nestedName);
+        if (nestedDefinition.definitionType === type) {
+          result.push(nestedDefinition);
+        }
+      }
+    }
+    return result;
+  }
+  /**
+   * Attempts match the property name to a property defined by any of the specified definitions.
+   * If matched, any unmatching definitions are filtered from the definitions array.
+   * Returns the type information for the matched property.
+   */
+  matchPropertyAndFilter(definitions, propertyName) {
+    let result;
+    let notFoundInSome = false;
+    for (const definition of definitions) {
+      const propertyDef = definition.properties[propertyName];
+      if (propertyDef) {
+        result = propertyDef;
+      } else {
+        notFoundInSome = true;
+      }
+    }
+    if (result && notFoundInSome) {
+      for (let i = 0; i < definitions.length; ) {
+        if (definitions[i].properties[propertyName]) {
+          i++;
+        } else {
+          definitions.splice(i, 1);
+        }
+      }
+    }
+    return result;
+  }
+  validate() {
+    const oneOfDefinitions = {};
+    for (const name of Object.keys(this.definitions)) {
+      if (!name.match(_TemplateSchema._definitionNamePattern)) {
+        throw new Error(`Invalid definition name '${name}'`);
+      }
+      const definition = this.definitions[name];
+      if (definition.definitionType === DefinitionType.OneOf) {
+        oneOfDefinitions[name] = definition;
+      } else {
+        definition.validate(this, name);
+      }
+    }
+    for (const name of Object.keys(oneOfDefinitions)) {
+      const oneOf = oneOfDefinitions[name];
+      oneOf.validate(this, name);
+    }
+  }
+  /**
+   * Loads a user-defined schema file
+   */
+  static load(objectReader) {
+    const context = new TemplateContext(new TemplateValidationErrors(10, 500), _TemplateSchema.getInternalSchema(), new NoOperationTraceWriter());
+    const template = readTemplate(context, TEMPLATE_SCHEMA, objectReader, void 0);
+    context.errors.check();
+    const mapping = template.assertMapping(TEMPLATE_SCHEMA);
+    const schema2 = new _TemplateSchema(mapping);
+    schema2.validate();
+    return schema2;
+  }
+  /**
+   * Gets the internal schema used for reading user-defined schema files
+   */
+  static getInternalSchema() {
+    if (_TemplateSchema._internalSchema === void 0) {
+      const schema2 = new _TemplateSchema();
+      let mappingDefinition = new MappingDefinition(TEMPLATE_SCHEMA);
+      mappingDefinition.properties[VERSION10] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[DEFINITIONS] = new PropertyDefinition(new StringToken(void 0, void 0, DEFINITIONS, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(DEFINITIONS);
+      mappingDefinition.looseKeyType = NON_EMPTY_STRING;
+      mappingDefinition.looseValueType = DEFINITION;
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      let oneOfDefinition = new OneOfDefinition(DEFINITION);
+      oneOfDefinition.oneOf.push(NULL_DEFINITION);
+      oneOfDefinition.oneOf.push(BOOLEAN_DEFINITION);
+      oneOfDefinition.oneOf.push(NUMBER_DEFINITION);
+      oneOfDefinition.oneOf.push(STRING_DEFINITION);
+      oneOfDefinition.oneOf.push(SEQUENCE_DEFINITION);
+      oneOfDefinition.oneOf.push(MAPPING_DEFINITION);
+      oneOfDefinition.oneOf.push(ONE_OF_DEFINITION);
+      schema2.definitions[oneOfDefinition.key] = oneOfDefinition;
+      mappingDefinition = new MappingDefinition(NULL_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[NULL] = new PropertyDefinition(new StringToken(void 0, void 0, NULL_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(NULL_DEFINITION_PROPERTIES);
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(BOOLEAN_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[BOOLEAN] = new PropertyDefinition(new StringToken(void 0, void 0, BOOLEAN_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(BOOLEAN_DEFINITION_PROPERTIES);
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(NUMBER_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[NUMBER] = new PropertyDefinition(new StringToken(void 0, void 0, NUMBER_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(NUMBER_DEFINITION_PROPERTIES);
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(STRING_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[STRING] = new PropertyDefinition(new StringToken(void 0, void 0, STRING_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(STRING_DEFINITION_PROPERTIES);
+      mappingDefinition.properties[CONSTANT] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[IGNORE_CASE] = new PropertyDefinition(new StringToken(void 0, void 0, BOOLEAN, void 0));
+      mappingDefinition.properties[REQUIRE_NON_EMPTY] = new PropertyDefinition(new StringToken(void 0, void 0, BOOLEAN, void 0));
+      mappingDefinition.properties[IS_EXPRESSION] = new PropertyDefinition(new StringToken(void 0, void 0, BOOLEAN, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(SEQUENCE_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[SEQUENCE] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(SEQUENCE_DEFINITION_PROPERTIES);
+      mappingDefinition.properties[ITEM_TYPE] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(MAPPING_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[MAPPING] = new PropertyDefinition(new StringToken(void 0, void 0, MAPPING_DEFINITION_PROPERTIES, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(MAPPING_DEFINITION_PROPERTIES);
+      mappingDefinition.properties[PROPERTIES] = new PropertyDefinition(new StringToken(void 0, void 0, PROPERTIES, void 0));
+      mappingDefinition.properties[LOOSE_KEY_TYPE] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[LOOSE_VALUE_TYPE] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(PROPERTIES);
+      mappingDefinition.looseKeyType = NON_EMPTY_STRING;
+      mappingDefinition.looseValueType = PROPERTY_VALUE;
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      oneOfDefinition = new OneOfDefinition(PROPERTY_VALUE);
+      oneOfDefinition.oneOf.push(NON_EMPTY_STRING);
+      oneOfDefinition.oneOf.push(MAPPING_PROPERTY_VALUE);
+      schema2.definitions[oneOfDefinition.key] = oneOfDefinition;
+      mappingDefinition = new MappingDefinition(MAPPING_PROPERTY_VALUE);
+      mappingDefinition.properties[TYPE] = new PropertyDefinition(new StringToken(void 0, void 0, NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[REQUIRED] = new PropertyDefinition(new StringToken(void 0, void 0, BOOLEAN, void 0));
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      mappingDefinition = new MappingDefinition(ONE_OF_DEFINITION);
+      mappingDefinition.properties[DESCRIPTION] = new PropertyDefinition(new StringToken(void 0, void 0, STRING, void 0));
+      mappingDefinition.properties[CONTEXT] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[ONE_OF] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      mappingDefinition.properties[ALLOWED_VALUES] = new PropertyDefinition(new StringToken(void 0, void 0, SEQUENCE_OF_NON_EMPTY_STRING, void 0));
+      schema2.definitions[mappingDefinition.key] = mappingDefinition;
+      const stringDefinition = new StringDefinition(NON_EMPTY_STRING);
+      stringDefinition.requireNonEmpty = true;
+      schema2.definitions[stringDefinition.key] = stringDefinition;
+      const sequenceDefinition = new SequenceDefinition(SEQUENCE_OF_NON_EMPTY_STRING);
+      sequenceDefinition.itemType = NON_EMPTY_STRING;
+      schema2.definitions[sequenceDefinition.key] = sequenceDefinition;
+      schema2.validate();
+      _TemplateSchema._internalSchema = schema2;
+    }
+    return _TemplateSchema._internalSchema;
+  }
+};
+TemplateSchema._definitionNamePattern = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
+
+// node_modules/@actions/workflow-parser/dist/workflow-v1.0.min.json
+var workflow_v1_0_min_default = { version: "workflow-v1.0", definitions: { "workflow-root": { description: "A workflow file.", mapping: { properties: { on: "on", name: "workflow-name", description: "workflow-description", "run-name": "run-name", defaults: "workflow-defaults", env: "workflow-env", permissions: "permissions", concurrency: "workflow-concurrency", jobs: { type: "jobs", required: true } } } }, "workflow-root-strict": { description: "Workflow file with strict validation", mapping: { properties: { on: { type: "on-strict", required: true }, name: "workflow-name", description: "workflow-description", "run-name": "run-name", defaults: "workflow-defaults", env: "workflow-env", permissions: "permissions", concurrency: "workflow-concurrency", jobs: { type: "jobs", required: true } } } }, "workflow-name": { description: "The name of the workflow that GitHub displays on your repository's 'Actions' tab.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#name)", string: {} }, "workflow-description": { description: "A description for your workflow or reusable workflow", string: {} }, "run-name": { context: ["github", "inputs", "vars"], string: {}, description: "The name for workflow runs generated from the workflow. GitHub displays the workflow run name in the list of workflow runs on your repository's 'Actions' tab.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#run-name)" }, on: { description: "The GitHub event that triggers the workflow. Events can be a single string, array of events, array of event types, or an event configuration map that schedules a workflow or restricts the execution of a workflow to specific files, tags, or branch changes. View a full list of [events that trigger workflows](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows).\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#on)", "one-of": ["string", "sequence", "on-mapping"] }, "on-mapping": { mapping: { properties: { workflow_call: "workflow-call" }, "loose-key-type": "non-empty-string", "loose-value-type": "any" } }, "on-strict": { description: "The GitHub event that triggers the workflow.  Events can be a single string, array of events, array of event types, or an event configuration map that schedules a workflow or restricts the execution of a workflow to specific files, tags, or branch changes. View a full list of [events that trigger workflows](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows).\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#on)", "one-of": ["on-string-strict", "on-sequence-strict", "on-mapping-strict"] }, "on-mapping-strict": { description: "The GitHub event that triggers the workflow.  Events can be a single string, array of events, array of event types, or an event configuration map that schedules a workflow or restricts the execution of a workflow to specific files, tags, or branch changes. View a full list of [events that trigger workflows](https://docs.github.com/actions/using-workflows/events-that-trigger-workflows).\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#on)", mapping: { properties: { branch_protection_rule: "branch-protection-rule", check_run: "check-run", check_suite: "check-suite", create: "create", delete: "delete", deployment: "deployment", deployment_status: "deployment-status", discussion: "discussion", discussion_comment: "discussion-comment", fork: "fork", gollum: "gollum", image_version: "image-version", issue_comment: "issue-comment", issues: "issues", label: "label", merge_group: "merge-group", milestone: "milestone", page_build: "page-build", project: "project", project_card: "project-card", project_column: "project-column", public: "public", pull_request: "pull-request", pull_request_comment: "pull-request-comment", pull_request_review: "pull-request-review", pull_request_review_comment: "pull-request-review-comment", pull_request_target: "pull-request-target", push: "push", registry_package: "registry-package", release: "release", repository_dispatch: "repository-dispatch", schedule: "schedule", status: "status", watch: "watch", workflow_call: "workflow-call", workflow_dispatch: "workflow-dispatch", workflow_run: "workflow-run" } } }, "on-string-strict": { "one-of": ["branch-protection-rule-string", "check-run-string", "check-suite-string", "create-string", "delete-string", "deployment-string", "deployment-status-string", "discussion-string", "discussion-comment-string", "fork-string", "gollum-string", "image-version-string", "issue-comment-string", "issues-string", "label-string", "merge-group-string", "milestone-string", "page-build-string", "project-string", "project-card-string", "project-column-string", "public-string", "pull-request-string", "pull-request-comment-string", "pull-request-review-string", "pull-request-review-comment-string", "pull-request-target-string", "push-string", "registry-package-string", "release-string", "repository-dispatch-string", "schedule-string", "status-string", "watch-string", "workflow-call-string", "workflow-dispatch-string", "workflow-run-string"] }, "on-sequence-strict": { sequence: { "item-type": "on-string-strict" } }, "branch-protection-rule-string": { description: "Runs your workflow when branch protection rules in the workflow repository are changed.", string: { constant: "branch_protection_rule" } }, "branch-protection-rule": { description: "Runs your workflow when branch protection rules in the workflow repository are changed.", "one-of": ["null", "branch-protection-rule-mapping"] }, "branch-protection-rule-mapping": { mapping: { properties: { types: "branch-protection-rule-activity" } } }, "branch-protection-rule-activity": { description: "The types of branch protection rule activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`.", "one-of": ["branch-protection-rule-activity-type", "branch-protection-rule-activity-types"] }, "branch-protection-rule-activity-types": { sequence: { "item-type": "branch-protection-rule-activity-type" } }, "branch-protection-rule-activity-type": { "allowed-values": ["created", "edited", "deleted"] }, "check-run-string": { description: "Runs your workflow when activity related to a check run occurs. A check run is an individual test that is part of a check suite.", string: { constant: "check_run" } }, "check-run": { description: "Runs your workflow when activity related to a check run occurs. A check run is an individual test that is part of a check suite.", "one-of": ["null", "check-run-mapping"] }, "check-run-mapping": { mapping: { properties: { types: "check-run-activity" } } }, "check-run-activity": { description: "The types of check run activity that trigger the workflow. Supported activity types: `created`, `rerequested`, `completed`, `requested_action`.", "one-of": ["check-run-activity-type", "check-run-activity-types"] }, "check-run-activity-types": { sequence: { "item-type": "check-run-activity-type" } }, "check-run-activity-type": { "allowed-values": ["completed", "created", "rerequested", "requested_action"] }, "check-suite-string": { description: "Runs your workflow when check suite activity occurs. A check suite is a collection of the check runs created for a specific commit. Check suites summarize the status and conclusion of the check runs that are in the suite.", string: { constant: "check_suite" } }, "check-suite": { description: "Runs your workflow when check suite activity occurs. A check suite is a collection of the check runs created for a specific commit. Check suites summarize the status and conclusion of the check runs that are in the suite.", "one-of": ["null", "check-suite-mapping"] }, "check-suite-mapping": { mapping: { properties: { types: "check-suite-activity" } } }, "check-suite-activity": { description: "The types of check suite activity that trigger the workflow. Supported activity types: `completed`.", "one-of": ["check-suite-activity-type", "check-suite-activity-types"] }, "check-suite-activity-types": { sequence: { "item-type": "check-suite-activity-type" } }, "check-suite-activity-type": { "allowed-values": ["completed"] }, "create-string": { description: "Runs your workflow when someone creates a Git reference (Git branch or tag) in the workflow's repository.", string: { constant: "create" } }, create: { description: "Runs your workflow when someone creates a Git reference (Git branch or tag) in the workflow's repository.", null: {} }, "delete-string": { description: "Runs your workflow when someone deletes a Git reference (Git branch or tag) in the workflow's repository.", string: { constant: "delete" } }, delete: { description: "Runs your workflow when someone deletes a Git reference (Git branch or tag) in the workflow's repository.", null: {} }, "deployment-string": { description: "Runs your workflow when someone creates a deployment in the workflow's repository. Deployments created with a commit SHA may not have a Git ref.", string: { constant: "deployment" } }, deployment: { description: "Runs your workflow when someone creates a deployment in the workflow's repository. Deployments created with a commit SHA may not have a Git ref.", null: {} }, "deployment-status-string": { description: "Runs your workflow when a third party provides a deployment status. Deployments created with a commit SHA may not have a Git ref.", string: { constant: "deployment_status" } }, "deployment-status": { description: "Runs your workflow when a third party provides a deployment status. Deployments created with a commit SHA may not have a Git ref.", null: {} }, "discussion-string": { description: "Runs your workflow when a discussion in the workflow's repository is created or modified. For activity related to comments on a discussion, use the `discussion_comment` event.", string: { constant: "discussion" } }, discussion: { description: "Runs your workflow when a discussion in the workflow's repository is created or modified. For activity related to comments on a discussion, use the `discussion_comment` event.", "one-of": ["null", "discussion-mapping"] }, "discussion-mapping": { mapping: { properties: { types: "discussion-activity" } } }, "discussion-activity": { description: "The types of discussion activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`, `transferred`, `pinned`, `unpinned`, `labeled`, `unlabeled`, `locked`, `unlocked`, `category_changed`, `answered`, `unanswered`.", "one-of": ["discussion-activity-type", "discussion-activity-types"] }, "discussion-activity-types": { sequence: { "item-type": "discussion-activity-type" } }, "discussion-activity-type": { "allowed-values": ["created", "edited", "deleted", "transferred", "pinned", "unpinned", "labeled", "unlabeled", "locked", "unlocked", "category_changed", "answered", "unanswered"] }, "discussion-comment-string": { description: "Runs your workflow when a comment on a discussion in the workflow's repository is created or modified. For activity related to a discussion as opposed to comments on the discussion, use the `discussion` event.", string: { constant: "discussion_comment" } }, "discussion-comment": { description: "Runs your workflow when a comment on a discussion in the workflow's repository is created or modified. For activity related to a discussion as opposed to comments on the discussion, use the `discussion` event.", "one-of": ["null", "discussion-comment-mapping"] }, "discussion-comment-mapping": { mapping: { properties: { types: "discussion-comment-activity" } } }, "discussion-comment-activity": { description: "The types of discussion comment activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`.", "one-of": ["discussion-comment-activity-type", "discussion-comment-activity-types"] }, "discussion-comment-activity-types": { sequence: { "item-type": "discussion-comment-activity-type" } }, "discussion-comment-activity-type": { "allowed-values": ["created", "edited", "deleted"] }, "fork-string": { description: "Runs your workflow when someone forks a repository.", string: { constant: "fork" } }, fork: { description: "Runs your workflow when someone forks a repository.", null: {} }, "gollum-string": { description: "Runs your workflow when someone creates or updates a Wiki page.", string: { constant: "gollum" } }, gollum: { description: "Runs your workflow when someone creates or updates a Wiki page.", null: {} }, "image-version-string": { description: "Runs your workflow when an image version is created or changes state.", string: { constant: "image_version" } }, "image-version": { description: "Runs your workflow when an image version is created or changes state.", "one-of": ["null", "image-version-mapping"] }, "image-version-mapping": { mapping: { properties: { types: "image-version-activity", names: "event-names", versions: "event-versions" } } }, "image-version-activity": { description: "The types of image version activity that trigger the workflow. Supported activity types: `created`, `ready`, `deleted`.", "one-of": ["image-version-activity-type", "image-version-activity-types"] }, "image-version-activity-types": { sequence: { "item-type": "image-version-activity-type" } }, "image-version-activity-type": { "allowed-values": ["created", "ready", "deleted"] }, "issue-comment-string": { description: "Runs your workflow when an issue or pull request comment is created, edited, or deleted.", string: { constant: "issue_comment" } }, "issue-comment": { description: "Runs your workflow when an issue or pull request comment is created, edited, or deleted.", "one-of": ["null", "issue-comment-mapping"] }, "issue-comment-mapping": { mapping: { properties: { types: "issue-comment-activity" } } }, "issue-comment-activity": { description: "The types of issue comment activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`.", "one-of": ["issue-comment-activity-type", "issue-comment-activity-types"] }, "issue-comment-activity-types": { sequence: { "item-type": "issue-comment-activity-type" } }, "issue-comment-activity-type": { "allowed-values": ["created", "edited", "deleted"] }, "issues-string": { description: "Runs your workflow when an issue in the workflow's repository is created or modified. For activity related to comments in an issue, use the `issue_comment` event.", string: { constant: "issues" } }, issues: { description: "Runs your workflow when an issue in the workflow's repository is created or modified. For activity related to comments in an issue, use the `issue_comment` event.", "one-of": ["null", "issues-mapping"] }, "issues-mapping": { mapping: { properties: { types: "issues-activity" } } }, "issues-activity": { description: "The types of issue activity that trigger the workflow. Supported activity types: `opened`, `edited`, `deleted`, `transferred`, `pinned`, `unpinned`, `closed`, `reopened`, `assigned`, `unassigned`, `labeled`, `unlabeled`, `locked`, `unlocked`, `milestoned`, `demilestoned`, `field_added`, `field_removed`, `typed`, `untyped`.", "one-of": ["issues-activity-type", "issues-activity-types"] }, "issues-activity-types": { sequence: { "item-type": "issues-activity-type" } }, "issues-activity-type": { "allowed-values": ["opened", "edited", "deleted", "transferred", "pinned", "unpinned", "closed", "reopened", "assigned", "unassigned", "labeled", "unlabeled", "locked", "unlocked", "milestoned", "demilestoned", "field_added", "field_removed", "typed", "untyped"] }, "label-string": { description: "Runs your workflow when a label in your workflow's repository is created or modified.", string: { constant: "label" } }, label: { description: "Runs your workflow when a label in your workflow's repository is created or modified.", "one-of": ["null", "label-mapping"] }, "label-mapping": { mapping: { properties: { types: "label-activity" } } }, "label-activity": { description: "The types of label activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`.", "one-of": ["label-activity-type", "label-activity-types"] }, "label-activity-types": { sequence: { "item-type": "label-activity-type" } }, "label-activity-type": { "allowed-values": ["created", "edited", "deleted"] }, "merge-group-string": { description: "Runs your workflow when a pull request is added to a merge queue, which adds the pull request to a merge group.", string: { constant: "merge_group" } }, "merge-group": { description: "Runs your workflow when a pull request is added to a merge queue, which adds the pull request to a merge group.", "one-of": ["null", "merge-group-mapping"] }, "merge-group-mapping": { mapping: { properties: { types: "merge-group-activity", branches: "event-branches", "branches-ignore": "event-branches-ignore" } } }, "merge-group-activity": { description: "The types of merge group activity that trigger the workflow. Supported activity types: `checks_requested`.", "one-of": ["merge-group-activity-type", "merge-group-activity-types"] }, "merge-group-activity-types": { sequence: { "item-type": "merge-group-activity-type" } }, "merge-group-activity-type": { "allowed-values": ["checks_requested"] }, "milestone-string": { description: "Runs your workflow when a milestone in the workflow's repository is created or modified.", string: { constant: "milestone" } }, milestone: { description: "Runs your workflow when a milestone in the workflow's repository is created or modified.", "one-of": ["null", "milestone-mapping"] }, "milestone-mapping": { mapping: { properties: { types: "milestone-activity" } } }, "milestone-activity": { description: "The types of milestone activity that trigger the workflow. Supported activity types: `created`, `closed`, `opened`, `edited`, `deleted`.", "one-of": ["milestone-activity-type", "milestone-activity-types"] }, "milestone-activity-types": { sequence: { "item-type": "milestone-activity-type" } }, "milestone-activity-type": { "allowed-values": ["created", "closed", "opened", "edited", "deleted"] }, "page-build-string": { description: "Runs your workflow when someone pushes to a branch that is the publishing source for GitHub Pages, if GitHub Pages is enabled for the repository.", string: { constant: "page_build" } }, "page-build": { description: "Runs your workflow when someone pushes to a branch that is the publishing source for GitHub Pages, if GitHub Pages is enabled for the repository.", null: {} }, "project-string": { description: "Runs your workflow when a project board is created or modified. For activity related to cards or columns in a project board, use the `project_card` or `project_column` events instead.", string: { constant: "project" } }, project: { description: "Runs your workflow when a project board is created or modified. For activity related to cards or columns in a project board, use the `project_card` or `project_column` events instead.", "one-of": ["null", "project-mapping"] }, "project-mapping": { mapping: { properties: { types: "project-activity" } } }, "project-activity": { description: "The types of project activity that trigger the workflow. Supported activity types: `created`, `closed`, `reopened`, `edited`, `deleted`.", "one-of": ["project-activity-type", "project-activity-types"] }, "project-activity-types": { sequence: { "item-type": "project-activity-type" } }, "project-activity-type": { "allowed-values": ["created", "closed", "reopened", "edited", "deleted"] }, "project-card-string": { description: "Runs your workflow when a card on a project board is created or modified. For activity related to project boards or columns in a project board, use the `project` or `project_column` event instead.", string: { constant: "project_card" } }, "project-card": { description: "Runs your workflow when a card on a project board is created or modified. For activity related to project boards or columns in a project board, use the `project` or `project_column` event instead.", "one-of": ["null", "project-card-mapping"] }, "project-card-mapping": { mapping: { properties: { types: "project-card-activity" } } }, "project-card-activity": { description: "The types of project card activity that trigger the workflow. Supported activity types: `created`, `moved`, `converted`, `edited`, `deleted`.", "one-of": ["project-card-activity-type", "project-card-activity-types"] }, "project-card-activity-types": { sequence: { "item-type": "project-card-activity-type" } }, "project-card-activity-type": { "allowed-values": ["created", "moved", "converted", "edited", "deleted"] }, "project-column-string": { description: "Runs your workflow when a column on a project board is created or modified. For activity related to project boards or cards in a project board, use the `project` or `project_card` event instead.", string: { constant: "project_column" } }, "project-column": { description: "Runs your workflow when a column on a project board is created or modified. For activity related to project boards or cards in a project board, use the `project` or `project_card` event instead.", "one-of": ["null", "project-column-mapping"] }, "project-column-mapping": { mapping: { properties: { types: "project-column-activity" } } }, "project-column-activity": { description: "The types of project column activity that trigger the workflow. Supported activity types: `created`, `updated`, `moved`, `deleted`.", "one-of": ["project-column-activity-type", "project-column-activity-types"] }, "project-column-activity-types": { sequence: { "item-type": "project-column-activity-type" } }, "project-column-activity-type": { "allowed-values": ["created", "updated", "moved", "deleted"] }, "public-string": { description: "Runs your workflow when your workflow's repository changes from private to public.", string: { constant: "public" } }, public: { description: "Runs your workflow when your workflow's repository changes from private to public.", null: {} }, "pull-request-string": { description: "Runs your workflow when activity on a pull request in the workflow's repository occurs. If no activity types are specified, the workflow runs when a pull request is opened, reopened, or when the head branch of the pull request is updated.", string: { constant: "pull_request" } }, "pull-request": { description: "Runs your workflow when activity on a pull request in the workflow's repository occurs. If no activity types are specified, the workflow runs when a pull request is opened, reopened, or when the head branch of the pull request is updated.", "one-of": ["null", "pull-request-mapping"] }, "pull-request-mapping": { mapping: { properties: { types: "pull-request-activity", branches: "event-branches", "branches-ignore": "event-branches-ignore", paths: "event-paths", "paths-ignore": "event-paths-ignore" } } }, "pull-request-activity": { description: "The types of pull request activity that trigger the workflow. Supported activity types: `assigned`, `unassigned`, `labeled`, `unlabeled`, `opened`, `edited`, `closed`, `reopened`, `synchronize`, `converted_to_draft`, `locked`, `unlocked`, `enqueued`, `dequeued`, `milestoned`, `demilestoned`, `ready_for_review`, `review_requested`, `review_request_removed`, `auto_merge_enabled`, `auto_merge_disabled`.", "one-of": ["pull-request-activity-type", "pull-request-activity-types"] }, "pull-request-activity-types": { sequence: { "item-type": "pull-request-activity-type" } }, "pull-request-activity-type": { "allowed-values": ["assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "closed", "reopened", "synchronize", "converted_to_draft", "locked", "unlocked", "enqueued", "dequeued", "milestoned", "demilestoned", "ready_for_review", "review_requested", "review_request_removed", "auto_merge_enabled", "auto_merge_disabled"] }, "pull-request-comment-string": { description: "Please use the `issue_comment` event instead.", string: { constant: "pull_request_comment" } }, "pull-request-comment": { description: "Please use the `issue_comment` event instead.", "one-of": ["null", "issue-comment-mapping"] }, "pull-request-review-string": { description: "Runs your workflow when a pull request review is submitted, edited, or dismissed. A pull request review is a group of pull request review comments in addition to a body comment and a state. For activity related to pull request review comments or pull request comments, use the `pull_request_review_comment` or `issue_comment` events instead.", string: { constant: "pull_request_review" } }, "pull-request-review": { description: "Runs your workflow when a pull request review is submitted, edited, or dismissed. A pull request review is a group of pull request review comments in addition to a body comment and a state. For activity related to pull request review comments or pull request comments, use the `pull_request_review_comment` or `issue_comment` events instead.", "one-of": ["null", "pull-request-review-mapping"] }, "pull-request-review-mapping": { mapping: { properties: { types: "pull-request-review-activity" } } }, "pull-request-review-activity": { description: "The types of pull request review activity that trigger the workflow. Supported activity types: `submitted`, `edited`, `dismissed`.", "one-of": ["pull-request-review-activity-type", "pull-request-review-activity-types"] }, "pull-request-review-activity-types": { sequence: { "item-type": "pull-request-review-activity-type" } }, "pull-request-review-activity-type": { "allowed-values": ["submitted", "edited", "dismissed"] }, "pull-request-review-comment-string": { description: "", string: { constant: "pull_request_review_comment" } }, "pull-request-review-comment": { description: "", "one-of": ["null", "pull-request-review-comment-mapping"] }, "pull-request-review-comment-mapping": { mapping: { properties: { types: "pull-request-review-comment-activity" } } }, "pull-request-review-comment-activity": { description: "The types of pull request review comment activity that trigger the workflow. Supported activity types: `created`, `edited`, `deleted`.", "one-of": ["pull-request-review-comment-activity-type", "pull-request-review-comment-activity-types"] }, "pull-request-review-comment-activity-types": { sequence: { "item-type": "pull-request-review-comment-activity-type" } }, "pull-request-review-comment-activity-type": { "allowed-values": ["created", "edited", "deleted"] }, "pull-request-target-string": { description: "Runs your workflow when activity on a pull request in the workflow's repository occurs. If no activity types are specified, the workflow runs when a pull request is opened, reopened, or when the head branch of the pull request is updated.\n\nThis event runs in the context of the base of the pull request, rather than in the context of the merge commit, as the `pull_request` event does. This prevents execution of unsafe code from the head of the pull request that could alter your repository or steal any secrets you use in your workflow. This event allows your workflow to do things like label or comment on pull requests from forks. Avoid using this event if you need to build or run code from the pull request.", string: { constant: "pull_request_target" } }, "pull-request-target": { description: "Runs your workflow when activity on a pull request in the workflow's repository occurs. If no activity types are specified, the workflow runs when a pull request is opened, reopened, or when the head branch of the pull request is updated.\n\nThis event runs in the context of the base of the pull request, rather than in the context of the merge commit, as the `pull_request` event does. This prevents execution of unsafe code from the head of the pull request that could alter your repository or steal any secrets you use in your workflow. This event allows your workflow to do things like label or comment on pull requests from forks. Avoid using this event if you need to build or run code from the pull request.", "one-of": ["null", "pull-request-target-mapping"] }, "pull-request-target-mapping": { mapping: { properties: { types: "pull-request-target-activity", branches: "event-branches", "branches-ignore": "event-branches-ignore", paths: "event-paths", "paths-ignore": "event-paths-ignore" } } }, "pull-request-target-activity": { description: "The types of pull request activity that trigger the workflow. Supported activity types: `assigned`, `unassigned`, `labeled`, `unlabeled`, `opened`, `edited`, `closed`, `reopened`, `synchronize`, `converted_to_draft`, `locked`, `unlocked`, `enqueued`, `dequeued`, `milestoned`, `demilestoned`, `ready_for_review`, `review_requested`, `review_request_removed`, `auto_merge_enabled`, `auto_merge_disabled`.", "one-of": ["pull-request-target-activity-type", "pull-request-target-activity-types"] }, "pull-request-target-activity-types": { sequence: { "item-type": "pull-request-target-activity-type" } }, "pull-request-target-activity-type": { "allowed-values": ["assigned", "unassigned", "labeled", "unlabeled", "opened", "edited", "closed", "reopened", "synchronize", "converted_to_draft", "locked", "unlocked", "enqueued", "dequeued", "milestoned", "demilestoned", "ready_for_review", "review_requested", "review_request_removed", "auto_merge_enabled", "auto_merge_disabled"] }, "push-string": { description: "Runs your workflow when you push a commit or tag.", string: { constant: "push" } }, push: { description: "Runs your workflow when you push a commit or tag.", "one-of": ["null", "push-mapping"] }, "push-mapping": { mapping: { properties: { branches: "event-branches", "branches-ignore": "event-branches-ignore", tags: "event-tags", "tags-ignore": "event-tags-ignore", paths: "event-paths", "paths-ignore": "event-paths-ignore" } } }, "registry-package-string": { description: "Runs your workflow when activity related to GitHub Packages occurs in your repository.", string: { constant: "registry_package" } }, "registry-package": { description: "Runs your workflow when activity related to GitHub Packages occurs in your repository.", "one-of": ["null", "registry-package-mapping"] }, "registry-package-mapping": { mapping: { properties: { types: "registry-package-activity" } } }, "registry-package-activity": { description: "The types of registry package activity that trigger the workflow. Supported activity types: `published`, `updated`.", "one-of": ["registry-package-activity-type", "registry-package-activity-types"] }, "registry-package-activity-types": { sequence: { "item-type": "registry-package-activity-type" } }, "registry-package-activity-type": { "allowed-values": ["published", "updated"] }, "release-string": { description: "Runs your workflow when release activity in your repository occurs.", string: { constant: "release" } }, release: { description: "Runs your workflow when release activity in your repository occurs.", "one-of": ["null", "release-mapping"] }, "release-mapping": { mapping: { properties: { types: "release-activity" } } }, "release-activity": { description: "The types of release activity that trigger the workflow. Supported activity types: `published`, `unpublished`, `created`, `edited`, `deleted`, `prereleased`, `released`.", "one-of": ["release-activity-type", "release-activity-types"] }, "release-activity-types": { sequence: { "item-type": "release-activity-type" } }, "release-activity-type": { "allowed-values": ["published", "unpublished", "created", "edited", "deleted", "prereleased", "released"] }, "schedule-string": { description: "The `schedule` event allows you to trigger a workflow at a scheduled time.\n\nYou can schedule a workflow to run at specific UTC times using POSIX cron syntax. Scheduled workflows run on the latest commit on the default or base branch. The shortest interval you can run scheduled workflows is once every 5 minutes. GitHub Actions does not support the non-standard syntax `@yearly`, `@monthly`, `@weekly`, `@daily`, `@hourly`, and `@reboot`.", string: { constant: "schedule" } }, schedule: { description: "The `schedule` event allows you to trigger a workflow at a scheduled time.\n\nYou can schedule a workflow to run at specific UTC times using POSIX cron syntax. Scheduled workflows run on the latest commit on the default or base branch. The shortest interval you can run scheduled workflows is once every 5 minutes. GitHub Actions does not support the non-standard syntax `@yearly`, `@monthly`, `@weekly`, `@daily`, `@hourly`, and `@reboot`.", sequence: { "item-type": "cron-mapping" } }, "status-string": { description: "Runs your workflow when the status of a Git commit changes. For example, commits can be marked as `error`, `failure`, `pending`, or `success`. If you want to provide more details about the status change, you may want to use the `check_run` event.", string: { constant: "status" } }, status: { description: "Runs your workflow when the status of a Git commit changes. For example, commits can be marked as `error`, `failure`, `pending`, or `success`. If you want to provide more details about the status change, you may want to use the `check_run` event.", null: {} }, "watch-string": { description: "Runs your workflow when the workflow's repository is starred.", string: { constant: "watch" } }, watch: { description: "Runs your workflow when the workflow's repository is starred.", "one-of": ["null", "watch-mapping"] }, "watch-mapping": { mapping: { properties: { types: "watch-activity" } } }, "watch-activity": { description: "The types of watch activity that trigger the workflow. Supported activity types: `started`.", "one-of": ["watch-activity-type", "watch-activity-types"] }, "watch-activity-types": { sequence: { "item-type": "watch-activity-type" } }, "watch-activity-type": { "allowed-values": ["started"] }, "workflow-run-string": { description: "This event occurs when a workflow run is requested or completed. It allows you to execute a workflow based on execution or completion of another workflow. The workflow started by the `workflow_run` event is able to access secrets and write tokens, even if the previous workflow was not. This is useful in cases where the previous workflow is intentionally not privileged, but you need to take a privileged action in a later workflow.", string: { constant: "workflow_run" } }, "workflow-run": { description: "This event occurs when a workflow run is requested or completed. It allows you to execute a workflow based on execution or completion of another workflow. The workflow started by the `workflow_run` event is able to access secrets and write tokens, even if the previous workflow was not. This is useful in cases where the previous workflow is intentionally not privileged, but you need to take a privileged action in a later workflow.", "one-of": ["null", "workflow-run-mapping"] }, "workflow-run-mapping": { mapping: { properties: { types: "workflow-run-activity", workflows: "workflow-run-workflows", branches: "event-branches", "branches-ignore": "event-branches-ignore" } } }, "workflow-run-workflows": { description: "The name of the workflow that triggers the `workflow_run` event. The workflow must be in the same repository as the workflow that uses the `workflow_run` event.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "workflow-run-activity": { description: "The types of workflow run activity that trigger the workflow. Supported activity types: `completed`, `requested`, `in_progress`.", "one-of": ["workflow-run-activity-type", "workflow-run-activity-types"] }, "workflow-run-activity-types": { sequence: { "item-type": "workflow-run-activity-type" } }, "workflow-run-activity-type": { "allowed-values": ["requested", "completed", "in_progress"] }, "event-branches": { description: "Use the `branches` filter when you want to include branch name patterns or when you want to both include and exclude branch name patterns. You cannot use both the `branches` and `branches-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-branches-ignore": { description: "Use the `branches-ignore` filter when you only want to exclude branch name patterns. You cannot use both the `branches` and `branches-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-names": { description: "Use the `names` filter when you want to include names via patterns or when you want to both include and exclude names using patterns. ", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-tags": { description: "Use the `tags` filter when you want to include tag name patterns or when you want to both include and exclude tag names patterns. You cannot use both the `tags` and `tags-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-tags-ignore": { description: "Use the `tags-ignore` filter when you only want to exclude tag name patterns. You cannot use both the `tags` and `tags-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-paths": { description: "Use the `paths` filter when you want to include file path patterns or when you want to both include and exclude file path patterns. You cannot use both the `paths` and `paths-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-paths-ignore": { description: "Use the `paths-ignore` filter when you only want to exclude file path patterns. You cannot use both the `paths` and `paths-ignore` filters for the same event in a workflow.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "event-versions": { description: "Use the `versions` filter when you want to include versions via patterns or when you want to both include and exclude versions using patterns. ", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "repository-dispatch-string": { description: "You can use the GitHub API to trigger a webhook event called `repository_dispatch` when you want to trigger a workflow for activity that happens outside of GitHub.", string: { constant: "branch_protection_rule" } }, "repository-dispatch": { description: "You can use the GitHub API to trigger a webhook event called `repository_dispatch` when you want to trigger a workflow for activity that happens outside of GitHub.", "one-of": ["null", "repository-dispatch-mapping"] }, "repository-dispatch-mapping": { mapping: { properties: { types: "sequence-of-non-empty-string" } } }, "workflow-call-string": { description: "The `workflow_call` event is used to indicate that a workflow can be called by another workflow. When a workflow is triggered with the `workflow_call` event, the event payload in the called workflow is the same event payload from the calling workflow.", string: { constant: "workflow_call" } }, "workflow-call": { description: "The `workflow_call` event is used to indicate that a workflow can be called by another workflow. When a workflow is triggered with the `workflow_call` event, the event payload in the called workflow is the same event payload from the calling workflow.", "one-of": ["null", "workflow-call-mapping"] }, "workflow-call-mapping": { mapping: { properties: { inputs: "workflow-call-inputs", secrets: "workflow-call-secrets", outputs: "workflow-call-outputs" } } }, "workflow-call-inputs": { description: "Inputs that are passed to the called workflow from the caller workflow.", mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "workflow-call-input-definition" } }, "workflow-call-input-definition": { mapping: { properties: { description: { type: "string", description: "A string description of the input parameter." }, type: { type: "workflow-call-input-type", required: true }, required: { type: "boolean", description: "A boolean to indicate whether the action requires the input parameter. Set to `true` when the parameter is required." }, default: "workflow-call-input-default" } } }, "workflow-call-input-type": { description: "Required if input is defined for the `on.workflow_call` keyword. The value of this parameter is a string specifying the data type of the input. This must be one of: `boolean`, `number`, or `string`.", "one-of": ["input-type-string", "input-type-boolean", "input-type-number"] }, "input-type-string": { string: { constant: "string" } }, "input-type-boolean": { string: { constant: "boolean" } }, "input-type-number": { string: { constant: "number" } }, "input-type-choice": { string: { constant: "choice" } }, "input-type-environment": { string: { constant: "environment" } }, "workflow-call-input-default": { description: 'If a `default` parameter is not set, the default value of the input is `false` for boolean, `0` for a number, and `""` for a string.', context: ["github", "inputs", "vars"], "one-of": ["string", "boolean", "number"] }, "workflow-call-secrets": { description: "A map of the secrets that can be used in the called workflow. Within the called workflow, you can use the `secrets` context to refer to a secret.", mapping: { "loose-key-type": "workflow-call-secret-name", "loose-value-type": "workflow-call-secret-definition" } }, "workflow-call-secret-name": { string: { "require-non-empty": true }, description: "A string identifier to associate with the secret." }, "workflow-call-secret-definition": { "one-of": ["null", "workflow-call-secret-mapping-definition"] }, "workflow-call-secret-mapping-definition": { mapping: { properties: { description: { type: "string", description: "A string description of the secret parameter." }, required: { type: "boolean", description: "A boolean specifying whether the secret must be supplied." } } } }, "workflow-call-outputs": { description: "A reusable workflow may generate data that you want to use in the caller workflow. To use these outputs, you must specify them as the outputs of the reusable workflow.", mapping: { "loose-key-type": "workflow-call-output-name", "loose-value-type": "workflow-call-output-definition" } }, "workflow-call-output-name": { string: { "require-non-empty": true }, description: "A string identifier to associate with the output. The value of `<output_id>` is a map of the input's metadata. The `<output_id>` must be a unique identifier within the outputs object and must start with a letter or _ and contain only alphanumeric characters, -, or _." }, "workflow-call-output-definition": { mapping: { properties: { description: { type: "string", description: "A string description of the output parameter." }, value: { type: "workflow-output-context", required: true } } } }, "workflow-output-context": { description: "The value to assign to the output parameter.", context: ["github", "inputs", "vars", "jobs"], string: {} }, "workflow-dispatch-string": { description: "The `workflow_dispatch` event allows you to manually trigger a workflow run. A workflow can be manually triggered using the GitHub API, GitHub CLI, or GitHub browser interface.", string: { constant: "workflow_dispatch" } }, "workflow-dispatch": { description: "The `workflow_dispatch` event allows you to manually trigger a workflow run. A workflow can be manually triggered using the GitHub API, GitHub CLI, or GitHub browser interface.", "one-of": ["null", "workflow-dispatch-mapping"] }, "workflow-dispatch-mapping": { mapping: { properties: { inputs: "workflow-dispatch-inputs" } } }, "workflow-dispatch-inputs": { description: "You can configure custom-defined input properties, default input values, and required inputs for the event directly in your workflow. When you trigger the event, you can provide the `ref` and any `inputs`. When the workflow runs, you can access the input values in the `inputs` context.", mapping: { "loose-key-type": "workflow-dispatch-input-name", "loose-value-type": "workflow-dispatch-input" } }, "workflow-dispatch-input-name": { string: { "require-non-empty": true }, description: "A string identifier to associate with the input. The value of <input_id> is a map of the input's metadata. The <input_id> must be a unique identifier within the inputs object. The <input_id> must start with a letter or _ and contain only alphanumeric characters, -, or _." }, "workflow-dispatch-input": { mapping: { properties: { description: { type: "string", description: "A string description of the input parameter." }, type: { type: "workflow-dispatch-input-type" }, required: { type: "boolean", description: "A boolean to indicate whether the workflow requires the input parameter. Set to true when the parameter is required." }, default: "workflow-dispatch-input-default", options: { type: "sequence-of-string", description: "The options of the dropdown list, if the type is a choice." } } } }, "workflow-dispatch-input-type": { description: "A string representing the type of the input. This must be one of: `boolean`, `number`, `string`, `choice`, or `environment`.", "one-of": ["input-type-string", "input-type-boolean", "input-type-number", "input-type-environment", "input-type-choice"] }, "workflow-dispatch-input-default": { description: "The default value is used when an input parameter isn't specified in a workflow file.", "one-of": ["string", "boolean", "number"] }, permissions: { description: "You can use `permissions` to modify the default permissions granted to the `GITHUB_TOKEN`, adding or removing access as required, so that you only allow the minimum required access.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#permissions)", "one-of": ["permissions-mapping", "permission-level-shorthand-read-all", "permission-level-shorthand-write-all"] }, "permissions-mapping": { mapping: { properties: { actions: { type: "permission-level-any", description: "Actions workflows, workflow runs, and artifacts." }, "artifact-metadata": { type: "permission-level-any", description: "Storage and deployment records for build artifacts." }, attestations: { type: "permission-level-any", description: "Artifact attestations." }, checks: { type: "permission-level-any", description: "Check runs and check suites." }, "code-quality": { type: "permission-level-any", description: "Code quality data." }, contents: { type: "permission-level-any", description: "Repository contents, commits, branches, downloads, releases, and merges." }, "copilot-requests": { type: "permission-level-write-or-no-access", description: "GitHub Copilot requests." }, deployments: { type: "permission-level-any", description: "Deployments and deployment statuses." }, discussions: { type: "permission-level-any", description: "Discussions and related comments and labels." }, "id-token": { type: "permission-level-write-or-no-access", description: "Token to request an OpenID Connect token." }, issues: { type: "permission-level-any", description: "Issues and related comments, assignees, labels, and milestones." }, models: { type: "permission-level-read-or-no-access", description: "Call AI models with GitHub Models." }, packages: { type: "permission-level-any", description: "Packages published to the GitHub Package Platform." }, pages: { type: "permission-level-any", description: "Retrieve Pages statuses, configuration, and builds, as well as create new builds." }, "pull-requests": { type: "permission-level-any", description: "Pull requests and related comments, assignees, labels, milestones, and merges." }, "repository-projects": { type: "permission-level-any", description: "Classic projects within a repository." }, "security-events": { type: "permission-level-any", description: "Code scanning alerts." }, statuses: { type: "permission-level-any", description: "Commit statuses." }, "vulnerability-alerts": { type: "permission-level-read-or-no-access", description: "Dependabot alerts." } } } }, "permission-level-any": { description: "The permission level for the `GITHUB_TOKEN`.", "one-of": ["permission-level-read", "permission-level-write", "permission-level-no-access"] }, "permission-level-read-or-no-access": { "one-of": ["permission-level-read", "permission-level-no-access"] }, "permission-level-write-or-no-access": { "one-of": ["permission-level-write", "permission-level-no-access"] }, "permission-level-read": { description: "The permission level for the `GITHUB_TOKEN`. Grants `read` permission for the specified scope.", string: { constant: "read" } }, "permission-level-write": { description: "The permission level for the `GITHUB_TOKEN`. Grants `write` permission for the specified scope.", string: { constant: "write" } }, "permission-level-no-access": { description: "The permission level for the `GITHUB_TOKEN`. Restricts all access for the specified scope.", string: { constant: "none" } }, "permission-level-shorthand-read-all": { description: "The permission level for the `GITHUB_TOKEN`. Grants `read` access for all scopes.", string: { constant: "read-all" } }, "permission-level-shorthand-write-all": { description: "The permission level for the `GITHUB_TOKEN`. Grants `write` access for all scopes.", string: { constant: "write-all" } }, "workflow-defaults": { description: "Use `defaults` to create a map of default settings that will apply to all jobs in the workflow. You can also set default settings that are only available to a job.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#defaults)", mapping: { properties: { run: "workflow-defaults-run" } } }, "workflow-defaults-run": { mapping: { properties: { shell: "shell", "working-directory": "working-directory" } } }, "workflow-env": { description: "A map of environment variables that are available to the steps of all jobs in the workflow. You can also set environment variables that are only available to the steps of a single job or to a single step.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#env)", context: ["github", "inputs", "vars", "secrets"], mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string" } }, jobs: { description: "A workflow run is made up of one or more `jobs`, which run in parallel by default. To run jobs sequentially, you can define dependencies on other jobs using the `jobs.<job_id>.needs` keyword. Each job runs in a runner environment specified by `runs-on`.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#jobs)", mapping: { "loose-key-type": "job-id", "loose-value-type": "job" } }, "job-id": { string: { "require-non-empty": true }, description: "A unique identifier for the job. The identifier must start with a letter or _ and contain only alphanumeric characters, -, or _." }, job: { description: "Each job must have an id to associate with the job. The key `job_id` is a string and its value is a map of the job's configuration data. You must replace `<job_id>` with a string that is unique to the jobs object. The `<job_id>` must start with a letter or _ and contain only alphanumeric characters, -, or _.", "one-of": ["job-factory", "workflow-job"] }, "job-factory": { mapping: { properties: { needs: "needs", if: "job-if", strategy: "strategy", name: { type: "string-strategy-context", description: "The name of the job displayed on GitHub." }, "runs-on": { type: "runs-on", required: true }, "timeout-minutes": { type: "number-strategy-context", description: "The maximum number of minutes to let a workflow run before GitHub automatically cancels it. Default: 360" }, "cancel-timeout-minutes": "number-strategy-context", "continue-on-error": { type: "boolean-strategy-context", description: "Prevents a workflow run from failing when a job fails. Set to true to allow a workflow run to pass when this job fails." }, container: "container", services: "services", env: "job-env", environment: "job-environment", permissions: "permissions", concurrency: "job-concurrency", outputs: "job-outputs", defaults: "job-defaults", steps: "steps", snapshot: "snapshot" } } }, "workflow-job": { mapping: { properties: { name: { type: "string-strategy-context", description: "The name of the job displayed on GitHub." }, uses: { description: "The location and version of a reusable workflow file to run as a job. Use one of the following formats:\n\n* `{owner}/{repo}/.github/workflows/{filename}@{ref}` for reusable workflows in public and private repositories.\n* `./.github/workflows/{filename}` for reusable workflows in the same repository.\n\n{ref} can be a SHA, a release tag, or a branch name. Using the commit SHA is the safest for stability and security.", type: "non-empty-string", required: true }, with: "workflow-job-with", secrets: "workflow-job-secrets", needs: "needs", if: "job-if", permissions: "permissions", concurrency: "job-concurrency", strategy: "strategy" } } }, "workflow-job-with": { description: "When a job is used to call a reusable workflow, you can use `with` to provide a map of inputs that are passed to the called workflow.\n\nAny inputs that you pass must match the input specifications defined in the called workflow.", mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "scalar-needs-context" } }, "workflow-job-secrets": { description: "When a job is used to call a reusable workflow, you can use `secrets` to provide a map of secrets that are passed to the called workflow.\n\nAny secrets that you pass must match the names defined in the called workflow.", "one-of": ["workflow-job-secrets-mapping", "workflow-job-secrets-inherit"] }, "workflow-job-secrets-mapping": { mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "scalar-needs-context-with-secrets" } }, "workflow-job-secrets-inherit": { string: { constant: "inherit" } }, needs: { description: "Use `needs` to identify any jobs that must complete successfully before this job will run. It can be a string or array of strings. If a job fails, all jobs that need it are skipped unless the jobs use a conditional expression that causes the job to continue. If a run contains a series of jobs that need each other, a failure applies to all jobs in the dependency chain from the point of failure onwards.", "one-of": ["sequence-of-non-empty-string", "non-empty-string"] }, "job-if": { description: "You can use the `if` conditional to prevent a job from running unless a condition is met. You can use any supported context and expression to create a conditional.", context: ["github", "inputs", "vars", "needs", "always(0,0)", "failure(0,MAX)", "cancelled(0,0)", "success(0,MAX)"], string: {} }, "job-if-result": { context: ["github", "inputs", "vars", "needs", "always(0,0)", "failure(0,MAX)", "cancelled(0,0)", "success(0,MAX)"], "one-of": ["null", "boolean", "number", "string", "sequence", "mapping"] }, strategy: { description: "Use `strategy` to use a matrix strategy for your jobs. A matrix strategy lets you use variables in a single job definition to automatically create multiple job runs that are based on the combinations of the variables. ", context: ["github", "inputs", "vars", "needs"], mapping: { properties: { "fail-fast": { type: "boolean", description: "Setting `fail-fast` to `false` prevents GitHub from canceling all in-progress jobs if any matrix job fails. Default: `true`" }, "max-parallel": { type: "number", description: "The maximum number of jobs that can run simultaneously when using a matrix job strategy. By default, GitHub will maximize the number of jobs run in parallel depending on runner availability." }, matrix: "matrix" } } }, matrix: { description: "Use `matrix` to define a matrix of different job configurations. Within your matrix, define one or more variables followed by an array of values.", mapping: { properties: { include: { type: "matrix-filter", description: "Use `include` to expand existing matrix configurations or to add new configurations. The value of `include` is a list of objects.\n\nFor each object in the `include` list, the key:value pairs in the object will be added to each of the matrix combinations if none of the key:value pairs overwrite any of the original matrix values. If the object cannot be added to any of the matrix combinations, a new matrix combination will be created instead. Note that the original matrix values will not be overwritten, but added matrix values can be overwritten." }, exclude: { type: "matrix-filter", description: "To remove specific configurations defined in the matrix, use `exclude`. An excluded configuration only has to be a partial match for it to be excluded." } }, "loose-key-type": "non-empty-string", "loose-value-type": "sequence" } }, "matrix-filter": { sequence: { "item-type": "matrix-filter-item" } }, "matrix-filter-item": { mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "any" } }, snapshot: { description: "Use `snapshot` to define a custom image you want to create or update after your job succeeds by taking a snapshot of your runner.", "one-of": ["non-empty-string", "snapshot-mapping"] }, "snapshot-mapping": { mapping: { properties: { "image-name": { description: "The desired name of the custom image you want to create or update.", type: "non-empty-string", required: true }, if: "snapshot-if", version: { description: "The desired major version updates upon a new custom image version creation.", type: "non-empty-string" } } } }, "snapshot-if": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], description: "Use the if conditional to prevent a snapshot from being taken unless a condition is met. Any supported context and expression can be used to create a conditional. Expressions in an `if` conditional do not require the bracketed expression syntax. When you use expressions in an `if` conditional, you may omit the expression syntax because GitHub automatically evaluates the `if` conditional as an expression.", string: {} }, "runs-on": { description: "Use `runs-on` to define the type of machine to run the job on.\n* The destination machine can be either a GitHub-hosted runner, larger runner, or a self-hosted runner.\n* You can target runners based on the labels assigned to them, or their group membership, or a combination of these.\n* You can provide `runs-on` as a single string or as an array of strings.\n* If you specify an array of strings, your workflow will execute on any runner that matches all of the specified `runs-on` values.\n* If you would like to run your workflow on multiple machines, use `jobs.<job_id>.strategy`.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["non-empty-string", "sequence-of-non-empty-string", "runs-on-mapping"] }, "runs-on-mapping": { mapping: { properties: { group: { description: "The group from which to select a runner.", type: "non-empty-string" }, labels: "runs-on-labels" } } }, "runs-on-labels": { description: "The label by which to filter for available runners.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "job-env": { description: "A map of variables that are available to all steps in the job.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets"], mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string" } }, "workflow-concurrency": { description: "Concurrency ensures that only a single job or workflow using the same concurrency group will run at a time. A concurrency group can be any string or expression.\n\nYou can also specify `concurrency` at the job level.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#concurrency)", context: ["github", "inputs", "vars"], "one-of": ["string", "concurrency-mapping"] }, "job-concurrency": { description: "Concurrency ensures that only a single job using the same concurrency group will run at a time. A concurrency group can be any string or expression. The expression can use any context except for the `secrets` context.\n\nYou can also specify `concurrency` at the workflow level.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["non-empty-string", "concurrency-mapping"] }, "concurrency-mapping": { description: "Concurrency ensures that only a single job or workflow using the same concurrency group will run at a time. A concurrency group can be any string or expression.\n\nYou can also specify `concurrency` at the job level.\n\n[Documentation](https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#concurrency)", mapping: { properties: { group: { type: "non-empty-string", required: true, description: "When a concurrent job or workflow is queued, if another job or workflow using the same concurrency group in the repository is in progress, the queued job or workflow will be `pending`. Any previously pending job or workflow in the concurrency group will be canceled. To also cancel any currently running job or workflow in the same concurrency group, specify `cancel-in-progress: true`." }, "cancel-in-progress": { type: "boolean", description: "To cancel any currently running job or workflow in the same concurrency group, specify cancel-in-progress: true." }, queue: { type: "concurrency-queue", description: "The queuing mode for the concurrency group. When set to `max`, workflows or jobs will wait in a queue for the concurrency group up to the maximum queue length. Default: `single` meaning at most one item can be pending." } } } }, "concurrency-queue": { "allowed-values": ["single", "max"] }, "job-environment": { description: "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["string", "job-environment-mapping"] }, "job-environment-mapping": { mapping: { properties: { name: { type: "job-environment-name", required: true }, url: { type: "string-runner-context-no-secrets", description: "The environment URL, which maps to `environment_url` in the deployments API." }, deployment: { type: "boolean", description: "Whether to create a deployment record for this environment. Defaults to true." } } } }, "job-environment-name": { description: "The name of the environment used by the job.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], string: {} }, "job-defaults": { description: "A map of default settings that will apply to all steps in the job. You can also set default settings for the entire workflow.", mapping: { properties: { run: "job-defaults-run" } } }, "job-defaults-run": { context: ["github", "inputs", "vars", "strategy", "matrix", "needs", "env"], mapping: { properties: { shell: "shell", "working-directory": "working-directory" } } }, "job-outputs": { description: "A map of outputs for a called workflow. Called workflow outputs are available to all downstream jobs in the caller workflow. Each output has an identifier, an optional `description,` and a `value`. The `value` must be set to the value of an output from a job within the called workflow.", mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string-runner-context" } }, steps: { description: "A job contains a sequence of tasks called `steps`. Steps can run commands, run setup tasks, run an action in your repository, a public repository, or an action published in a Docker registry, wait for background steps to complete, or cancel a background step. Not all steps run actions, but all actions run as a step. Each step runs in its own process in the runner environment and has access to the workspace and filesystem. Because steps run in their own process, changes to environment variables are not preserved between steps. GitHub provides built-in steps to set up and complete a job.", sequence: { "item-type": "steps-item" } }, "steps-item": { "one-of": ["run-step", "regular-step", "wait-step", "wait-all-step", "cancel-step", "parallel-step"] }, "run-step": { mapping: { properties: { name: "step-name", id: "step-id", if: "step-if", "timeout-minutes": "step-timeout-minutes", run: { type: "string-steps-context", description: "Runs command-line programs using the operating system's shell. If you do not provide a `name`, the step name will default to the text specified in the `run` command. Commands run using non-login shells by default. You can choose a different shell and customize the shell used to run commands. Each `run` keyword represents a new process and shell in the virtual environment. When you provide multi-line commands, each line runs in the same shell.", required: true }, "continue-on-error": "step-continue-on-error", env: "step-env", "working-directory": "string-steps-context", shell: "shell", background: "step-background" } } }, "regular-step": { mapping: { properties: { name: "step-name", id: "step-id", if: "step-if", "continue-on-error": "step-continue-on-error", "timeout-minutes": "step-timeout-minutes", uses: { type: "step-uses", required: true }, with: "step-with", env: "step-env", background: "step-background" } } }, "wait-step": { mapping: { properties: { name: "step-name", id: "step-id", "continue-on-error": "step-continue-on-error", wait: { type: "step-wait-target", required: true } } } }, "wait-all-step": { mapping: { properties: { name: "step-name", id: "step-id", "continue-on-error": "step-continue-on-error", "wait-all": { type: "step-wait-all-value", required: true } } } }, "cancel-step": { mapping: { properties: { name: "step-name", id: "step-id", "continue-on-error": "step-continue-on-error", cancel: { type: "step-cancel-target", required: true } } } }, "parallel-step": { mapping: { properties: { parallel: { type: "parallel-steps", required: true, description: "Run a group of steps concurrently. All steps in the parallel block run as background steps and the workflow waits for all of them to complete before continuing." } } } }, "parallel-steps": { sequence: { "item-type": "steps-item" } }, "step-uses": { description: "Selects an action to run as part of a step in your job. An action is a reusable unit of code. You can use an action defined in the same repository as the workflow, a public repository, a [private repository with access enabled](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#allowing-access-to-components-in-a-private-repository), or in a published Docker container image.", string: { "require-non-empty": true } }, "step-background": { boolean: {}, description: "When set to true, runs this step in the background. The workflow continues to the next step immediately without waiting for the background step to finish." }, "step-wait-target": { description: "The step ID or IDs of background steps to wait for.", "one-of": ["non-empty-string", "sequence-of-non-empty-string"] }, "step-wait-all-value": { description: "Wait for all prior background steps to complete. Use as a bare key (`wait-all:`) or with a boolean value.", "one-of": ["null", "boolean"] }, "step-cancel-target": { description: "The step ID of a background step to cancel.", string: { "require-non-empty": true } }, "step-continue-on-error": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], boolean: {}, description: "Prevents a job from failing when a step fails. Set to `true` to allow a job to pass when this step fails." }, "step-id": { string: { "require-non-empty": true }, description: "A unique identifier for the step. You can use the `id` to reference the step in contexts." }, "step-if": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "steps", "job", "runner", "env", "always(0,0)", "failure(0,0)", "cancelled(0,0)", "success(0,0)", "hashFiles(1,255)"], description: "Use the `if` conditional to prevent a step from running unless a condition is met. Any supported context and expression can be used to create a conditional. Expressions in an `if` conditional do not require the bracketed expression syntax. When you use expressions in an `if` conditional, you may omit the expression syntax because GitHub automatically evaluates the `if` conditional as an expression.", string: {} }, "step-if-result": { context: ["github", "inputs", "vars", "strategy", "matrix", "steps", "job", "runner", "env", "always(0,0)", "failure(0,0)", "cancelled(0,0)", "success(0,0)", "hashFiles(1,255)"], "one-of": ["null", "boolean", "number", "string", "sequence", "mapping"] }, "step-env": { description: "Sets variables for steps to use in the runner environment. You can also set variables for the entire workflow or a job.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string" } }, "step-name": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], string: {}, description: "A name for your step to display on GitHub." }, "step-timeout-minutes": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], number: {}, description: "The maximum number of minutes to run the step before killing the process." }, "step-with": { description: "A map of the input parameters defined by the action. Each input parameter is a key/value pair. Input parameters are set as variables. When you specify an input in a workflow file or use a default input value, GitHub creates a variable for the input with the name `INPUT_<VARIABLE_NAME>`. The variable created converts input names to uppercase letters and replaces spaces with `_`.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string" } }, container: { description: "A container to run any steps in a job that don't already specify a container. If you have steps that use both script and container actions, the container actions will run as sibling containers on the same network with the same volume mounts.\n\nIf you do not set a container, all steps will run directly on the host specified by runs-on unless a step refers to an action configured to run in a container.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["string", "container-mapping"] }, "container-mapping": { mapping: { properties: { image: { type: "non-empty-string", description: "Use `jobs.<job_id>.container.image` to define the Docker image to use as the container to run the action. The value can be the Docker Hub image or a registry name." }, options: { type: "string", description: "Use `jobs.<job_id>.container.options` to configure additional Docker container resource options." }, env: "container-env", ports: { type: "sequence-of-non-empty-string", description: "Use `jobs.<job_id>.container.ports` to set an array of ports to expose on the container." }, volumes: { type: "sequence-of-non-empty-string", description: "Use `jobs.<job_id>.container.volumes` to set an array of volumes for the container to use. You can use volumes to share data between services or other steps in a job. You can specify named Docker volumes, anonymous Docker volumes, or bind mounts on the host." }, credentials: "container-registry-credentials" } } }, services: { description: "Additional containers to host services for a job in a workflow. These are useful for creating databases or cache services like redis. The runner on the virtual machine will automatically create a network and manage the life cycle of the service containers. When you use a service container for a job or your step uses container actions, you don't need to set port information to access the service. Docker automatically exposes all ports between containers on the same network. When both the job and the action run in a container, you can directly reference the container by its hostname. The hostname is automatically mapped to the service name. When a step does not use a container action, you must access the service using localhost and bind the ports.", context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "services-container" } }, "services-container": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["non-empty-string", "service-container-mapping"] }, "container-registry-credentials": { description: "If the image's container registry requires authentication to pull the image, you can use `jobs.<job_id>.container.credentials` to set a map of the username and password. The credentials are the same values that you would provide to the `docker login` command.", context: ["github", "inputs", "vars", "secrets", "env"], mapping: { properties: { username: "non-empty-string", password: "non-empty-string" } } }, "container-env": { description: "Use `jobs.<job_id>.container.env` to set a map of variables in the container.", mapping: { "loose-key-type": "non-empty-string", "loose-value-type": "string-runner-context" } }, "non-empty-string": { string: { "require-non-empty": true } }, "sequence-of-non-empty-string": { sequence: { "item-type": "non-empty-string" } }, "sequence-of-string": { sequence: { "item-type": "string" } }, "boolean-needs-context": { context: ["github", "inputs", "vars", "needs"], boolean: {} }, "number-needs-context": { context: ["github", "inputs", "vars", "needs"], number: {} }, "string-needs-context": { context: ["github", "inputs", "vars", "needs"], string: {} }, "scalar-needs-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], "one-of": ["string", "boolean", "number"] }, "scalar-needs-context-with-secrets": { context: ["github", "inputs", "vars", "needs", "secrets", "strategy", "matrix"], "one-of": ["string", "boolean", "number"] }, "boolean-strategy-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], boolean: {} }, "number-strategy-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], number: {} }, "string-strategy-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix"], string: {} }, "boolean-steps-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], boolean: {} }, "number-steps-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], number: {} }, "string-runner-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env"], string: {} }, "string-runner-context-no-secrets": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "steps", "job", "runner", "env"], string: {} }, "string-steps-context": { context: ["github", "inputs", "vars", "needs", "strategy", "matrix", "secrets", "steps", "job", "runner", "env", "hashFiles(1,255)"], string: {} }, shell: { string: { "require-non-empty": true }, description: "Use `shell` to override the default shell settings in the runner's operating system. You can use built-in shell keywords, or you can define a custom set of shell options. The shell command that is run internally executes a temporary file that contains the commands specified in `run`." }, "working-directory": { string: { "require-non-empty": true }, description: "The `working-directory` keyword specifies the working directory where the command is run." }, "cron-mapping": { mapping: { properties: { cron: { type: "cron-pattern", required: true }, timezone: "timezone-string" } } }, "cron-pattern": { description: "A cron expression that represents a schedule. A scheduled workflow will run at most once every 5 minutes.", string: { "require-non-empty": true } }, "timezone-string": { description: "A string that represents the time zone a scheduled workflow will run relative to in IANA format (e.g. 'America/New_York' or 'Europe/London'). If omitted, the workflow will run relative to midnight UTC.", string: { "require-non-empty": true } }, "service-container-mapping": { mapping: { properties: { image: { type: "non-empty-string", description: "The Docker image to use as the container. The value can be the Docker Hub image or a registry name." }, options: { type: "string", description: "Additional Docker container resource options." }, env: "container-env", ports: { type: "sequence-of-non-empty-string", description: "An array of ports to expose on the container." }, volumes: { type: "sequence-of-non-empty-string", description: "An array of volumes for the container to use. You can use volumes to share data between services or other steps in a job. You can specify named Docker volumes, anonymous Docker volumes, or bind mounts on the host." }, credentials: "container-registry-credentials", entrypoint: { type: "string", description: "Override the default ENTRYPOINT in the service container image." }, command: { type: "string", description: "Override the default CMD in the service container image." } } } } } };
+
+// node_modules/@actions/workflow-parser/dist/workflows/workflow-schema.js
+var schema;
+function getWorkflowSchema() {
+  if (schema === void 0) {
+    const json = JSON.stringify(workflow_v1_0_min_default);
+    schema = TemplateSchema.load(new JSONObjectReader(void 0, json));
+  }
+  return schema;
+}
+
+// node_modules/@actions/workflow-parser/dist/workflows/yaml-object-reader.js
+var import_yaml = __toESM(require_dist(), 1);
+var YamlObjectReader = class _YamlObjectReader {
+  constructor(fileId, content) {
+    this.lineCounter = new import_yaml.LineCounter();
+    this.errors = [];
+    this.doc = (0, import_yaml.parseDocument)(content, {
+      lineCounter: this.lineCounter,
+      keepSourceTokens: true,
+      uniqueKeys: false
+      // Uniqueness is validated by the template reader
+    });
+    for (const err of this.doc.errors) {
+      this.errors.push({ message: err.message, range: rangeFromLinePos(err.linePos) });
+    }
+    this._generator = this.getNodes(this.doc, /* @__PURE__ */ new Set());
+    this.fileId = fileId;
+  }
+  *getNodes(node, aliasResolutionStack) {
+    let range = this.getRange(node);
+    if ((0, import_yaml.isDocument)(node)) {
+      yield new ParseEvent(EventType.DocumentStart);
+      for (const item of this.getNodes(node.contents, /* @__PURE__ */ new Set())) {
+        yield item;
+      }
+      yield new ParseEvent(EventType.DocumentEnd);
+    }
+    if ((0, import_yaml.isCollection)(node)) {
+      if ((0, import_yaml.isSeq)(node)) {
+        yield new ParseEvent(EventType.SequenceStart, new SequenceToken(this.fileId, range, void 0));
+      } else if ((0, import_yaml.isMap)(node)) {
+        yield new ParseEvent(EventType.MappingStart, new MappingToken(this.fileId, range, void 0));
+      }
+      for (const item of node.items) {
+        for (const child of this.getNodes(item, aliasResolutionStack)) {
+          yield child;
+        }
+      }
+      if ((0, import_yaml.isSeq)(node)) {
+        yield new ParseEvent(EventType.SequenceEnd);
+      } else if ((0, import_yaml.isMap)(node)) {
+        yield new ParseEvent(EventType.MappingEnd);
+      }
+    }
+    if ((0, import_yaml.isScalar)(node)) {
+      yield new ParseEvent(EventType.Literal, _YamlObjectReader.getLiteralToken(this.fileId, range, node));
+    }
+    if ((0, import_yaml.isAlias)(node)) {
+      const resolved = node.resolve(this.doc);
+      if (resolved) {
+        if (aliasResolutionStack.has(resolved)) {
+          return;
+        }
+        const newStack = new Set(aliasResolutionStack);
+        newStack.add(resolved);
+        yield* this.getNodes(resolved, newStack);
+      }
+      return;
+    }
+    if ((0, import_yaml.isPair)(node)) {
+      const scalarKey = node.key;
+      range = this.getRange(scalarKey);
+      const key = scalarKey.value;
+      yield new ParseEvent(EventType.Literal, new StringToken(this.fileId, range, key, void 0));
+      for (const child of this.getNodes(node.value, aliasResolutionStack)) {
+        yield child;
+      }
+    }
+  }
+  getRange(node) {
+    const range = node?.range ?? [];
+    const startPos = range[0];
+    const endPos = range[1];
+    if (startPos !== void 0 && endPos !== void 0) {
+      const slp = this.lineCounter.linePos(startPos);
+      const elp = this.lineCounter.linePos(endPos);
+      return {
+        start: { line: slp.line, column: slp.col },
+        end: { line: elp.line, column: elp.col }
+      };
+    }
+    return void 0;
+  }
+  static getLiteralToken(fileId, range, token) {
+    const value = token.value;
+    if (value === null || value === void 0) {
+      return new NullToken(fileId, range, void 0);
+    }
+    switch (typeof value) {
+      case "number":
+        return new NumberToken(fileId, range, value, void 0);
+      case "boolean":
+        return new BooleanToken(fileId, range, value, void 0);
+      case "string": {
+        let source;
+        let blockScalarHeader;
+        if (token.srcToken && "source" in token.srcToken) {
+          source = token.srcToken.source;
+          if (token.srcToken.type === "block-scalar" && "props" in token.srcToken) {
+            const props = token.srcToken.props;
+            const headerProp = props.find((p) => p.type === "block-scalar-header");
+            if (headerProp?.source) {
+              blockScalarHeader = headerProp.source;
+            }
+          }
+        }
+        return new StringToken(fileId, range, value, void 0, source, blockScalarHeader);
+      }
+      default:
+        throw new Error(`Unexpected value type '${typeof value}' when reading object`);
+    }
+  }
+  allowLiteral() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.Literal) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowSequenceStart() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.SequenceStart) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowSequenceEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.SequenceEnd) {
+        this._current = this._generator.next();
+        return true;
+      }
+    }
+    return false;
+  }
+  allowMappingStart() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.MappingStart) {
+        this._current = this._generator.next();
+        return parseEvent.token;
+      }
+    }
+    return void 0;
+  }
+  allowMappingEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.MappingEnd) {
+        this._current = this._generator.next();
+        return true;
+      }
+    }
+    return false;
+  }
+  validateEnd() {
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.DocumentEnd) {
+        this._current = this._generator.next();
+        return;
+      }
+    }
+    throw new Error("Expected end of reader");
+  }
+  validateStart() {
+    if (!this._current) {
+      this._current = this._generator.next();
+    }
+    if (!this._current.done) {
+      const parseEvent = this._current.value;
+      if (parseEvent.type === EventType.DocumentStart) {
+        this._current = this._generator.next();
+        return;
+      }
+    }
+    throw new Error("Expected start of reader");
+  }
+};
+function rangeFromLinePos(linePos) {
+  if (linePos === void 0) {
+    return;
+  }
+  const start = { line: linePos[0].line, column: linePos[0].col };
+  const end = linePos.length == 2 ? { line: linePos[1].line, column: linePos[1].col } : start;
+  return { start, end };
+}
+
+// node_modules/@actions/workflow-parser/dist/workflows/workflow-parser.js
+function parseWorkflow(entryFile, contextOrTrace) {
+  const context = contextOrTrace instanceof TemplateContext ? contextOrTrace : new TemplateContext(new TemplateValidationErrors(), getWorkflowSchema(), contextOrTrace);
+  const fileId = context.getFileId(entryFile.name);
+  const reader = new YamlObjectReader(fileId, entryFile.content);
+  if (reader.errors.length > 0) {
+    for (const err of reader.errors) {
+      context.error(fileId, err.message, err.range);
+    }
+    return {
+      context,
+      value: void 0
+    };
+  }
+  const result = readTemplate(context, WORKFLOW_ROOT, reader, fileId);
+  return {
+    context,
+    value: result
+  };
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/concurrency.js
+function convertConcurrency(context, token) {
+  const result = {};
+  const featureFlags = context.state.featureFlags;
+  if (token.isExpression) {
+    return result;
+  }
+  if (isString(token)) {
+    result.group = token;
+    return result;
+  }
+  const concurrencyProperty = token.assertMapping("concurrency group");
+  for (const property of concurrencyProperty) {
+    const propertyName = property.key.assertString("concurrency group key");
+    if (property.key.isExpression || property.value.isExpression) {
+      continue;
+    }
+    switch (propertyName.value) {
+      case "group":
+        result.group = property.value.assertString("concurrency group");
+        break;
+      case "cancel-in-progress":
+        result.cancelInProgress = property.value.assertBoolean("cancel-in-progress").value;
+        break;
+      case "queue":
+        if (featureFlags?.isEnabled("allowConcurrencyQueue")) {
+          result.queue = property.value.assertString("queue").value;
+        }
+        break;
+      default:
+        context.error(propertyName, `Invalid property name: ${propertyName.value}`);
+    }
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/cron.js
+var import_cronstrue = __toESM(require_cronstrue(), 1);
+
+// node_modules/@actions/workflow-parser/dist/model/converter/cron-constants.js
+var MONTHS = {
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12
+};
+var DAYS = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6
+};
+var MINUTE_RANGE = { min: 0, max: 59 };
+var HOUR_RANGE = { min: 0, max: 23 };
+var DOM_RANGE = { min: 1, max: 31 };
+var MONTH_RANGE = { min: 1, max: 12, names: MONTHS };
+var DOW_RANGE = { min: 0, max: 6, names: DAYS };
+
+// node_modules/@actions/workflow-parser/dist/model/converter/cron.js
+function isValidCron(cron) {
+  const parts = cron.split(/ +/);
+  if (parts.length != 5) {
+    return false;
+  }
+  const [minutes, hours, dom, months, dow] = parts;
+  return validateCronPart(minutes, MINUTE_RANGE) && validateCronPart(hours, HOUR_RANGE) && validateCronPart(dom, DOM_RANGE) && validateCronPart(months, MONTH_RANGE) && validateCronPart(dow, DOW_RANGE);
+}
+function validateCronPart(value, range, allowSeparators = true) {
+  if (range.names && range.names[value.toLowerCase()] !== void 0) {
+    return true;
+  }
+  if (value === "*") {
+    return true;
+  }
+  if (value.includes(",")) {
+    if (!allowSeparators) {
+      return false;
+    }
+    return value.split(",").every((v) => v && validateCronPart(v, range));
+  }
+  if (value.includes("/")) {
+    if (!allowSeparators) {
+      return false;
+    }
+    const [start, step, ...rest] = value.split("/");
+    const stepNumber = +step;
+    if (rest.length > 0 || isNaN(stepNumber) || stepNumber <= 0 || !start || !step) {
+      return false;
+    }
+    return validateCronPart(start, range) && validateCronPart(step, range, false);
+  }
+  if (value.includes("-")) {
+    if (!allowSeparators) {
+      return false;
+    }
+    const [start, end, ...rest] = value.split("-");
+    if (rest.length > 0 || !start || !end) {
+      return false;
+    }
+    const startNumber = convertToNumber(start, range.names);
+    const endNumber = convertToNumber(end, range.names);
+    return validateCronPart(start, range, false) && validateCronPart(end, range, false) && endNumber >= startNumber;
+  }
+  const number = +value;
+  return !isNaN(number) && number >= range.min && number <= range.max;
+}
+function convertToNumber(value, names) {
+  if (names && names[value.toLowerCase()] !== void 0) {
+    return +names[value.toLowerCase()];
+  } else {
+    return +value;
+  }
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/string-list.js
+function convertStringList(name, token) {
+  const result = [];
+  for (const item of token) {
+    result.push(item.assertString(`${name} item`).value);
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/workflow-template.js
+var InputType;
+(function(InputType2) {
+  InputType2["string"] = "string";
+  InputType2["choice"] = "choice";
+  InputType2["boolean"] = "boolean";
+  InputType2["environment"] = "environment";
+})(InputType || (InputType = {}));
+
+// node_modules/@actions/workflow-parser/dist/model/converter/workflow-call.js
+function convertEventWorkflowCall(context, token) {
+  const result = {};
+  for (const item of token) {
+    const key = item.key.assertString("workflow dispatch input key");
+    switch (key.value) {
+      case "inputs":
+        result.inputs = convertWorkflowInputs(context, item.value.assertMapping("workflow dispatch inputs"));
+        break;
+      case "secrets":
+        result.secrets = convertWorkflowCallSecrets(context, item.value.assertMapping("workflow dispatch inputs"));
+        break;
+      case "outputs":
+        break;
+    }
+  }
+  return result;
+}
+function convertWorkflowInputs(context, token) {
+  const result = {};
+  for (const item of token) {
+    const inputName = item.key.assertString("input name");
+    const inputMapping = item.value.assertMapping("input configuration");
+    result[inputName.value] = convertWorkflowInput(context, inputMapping);
+  }
+  return result;
+}
+function convertWorkflowInput(context, token) {
+  const result = {
+    type: InputType.string
+    // Default to string
+  };
+  let defaultValue;
+  for (const item of token) {
+    const key = item.key.assertString("workflow dispatch input key");
+    switch (key.value) {
+      case "description":
+        result.description = item.value.assertString("input description").value;
+        break;
+      case "required":
+        result.required = item.value.assertBoolean("input required").value;
+        break;
+      case "default":
+        defaultValue = item.value.assertScalar("input default");
+        break;
+      case "type":
+        result.type = InputType[item.value.assertString("input type").value];
+        break;
+      case "options":
+        result.options = convertStringList("input options", item.value.assertSequence("input options"));
+        break;
+      default:
+        context.error(item.key, `Invalid key '${key.value}'`);
+    }
+  }
+  if (defaultValue !== void 0 && !defaultValue.isExpression) {
+    try {
+      switch (result.type) {
+        case InputType.boolean:
+          result.default = defaultValue.assertBoolean("input default").value;
+          break;
+        case InputType.string:
+        case InputType.choice:
+        case InputType.environment:
+          result.default = defaultValue.assertString("input default").value;
+          break;
+      }
+    } catch (e) {
+      context.error(defaultValue, e);
+    }
+  }
+  if (result.type === InputType.choice) {
+    if (result.options === void 0 || result.options.length === 0) {
+      context.error(token, "Missing 'options' for choice input");
+    }
+  } else {
+    if (result.options !== void 0) {
+      context.error(token, "Input type is not 'choice', but 'options' is defined");
+    }
+  }
+  return result;
+}
+function convertWorkflowCallSecrets(context, token) {
+  const result = {};
+  for (const item of token) {
+    const secretName = item.key.assertString("secret name");
+    result[secretName.value] = convertWorkflowCallSecret(context, item.value);
+  }
+  return result;
+}
+function convertWorkflowCallSecret(context, token) {
+  const result = {};
+  if (isMapping(token)) {
+    for (const item of token) {
+      const key = item.key.assertString("workflow call secret key");
+      switch (key.value) {
+        case "description":
+          result.description = item.value.assertString("secret description").value;
+          break;
+        case "required":
+          result.required = item.value.assertBoolean("secret required").value;
+          break;
+      }
+    }
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/workflow-dispatch.js
+function convertEventWorkflowDispatchInputs(context, token) {
+  const result = {};
+  for (const item of token) {
+    const key = item.key.assertString("workflow dispatch input key");
+    switch (key.value) {
+      case "inputs":
+        result.inputs = convertWorkflowDispatchInputs(context, item.value.assertMapping("workflow dispatch inputs"));
+        break;
+    }
+  }
+  return result;
+}
+function convertWorkflowDispatchInputs(context, token) {
+  const result = {};
+  for (const item of token) {
+    const inputName = item.key.assertString("input name");
+    const inputMapping = item.value.assertMapping("input configuration");
+    result[inputName.value] = convertWorkflowDispatchInput(context, inputMapping);
+  }
+  return result;
+}
+function convertWorkflowDispatchInput(context, token) {
+  const result = {
+    type: InputType.string
+    // Default to string
+  };
+  let defaultValue;
+  for (const item of token) {
+    const key = item.key.assertString("workflow dispatch input key");
+    switch (key.value) {
+      case "description":
+        result.description = item.value.assertString("input description").value;
+        break;
+      case "required":
+        result.required = item.value.assertBoolean("input required").value;
+        break;
+      case "default":
+        defaultValue = item.value.assertScalar("input default");
+        break;
+      case "type":
+        result.type = InputType[item.value.assertString("input type").value];
+        break;
+      case "options":
+        result.options = convertStringList("input options", item.value.assertSequence("input options"));
+        break;
+      default:
+        context.error(item.key, `Invalid key '${key.value}'`);
+    }
+  }
+  if (defaultValue !== void 0) {
+    try {
+      switch (result.type) {
+        case InputType.boolean:
+          result.default = defaultValue.assertBoolean("input default").value;
+          break;
+        case InputType.string:
+        case InputType.choice:
+        case InputType.environment:
+          result.default = defaultValue.assertString("input default").value;
+          break;
+      }
+    } catch (e) {
+      context.error(defaultValue, e);
+    }
+  }
+  if (result.type === InputType.choice) {
+    if (result.options === void 0 || result.options.length === 0) {
+      context.error(token, "Missing 'options' for choice input");
+    }
+  } else {
+    if (result.options !== void 0) {
+      context.error(token, "Input type is not 'choice', but 'options' is defined");
+    }
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/events.js
+function convertOn(context, token) {
+  if (isLiteral(token)) {
+    const event = token.assertString("on");
+    return {
+      [event.value]: {}
+    };
+  }
+  if (isSequence(token)) {
+    const result = {};
+    for (const item of token) {
+      const event = item.assertString("on");
+      result[event.value] = {};
+    }
+    return result;
+  }
+  if (isMapping(token)) {
+    const result = {};
+    for (const item of token) {
+      const eventKey = item.key.assertString("event name");
+      const eventName = eventKey.value;
+      if (item.value.templateTokenType === TokenType.Null) {
+        result[eventName] = {};
+        continue;
+      }
+      if (eventName === "schedule") {
+        const scheduleToken = item.value.assertSequence(`event ${eventName}`);
+        result.schedule = convertSchedule(context, scheduleToken);
+        continue;
+      }
+      const eventToken = item.value.assertMapping(`event ${eventName}`);
+      if (eventName === "workflow_call") {
+        result.workflow_call = convertEventWorkflowCall(context, eventToken);
+        continue;
+      }
+      if (eventName === "workflow_dispatch") {
+        result.workflow_dispatch = convertEventWorkflowDispatchInputs(context, eventToken);
+        continue;
+      }
+      result[eventName] = {
+        ...convertPatternFilter("branches", eventToken),
+        ...convertPatternFilter("tags", eventToken),
+        ...convertPatternFilter("paths", eventToken),
+        ...convertFilter("types", eventToken),
+        ...convertFilter("versions", eventToken),
+        ...convertFilter("names", eventToken),
+        ...convertFilter("workflows", eventToken)
+      };
+    }
+    return result;
+  }
+  context.error(token, "Invalid format for 'on'");
+  return {};
+}
+function convertPatternFilter(name, token) {
+  const result = {};
+  for (const item of token) {
+    const key = item.key.assertString(`${name} filter key`);
+    switch (key.value) {
+      case name:
+        if (isString(item.value)) {
+          result[name] = [item.value.value];
+        } else {
+          result[name] = convertStringList(name, item.value.assertSequence(`${name} list`));
+        }
+        break;
+      case `${name}-ignore`:
+        if (isString(item.value)) {
+          result[`${name}-ignore`] = [item.value.value];
+        } else {
+          result[`${name}-ignore`] = convertStringList(`${name}-ignore`, item.value.assertSequence(`${name}-ignore list`));
+        }
+        break;
+    }
+  }
+  return result;
+}
+function convertFilter(name, token) {
+  const result = {};
+  for (const item of token) {
+    const key = item.key.assertString(`${name} filter key`);
+    switch (key.value) {
+      case name:
+        if (isString(item.value)) {
+          result[name] = [item.value.value];
+        } else {
+          result[name] = convertStringList(name, item.value.assertSequence(`${name} list`));
+        }
+        break;
+    }
+  }
+  return result;
+}
+function convertSchedule(context, token) {
+  const result = [];
+  for (const item of token) {
+    const mappingToken = item.assertMapping(`event schedule`);
+    const config = { cron: "" };
+    let valid = true;
+    for (const entry of mappingToken) {
+      const key = entry.key.assertString(`schedule key`);
+      if (key.value === "cron") {
+        const cron = entry.value.assertString(`schedule cron`);
+        if (!isValidCron(cron.value)) {
+          context.error(cron, "Invalid cron expression. Expected format: '* * * * *' (minute hour day month weekday)");
+        }
+        config.cron = cron.value;
+      } else if (key.value === "timezone") {
+        const timezone = entry.value.assertString(`schedule timezone`);
+        config.timezone = timezone.value;
+      } else {
+        context.error(key, `Invalid schedule key`);
+        valid = false;
+      }
+    }
+    if (valid && config.cron) {
+      result.push(config);
+    } else if (valid && !config.cron) {
+      context.error(mappingToken, "Missing required key 'cron' in schedule entry");
+    }
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/handle-errors.js
+function handleTemplateTokenErrors(root, context, defaultValue, f) {
+  let r = defaultValue;
+  try {
+    r = f();
+  } catch (err) {
+    if (err instanceof TemplateTokenError) {
+      context.error(err.token, err);
+    } else {
+      context.error(root, err);
+    }
+  }
+  return r;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/if-condition.js
+function ensureStatusFunction(condition, definitionInfo) {
+  const allowedContext = definitionInfo?.allowedContext || [];
+  try {
+    const { namedContexts, functions } = splitAllowedContext(allowedContext);
+    const lexer = new Lexer(condition);
+    const result = lexer.lex();
+    const parser = new Parser(result.tokens, namedContexts, functions);
+    const tree = parser.parse();
+    if (walkTreeToFindStatusFunctionCalls(tree)) {
+      return condition;
+    }
+    return `success() && (${condition})`;
+  } catch {
+    return condition;
+  }
+}
+function convertToIfCondition(context, token) {
+  const scalar = token.assertScalar("if condition");
+  const allowedContext = token.definitionInfo?.allowedContext || [];
+  let condition;
+  let source;
+  if (scalar instanceof BasicExpressionToken) {
+    condition = scalar.expression;
+    source = scalar.source;
+  } else {
+    const stringToken = scalar.assertString("if condition");
+    condition = stringToken.value.trim();
+    source = stringToken.source;
+  }
+  let finalCondition;
+  if (!condition) {
+    finalCondition = "success()";
+  } else {
+    finalCondition = ensureStatusFunction(condition, token.definitionInfo);
+  }
+  try {
+    ExpressionToken.validateExpression(finalCondition, allowedContext);
+  } catch (err) {
+    context.error(token, err);
+    return void 0;
+  }
+  return new BasicExpressionToken(token.file, token.range, finalCondition, token.definitionInfo, void 0, source);
+}
+function walkTreeToFindStatusFunctionCalls(tree) {
+  if (!tree) {
+    return false;
+  }
+  if (tree instanceof FunctionCall) {
+    const funcName = tree.functionName.lexeme.toLowerCase();
+    if (funcName === "success" || funcName === "failure" || funcName === "cancelled" || funcName === "always") {
+      return true;
+    }
+    return tree.args.some((arg) => walkTreeToFindStatusFunctionCalls(arg));
+  }
+  if (tree instanceof Binary) {
+    return walkTreeToFindStatusFunctionCalls(tree.left) || walkTreeToFindStatusFunctionCalls(tree.right);
+  }
+  if (tree instanceof Unary) {
+    return walkTreeToFindStatusFunctionCalls(tree.expr);
+  }
+  if (tree instanceof Logical) {
+    return tree.args.some((arg) => walkTreeToFindStatusFunctionCalls(arg));
+  }
+  if (tree instanceof Grouping) {
+    return walkTreeToFindStatusFunctionCalls(tree.group);
+  }
+  if (tree instanceof IndexAccess) {
+    return walkTreeToFindStatusFunctionCalls(tree.expr) || walkTreeToFindStatusFunctionCalls(tree.index);
+  }
+  return false;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/container.js
+function convertToJobContainer(context, container) {
+  let image;
+  let env;
+  let ports;
+  let volumes;
+  let options;
+  for (const [, token] of TemplateToken.traverse(container)) {
+    if (token.isExpression) {
+      return;
+    }
+  }
+  if (isString(container)) {
+    image = container.assertString("container item");
+    return { image };
+  }
+  const mapping = container.assertMapping("container item");
+  if (mapping)
+    for (const item of mapping) {
+      const key = item.key.assertString("container item key");
+      const value = item.value;
+      switch (key.value) {
+        case "image":
+          image = value.assertString("container image");
+          break;
+        case "credentials":
+          convertToJobCredentials(context, value);
+          break;
+        case "env":
+          env = value.assertMapping("container env");
+          for (const envItem of env) {
+            envItem.key.assertString("container env value");
+          }
+          break;
+        case "ports":
+          ports = value.assertSequence("container ports");
+          for (const port of ports) {
+            port.assertString("container port");
+          }
+          break;
+        case "volumes":
+          volumes = value.assertSequence("container volumes");
+          for (const volume of volumes) {
+            volume.assertString("container volume");
+          }
+          break;
+        case "options":
+          options = value.assertString("container options");
+          break;
+        default:
+          context.error(key, `Unexpected container item key: ${key.value}`);
+      }
+    }
+  if (!image) {
+    context.error(container, "Container image cannot be empty");
+  } else {
+    return { image, env, ports, volumes, options };
+  }
+}
+function convertToServiceContainer(context, container) {
+  let image;
+  let env;
+  let ports;
+  let volumes;
+  let options;
+  let entrypoint;
+  let command;
+  for (const [, token] of TemplateToken.traverse(container)) {
+    if (token.isExpression) {
+      return;
+    }
+  }
+  if (isString(container)) {
+    image = container.assertString("container item");
+    return { image };
+  }
+  const mapping = container.assertMapping("container item");
+  if (mapping)
+    for (const item of mapping) {
+      const key = item.key.assertString("container item key");
+      const value = item.value;
+      switch (key.value) {
+        case "image":
+          image = value.assertString("container image");
+          break;
+        case "credentials":
+          convertToJobCredentials(context, value);
+          break;
+        case "env":
+          env = value.assertMapping("container env");
+          for (const envItem of env) {
+            envItem.key.assertString("container env value");
+          }
+          break;
+        case "ports":
+          ports = value.assertSequence("container ports");
+          for (const port of ports) {
+            port.assertString("container port");
+          }
+          break;
+        case "volumes":
+          volumes = value.assertSequence("container volumes");
+          for (const volume of volumes) {
+            volume.assertString("container volume");
+          }
+          break;
+        case "options":
+          options = value.assertString("container options");
+          break;
+        case "entrypoint":
+          entrypoint = value.assertString("container entrypoint");
+          break;
+        case "command":
+          command = value.assertString("container command");
+          break;
+        default:
+          context.error(key, `Unexpected container item key: ${key.value}`);
+      }
+    }
+  if (!image) {
+    context.error(container, "Container image cannot be empty");
+  } else {
+    return { image, env, ports, volumes, options, entrypoint, command };
+  }
+}
+function convertToJobServices(context, services) {
+  const serviceList = [];
+  const mapping = services.assertMapping("services");
+  for (const service of mapping) {
+    service.key.assertString("service key");
+    const container = convertToServiceContainer(context, service.value);
+    if (container) {
+      serviceList.push(container);
+    }
+  }
+  return serviceList;
+}
+function convertToJobCredentials(context, value) {
+  const mapping = value.assertMapping("credentials");
+  let username;
+  let password;
+  for (const item of mapping) {
+    const key = item.key.assertString("credentials item");
+    const value2 = item.value;
+    switch (key.value) {
+      case "username":
+        username = value2.assertString("credentials username");
+        break;
+      case "password":
+        password = value2.assertString("credentials password");
+        break;
+      default:
+        context.error(key, `credentials key ${key.value}`);
+    }
+  }
+  return { username, password };
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/id-builder.js
+var SEPARATOR = "_";
+var MAX_ATTEMPTS = 1e3;
+var MAX_LENGTH = 100;
+var IdBuilder = class {
+  constructor() {
+    this.name = [];
+    this.distinctNames = /* @__PURE__ */ new Set();
+  }
+  appendSegment(value) {
+    if (value.length === 0) {
+      return;
+    }
+    if (this.name.length == 0) {
+      const first = value[0];
+      if (this.isAlpha(first) || first == "_") {
+      } else if (this.isNumeric(first) || first == "-") {
+        this.name.push("_");
+      } else {
+      }
+    } else {
+      this.name.push(SEPARATOR);
+    }
+    for (const c of value) {
+      {
+        if (this.isAlphaNumeric(c) || c == "_" || c == "-") {
+          this.name.push(c);
+        } else {
+          this.name.push(SEPARATOR);
+        }
+      }
+    }
+  }
+  build() {
+    const original = this.name.length > 0 ? this.name.join("") : "job";
+    let suffix = "";
+    for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt++) {
+      if (attempt === 1) {
+        suffix = "";
+      } else {
+        suffix = `_${attempt}`;
+      }
+      const candidate = original.substring(0, Math.min(original.length, MAX_LENGTH - suffix.length)) + suffix;
+      if (!this.distinctNames.has(candidate)) {
+        this.distinctNames.add(candidate);
+        this.name = [];
+        return candidate;
+      }
+    }
+    throw new Error("Unable to create a unique name");
+  }
+  /**
+   * Adds a known identifier to the set of distinct ids.
+   * @param value The value to add
+   * @returns An error if the value is invalid, otherwise undefined
+   */
+  tryAddKnownId(value) {
+    if (!value || !this.isValid(value) || value.length >= MAX_LENGTH) {
+      return `The identifier '${value}' is invalid. IDs may only contain alphanumeric characters, '_', and '-'. IDs must start with a letter or '_' and and must be less than ${MAX_LENGTH} characters.`;
+    }
+    if (value.startsWith(SEPARATOR + SEPARATOR)) {
+      return `The identifier '${value}' is invalid. IDs starting with '__' are reserved.`;
+    }
+    if (this.distinctNames.has(value)) {
+      return `The identifier '${value}' may not be used more than once within the same scope.`;
+    }
+    this.distinctNames.add(value);
+    return;
+  }
+  /**
+   * A name is valid if it starts with a letter or underscore, and contains only
+   * letters, numbers, underscores, and hyphens.
+   * @param name The string name to validate
+   * @returns Whether the name is valid
+   */
+  isValid(name) {
+    let first = true;
+    for (const c of name) {
+      if (first) {
+        first = false;
+        if (!this.isAlpha(c) && c != "_") {
+          return false;
+        }
+        continue;
+      }
+      if (!this.isAlphaNumeric(c) && c != "_" && c != "-") {
+        return false;
+      }
+    }
+    return true;
+  }
+  isAlphaNumeric(c) {
+    return this.isAlpha(c) || this.isNumeric(c);
+  }
+  isNumeric(c) {
+    return c >= "0" && c <= "9";
+  }
+  isAlpha(c) {
+    return c >= "a" && c <= "z" || c >= "A" && c <= "Z";
+  }
+};
+
+// node_modules/@actions/workflow-parser/dist/model/converter/job/environment.js
+function convertToActionsEnvironmentRef(context, token) {
+  const result = {};
+  if (token.isExpression) {
+    return result;
+  }
+  if (isScalar(token)) {
+    result.name = token;
+    return result;
+  }
+  const environmentMapping = token.assertMapping("job environment");
+  for (const property of environmentMapping) {
+    const propertyName = property.key.assertString("job environment key");
+    if (property.key.isExpression || property.value.isExpression) {
+      continue;
+    }
+    switch (propertyName.value) {
+      case "name":
+        result.name = property.value.assertScalar("job environment name key");
+        break;
+      case "url":
+        result.url = property.value;
+        break;
+      case "deployment": {
+        const deploymentValue = property.value.assertBoolean("job environment deployment");
+        if (deploymentValue.value === false) {
+          result.skipDeployment = true;
+        }
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/job/runs-on.js
+function convertRunsOn(context, token) {
+  const labels = convertRunsOnLabels(token);
+  if (!isMapping(token)) {
+    return {
+      labels,
+      group: ""
+    };
+  }
+  let group = "";
+  for (const item of token) {
+    const key = item.key.assertString("job runs-on property name");
+    switch (key.value) {
+      case "group": {
+        if (item.value.isExpression) {
+          continue;
+        }
+        const groupName = item.value.assertString("job runs-on group name").value;
+        const names = groupName.split("/");
+        switch (names.length) {
+          case 1: {
+            group = groupName;
+            break;
+          }
+          case 2: {
+            if (!["org", "organization", "ent", "enterprise"].includes(names[0])) {
+              context.error(item.value, `Invalid runs-on group name '${groupName}. Please use 'organization/' or 'enterprise/' prefix to target a single runner group.'`);
+              continue;
+            }
+            if (!names[1]) {
+              context.error(item.value, `Invalid runs-on group name '${groupName}'.`);
+              continue;
+            }
+            group = groupName;
+            break;
+          }
+          default: {
+            context.error(item.value, `Invalid runs-on group name '${groupName}. Please use 'organization/' or 'enterprise/' prefix to target a single runner group.'`);
+            break;
+          }
+        }
+        break;
+      }
+      case "labels": {
+        const mapLabels = convertRunsOnLabels(item.value);
+        for (const label of mapLabels) {
+          labels.add(label);
+        }
+        break;
+      }
+    }
+  }
+  return {
+    labels,
+    group
+  };
+}
+function convertRunsOnLabels(token) {
+  const labels = /* @__PURE__ */ new Set();
+  if (token.isExpression) {
+    return labels;
+  }
+  if (isString(token)) {
+    labels.add(token.value);
+    return labels;
+  }
+  if (isSequence(token)) {
+    for (const item of token) {
+      if (item.isExpression) {
+        continue;
+      }
+      const label = item.assertString("job runs-on label sequence item");
+      labels.add(label.value);
+    }
+  }
+  return labels;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/type-guards.js
+function isActionStep(step) {
+  return step.uses !== void 0;
+}
+function isReusableWorkflowJob(job) {
+  return job.type === "reusableWorkflowJob";
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/steps.js
+function convertSteps(context, steps) {
+  if (!isSequence(steps)) {
+    context.error(steps, "Invalid format for steps");
+    return [];
+  }
+  const idBuilder = new IdBuilder();
+  const knownStepIds = /* @__PURE__ */ new Set();
+  const result = [];
+  for (const item of steps) {
+    const step = handleTemplateTokenErrors(steps, context, void 0, () => convertStep(context, idBuilder, knownStepIds, item));
+    if (step) {
+      result.push(step);
+    }
+  }
+  for (const step of result) {
+    if (step.id) {
+      continue;
+    }
+    let id = "";
+    if (isActionStep(step)) {
+      id = createActionStepId(step);
+    } else if ("wait" in step) {
+      id = "wait";
+    } else if ("wait-all" in step) {
+      id = "wait-all";
+    } else if ("cancel" in step) {
+      id = "cancel";
+    } else if ("parallel" in step) {
+      id = "parallel";
+    }
+    if (!id) {
+      id = "run";
+    }
+    idBuilder.appendSegment(`__${id}`);
+    step.id = idBuilder.build();
+  }
+  return result;
+}
+function convertStep(context, idBuilder, knownStepIds, step) {
+  const mapping = step.assertMapping("steps item");
+  let run;
+  let id;
+  let name;
+  let uses;
+  let background;
+  let wait;
+  let waitAll;
+  let cancel;
+  let parallel;
+  let continueOnError;
+  let env;
+  let ifCondition;
+  for (const item of mapping) {
+    const key = item.key.assertString("steps item key");
+    switch (key.value) {
+      case "id":
+        id = item.value.assertString("steps item id");
+        if (id) {
+          const error = idBuilder.tryAddKnownId(id.value);
+          if (error) {
+            context.error(id, error);
+          } else {
+            knownStepIds.add(id.value);
+          }
+        }
+        break;
+      case "name":
+        name = item.value.assertScalar("steps item name");
+        break;
+      case "run":
+        run = item.value.assertScalar("steps item run");
+        break;
+      case "uses":
+        uses = item.value.assertString("steps item uses");
+        break;
+      case "background":
+        background = item.value.assertBoolean("steps item background").value;
+        break;
+      case "wait":
+        wait = convertWaitTargets(context, knownStepIds, item.value, id);
+        break;
+      case "wait-all":
+        waitAll = convertWaitAllValue(context, item.value);
+        break;
+      case "cancel":
+        cancel = item.value.assertString("steps item cancel");
+        validateTargetStepId(context, knownStepIds, cancel, id);
+        break;
+      case "parallel":
+        parallel = item.value;
+        break;
+      case "env":
+        env = item.value.assertMapping("step env");
+        break;
+      case "if":
+        ifCondition = convertToIfCondition(context, item.value);
+        break;
+      case "continue-on-error":
+        if (!item.value.isExpression) {
+          continueOnError = item.value.assertBoolean("steps item continue-on-error").value;
+        } else {
+          continueOnError = item.value.assertScalar("steps item continue-on-error");
+        }
+    }
+  }
+  if (run) {
+    return {
+      id: id?.value || "",
+      name,
+      if: ifCondition || new BasicExpressionToken(void 0, void 0, "success()", void 0, void 0, void 0),
+      "continue-on-error": continueOnError,
+      env,
+      run,
+      background
+    };
+  }
+  if (uses) {
+    return {
+      id: id?.value || "",
+      name,
+      if: ifCondition || new BasicExpressionToken(void 0, void 0, "success()", void 0, void 0, void 0),
+      "continue-on-error": continueOnError,
+      env,
+      uses,
+      background
+    };
+  }
+  if (wait) {
+    return {
+      id: id?.value || "",
+      name: name || createSyntheticStepName("Wait"),
+      "continue-on-error": continueOnError,
+      wait
+    };
+  }
+  if (waitAll !== void 0) {
+    return {
+      id: id?.value || "",
+      name: name || createSyntheticStepName("Wait for all"),
+      "continue-on-error": continueOnError,
+      "wait-all": waitAll
+    };
+  }
+  if (cancel) {
+    return {
+      id: id?.value || "",
+      name: name || createSyntheticStepName("Cancel"),
+      "continue-on-error": continueOnError,
+      cancel
+    };
+  }
+  if (parallel) {
+    const parallelSteps = convertSteps(context, parallel);
+    for (const ps of parallelSteps) {
+      if ("background" in ps && ps.background !== void 0) {
+        context.error(step, "'background' is not allowed inside a parallel block. Steps in a parallel block are automatically run as background steps.");
+      }
+      if ("wait" in ps) {
+        context.error(step, "'wait' is not allowed inside a parallel block.");
+      }
+      if ("wait-all" in ps) {
+        context.error(step, "'wait-all' is not allowed inside a parallel block.");
+      }
+      if ("cancel" in ps) {
+        context.error(step, "'cancel' is not allowed inside a parallel block.");
+      }
+      if ("parallel" in ps) {
+        context.error(step, "Nested 'parallel' blocks are not allowed.");
+      }
+    }
+    return {
+      id: id?.value || "",
+      name: name || createSyntheticStepName("Parallel group"),
+      parallel: parallelSteps
+    };
+  }
+  context.error(step, context.state.featureFlags?.isEnabled("allowBackgroundSteps") ? "Expected one of uses, run, wait, wait-all, cancel, or parallel to be defined" : "Expected one of uses or run to be defined");
+}
+function createActionStepId(step) {
+  const uses = step.uses.value;
+  if (uses.startsWith("docker://")) {
+    return uses.substring("docker://".length);
+  }
+  if (uses.startsWith("./") || uses.startsWith(".\\")) {
+    return "self";
+  }
+  const segments = uses.split("@");
+  if (segments.length != 2) {
+    return "";
+  }
+  const pathSegments = segments[0].split(/[\\/]/).filter((s) => s.length > 0);
+  const gitRef = segments[1];
+  if (pathSegments.length >= 2 && pathSegments[0] && pathSegments[1] && gitRef) {
+    return `${pathSegments[0]}/${pathSegments[1]}`;
+  }
+  return "";
+}
+function createSyntheticStepName(value) {
+  return new StringToken(void 0, void 0, value, void 0, void 0, void 0);
+}
+function convertWaitTargets(context, knownStepIds, token, ownStepId) {
+  if (token instanceof StringToken) {
+    validateTargetStepId(context, knownStepIds, token, ownStepId);
+    return [token];
+  }
+  const sequence = token.assertSequence("steps item wait");
+  const targets = [];
+  for (let i = 0; i < sequence.count; i++) {
+    const target = sequence.get(i).assertString("steps item wait item");
+    validateTargetStepId(context, knownStepIds, target, ownStepId);
+    targets.push(target);
+  }
+  return targets;
+}
+function convertWaitAllValue(context, token) {
+  if (token instanceof NullToken) {
+    return true;
+  }
+  const value = token.assertBoolean("steps item wait-all").value;
+  if (!value) {
+    context.error(token, "The value of 'wait-all' must be true or omitted");
+  }
+  return true;
+}
+function validateTargetStepId(context, knownStepIds, target, ownStepId) {
+  if (target.value.startsWith("__")) {
+    context.error(target, `The identifier '${target.value}' is invalid. IDs starting with '__' are reserved.`);
+  } else if (ownStepId && target.value.toLowerCase() === ownStepId.value.toLowerCase()) {
+    context.error(target, `Step '${ownStepId.value}' cannot reference itself`);
+  } else if (!knownStepIds.has(target.value)) {
+    context.error(target, `Step references unknown step ID '${target.value}'`);
+  }
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/job.js
+function convertJob(context, jobKey, token) {
+  const error = new IdBuilder().tryAddKnownId(jobKey.value);
+  if (error) {
+    context.error(jobKey, error);
+  }
+  let concurrency, container, env, environment, ifCondition, name, outputs, runsOn, services, strategy, snapshot;
+  let needs = void 0;
+  let steps = [];
+  let workflowJobRef;
+  let workflowJobInputs;
+  let inheritSecrets = false;
+  let workflowJobSecrets;
+  for (const item of token) {
+    const propertyName = item.key.assertString("job property name");
+    switch (propertyName.value) {
+      case "concurrency":
+        handleTemplateTokenErrors(item.value, context, void 0, () => convertConcurrency(context, item.value));
+        concurrency = item.value;
+        break;
+      case "container":
+        convertToJobContainer(context, item.value);
+        container = item.value;
+        break;
+      case "env":
+        handleTemplateTokenErrors(item.value, context, void 0, () => {
+          env = item.value.assertMapping("job env");
+        });
+        break;
+      case "environment":
+        handleTemplateTokenErrors(item.value, context, void 0, () => convertToActionsEnvironmentRef(context, item.value));
+        environment = item.value;
+        break;
+      case "if":
+        ifCondition = convertToIfCondition(context, item.value);
+        break;
+      case "name":
+        name = item.value.assertScalar("job name");
+        break;
+      case "needs": {
+        needs = [];
+        if (isString(item.value)) {
+          const jobNeeds = item.value.assertString("job needs id");
+          needs.push(jobNeeds);
+        }
+        if (isSequence(item.value)) {
+          for (const seqItem of item.value) {
+            const jobNeeds = seqItem.assertString("job needs id");
+            needs.push(jobNeeds);
+          }
+        }
+        break;
+      }
+      case "outputs":
+        handleTemplateTokenErrors(item.value, context, void 0, () => {
+          outputs = item.value.assertMapping("job outputs");
+        });
+        break;
+      case "runs-on":
+        handleTemplateTokenErrors(item.value, context, void 0, () => convertRunsOn(context, item.value));
+        runsOn = item.value;
+        break;
+      case "services":
+        convertToJobServices(context, item.value);
+        services = item.value;
+        break;
+      case "snapshot":
+        snapshot = item.value;
+        break;
+      case "steps":
+        steps = convertSteps(context, item.value);
+        break;
+      case "strategy":
+        strategy = item.value;
+        break;
+      case "uses":
+        workflowJobRef = item.value.assertString("job uses value");
+        break;
+      case "with":
+        handleTemplateTokenErrors(item.value, context, void 0, () => {
+          workflowJobInputs = item.value.assertMapping("uses-with value");
+        });
+        break;
+      case "secrets":
+        if (isString(item.value) && item.value.value === "inherit") {
+          inheritSecrets = true;
+        } else {
+          handleTemplateTokenErrors(item.value, context, void 0, () => {
+            workflowJobSecrets = item.value.assertMapping("uses-secrets value");
+          });
+        }
+        break;
+    }
+  }
+  if (workflowJobRef !== void 0) {
+    return {
+      type: "reusableWorkflowJob",
+      id: jobKey,
+      name: jobName(name, jobKey),
+      needs: needs || [],
+      if: ifCondition || new BasicExpressionToken(void 0, void 0, "success()", void 0, void 0, void 0),
+      ref: workflowJobRef,
+      "input-definitions": void 0,
+      "input-values": workflowJobInputs,
+      "secret-definitions": void 0,
+      "secret-values": workflowJobSecrets,
+      "inherit-secrets": inheritSecrets || void 0,
+      outputs: void 0,
+      concurrency,
+      strategy
+    };
+  } else {
+    return {
+      type: "job",
+      id: jobKey,
+      name: jobName(name, jobKey),
+      needs,
+      if: ifCondition || new BasicExpressionToken(void 0, void 0, "success()", void 0, void 0, void 0),
+      env,
+      concurrency,
+      environment,
+      strategy,
+      "runs-on": runsOn,
+      container,
+      services,
+      outputs,
+      steps,
+      snapshot
+    };
+  }
+}
+function jobName(name, jobKey) {
+  if (name === void 0) {
+    return jobKey;
+  }
+  if (isString(name) && name.value === "") {
+    return jobKey;
+  }
+  return name;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/jobs.js
+function convertJobs(context, token) {
+  if (isMapping(token)) {
+    const result = [];
+    const jobsWithSatisfiedNeeds = [];
+    const alljobsWithUnsatisfiedNeeds = [];
+    for (const item of token) {
+      const jobKey = item.key.assertString("job name");
+      const jobDef = item.value.assertMapping(`job ${jobKey.value}`);
+      const job = handleTemplateTokenErrors(token, context, void 0, () => convertJob(context, jobKey, jobDef));
+      if (job) {
+        result.push(job);
+        const node = {
+          name: job.id.value,
+          needs: Object.assign([], job.needs)
+        };
+        if (node.needs.length > 0) {
+          alljobsWithUnsatisfiedNeeds.push(node);
+        } else {
+          jobsWithSatisfiedNeeds.push(node);
+        }
+      }
+    }
+    validateNeeds(token, context, result, jobsWithSatisfiedNeeds, alljobsWithUnsatisfiedNeeds);
+    return result;
+  }
+  context.error(token, "Invalid format for jobs");
+  return [];
+}
+function validateNeeds(token, context, result, jobsWithSatisfiedNeeds, alljobsWithUnsatisfiedNeeds) {
+  if (jobsWithSatisfiedNeeds.length == 0) {
+    context.error(token, "The workflow must contain at least one job with no dependencies.");
+    return;
+  }
+  while (jobsWithSatisfiedNeeds.length > 0) {
+    const currentJob = jobsWithSatisfiedNeeds.shift();
+    if (currentJob == void 0) {
+      break;
+    }
+    for (let i = alljobsWithUnsatisfiedNeeds.length - 1; i >= 0; i--) {
+      const unsatisfiedJob = alljobsWithUnsatisfiedNeeds[i];
+      for (let j = unsatisfiedJob.needs.length - 1; j >= 0; j--) {
+        const need = unsatisfiedJob.needs[j];
+        if (need.value == currentJob.name) {
+          unsatisfiedJob.needs.splice(j, 1);
+          if (unsatisfiedJob.needs.length == 0) {
+            jobsWithSatisfiedNeeds.push(unsatisfiedJob);
+            alljobsWithUnsatisfiedNeeds.splice(i, 1);
+          }
+        }
+      }
+    }
+  }
+  if (alljobsWithUnsatisfiedNeeds.length > 0) {
+    const jobNames = result.map((x) => x.id.value);
+    for (const unsatisfiedJob of alljobsWithUnsatisfiedNeeds) {
+      for (const need of unsatisfiedJob.needs) {
+        if (jobNames.includes(need.value)) {
+          context.error(need, `Job '${unsatisfiedJob.name}' depends on job '${need.value}' which creates a cycle in the dependency graph.`);
+        } else {
+          context.error(need, `Job '${unsatisfiedJob.name}' depends on unknown job '${need.value}'.`);
+        }
+      }
+    }
+  }
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/job/inputs.js
+function convertWorkflowJobInputs(context, job) {
+  const inputDefinitions = createTokenMap(job["input-definitions"]?.assertMapping("workflow job input definitions"), "inputs");
+  const inputValues = createTokenMap(job["input-values"]?.assertMapping("workflow job input values"), "with");
+  if (inputDefinitions !== void 0) {
+    for (const [, [name, value]] of inputDefinitions) {
+      const inputSpec = createTokenMap(value.assertMapping(`input ${name}`), `input ${name} key`);
+      const inputTypeToken = inputSpec?.get("type")?.[1];
+      if (!inputTypeToken) {
+        continue;
+      }
+      const inputSet = inputValues !== void 0 && inputValues.has(name.toLowerCase());
+      const required = inputSpec.get("required")?.[1].assertBoolean(`input ${name} required`).value;
+      if (required && !inputSet) {
+        context.error(job.ref, `Input ${name} is required, but not provided while calling.`);
+      }
+    }
+  }
+  if (inputValues !== void 0) {
+    for (const [, [name, value]] of inputValues) {
+      if (!inputDefinitions?.has(name.toLowerCase())) {
+        context.error(value, `Invalid input, ${name} is not defined in the referenced workflow.`);
+      }
+    }
+  }
+}
+function createTokenMap(mapping, description) {
+  if (!mapping) {
+    return void 0;
+  }
+  const result = /* @__PURE__ */ new Map();
+  for (const item of mapping) {
+    const name = item.key.assertString(`${description} key`);
+    result.set(name.value.toLowerCase(), [name.value, item.value]);
+  }
+  return result;
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/job/secrets.js
+function convertWorkflowJobSecrets(context, job) {
+  if (job["inherit-secrets"]) {
+    return;
+  }
+  const secretDefinitions = createTokenMap(job["secret-definitions"]?.assertMapping("workflow job secret definitions"), "secrets");
+  const secretValues = createTokenMap(job["secret-values"]?.assertMapping("workflow job secret values"), "secrets");
+  if (secretDefinitions !== void 0) {
+    for (const [, [name, value]] of secretDefinitions) {
+      if (value instanceof NullToken) {
+        continue;
+      }
+      const secretSpec = createTokenMap(value.assertMapping(`secret ${name}`), `secret ${name} key`);
+      const required = secretSpec?.get("required")?.[1].assertBoolean(`secret ${name} required`).value;
+      if (required) {
+        if (secretValues == void 0 || !secretValues.has(name.toLowerCase())) {
+          context.error(job.ref, `Secret ${name} is required, but not provided while calling.`);
+        }
+      }
+    }
+  }
+  if (secretValues !== void 0) {
+    for (const [, [name, value]] of secretValues) {
+      if (!secretDefinitions?.has(name.toLowerCase())) {
+        context.error(value, `Invalid secret, ${name} is not defined in the referenced workflow.`);
+      }
+    }
+  }
+}
+
+// node_modules/@actions/workflow-parser/dist/model/converter/referencedWorkflow.js
+function convertReferencedWorkflow(context, referencedWorkflow, job) {
+  const mapping = referencedWorkflow.assertMapping("root");
+  const tokenForErrors = job.ref;
+  for (const pair of mapping) {
+    const key = pair.key.assertString("root key");
+    switch (key.value) {
+      case "on": {
+        handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertReferencedWorkflowOn(context, pair.value, job));
+        break;
+      }
+      case "jobs": {
+        job.jobs = handleTemplateTokenErrors(tokenForErrors, context, [], () => convertJobs(context, pair.value));
+        break;
+      }
+    }
+  }
+}
+function convertReferencedWorkflowOn(context, on, job) {
+  const tokenForErrors = job.ref;
+  switch (on.templateTokenType) {
+    case TokenType.String: {
+      const event = on.assertString("Reference workflow on value").value;
+      if (event === "workflow_call") {
+        handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobInputs(context, job));
+        handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobSecrets(context, job));
+        return;
+      }
+      break;
+    }
+    case TokenType.Sequence: {
+      const events = on.assertSequence("Reference workflow on value");
+      for (const eventToken of events) {
+        const event = eventToken.assertString(`Reference workflow on value ${eventToken}`).value;
+        if (event === "workflow_call") {
+          handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobInputs(context, job));
+          handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobSecrets(context, job));
+          return;
+        }
+      }
+      break;
+    }
+    case TokenType.Mapping: {
+      const eventMapping = on.assertMapping("Reference workflow on value");
+      for (const pair of eventMapping) {
+        const event = pair.key.assertString(`Reference workflow on value ${pair.key}`).value;
+        if (event !== "workflow_call") {
+          continue;
+        }
+        if (pair.value.templateTokenType === TokenType.Null) {
+          handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobInputs(context, job));
+          handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobSecrets(context, job));
+          return;
+        }
+        const definitions = pair.value.assertMapping(`Reference workflow on value ${pair.key}`);
+        for (const definition of definitions) {
+          const definitionKey = definition.key.assertString(`on-workflow_call-${definition.key}`).value;
+          switch (definitionKey) {
+            case "inputs":
+              job["input-definitions"] = definition.value.assertMapping(`on-workflow_call-${definition.key}`);
+              break;
+            case "outputs":
+              job.outputs = definition.value.assertMapping(`on-workflow_call-${definition.key}`);
+              break;
+            case "secrets":
+              job["secret-definitions"] = definition.value.assertMapping(`on-workflow_call-${definition.key}`);
+              break;
+          }
+        }
+        handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobInputs(context, job));
+        handleTemplateTokenErrors(tokenForErrors, context, void 0, () => convertWorkflowJobSecrets(context, job));
+        return;
+      }
+      break;
+    }
+  }
+  context.error(tokenForErrors, "workflow_call key is not defined in the referenced workflow.");
+}
+
+// node_modules/@actions/workflow-parser/dist/model/convert.js
+var ErrorPolicy;
+(function(ErrorPolicy2) {
+  ErrorPolicy2[ErrorPolicy2["ReturnErrorsOnly"] = 0] = "ReturnErrorsOnly";
+  ErrorPolicy2[ErrorPolicy2["TryConversion"] = 1] = "TryConversion";
+})(ErrorPolicy || (ErrorPolicy = {}));
+var defaultOptions = {
+  maxReusableWorkflowDepth: 4,
+  fetchReusableWorkflowDepth: 0,
+  errorPolicy: ErrorPolicy.ReturnErrorsOnly,
+  featureFlags: new FeatureFlags()
+};
+async function convertWorkflowTemplate(context, root, fileProvider, options = defaultOptions) {
+  const result = {};
+  const opts = getOptionsWithDefaults(options);
+  context.state.featureFlags = opts.featureFlags;
+  if (context.errors.getErrors().length > 0 && opts.errorPolicy === ErrorPolicy.ReturnErrorsOnly) {
+    result.errors = context.errors.getErrors().map((x) => ({
+      Message: x.message
+    }));
+    return result;
+  }
+  if (fileProvider === void 0 && opts.fetchReusableWorkflowDepth > 0) {
+    context.error(root, new Error("A file provider is required to fetch reusable workflows"));
+  }
+  try {
+    const rootMapping = root.assertMapping("root");
+    for (const item of rootMapping) {
+      const key = item.key.assertString("root key");
+      switch (key.value) {
+        case "on":
+          result.events = handleTemplateTokenErrors(root, context, {}, () => convertOn(context, item.value));
+          break;
+        case "jobs":
+          result.jobs = handleTemplateTokenErrors(root, context, [], () => convertJobs(context, item.value));
+          break;
+        case "concurrency":
+          handleTemplateTokenErrors(root, context, {}, () => convertConcurrency(context, item.value));
+          result.concurrency = item.value;
+          break;
+        case "env":
+          result.env = item.value;
+          break;
+      }
+    }
+    for (const job of result.jobs || []) {
+      if (isReusableWorkflowJob(job)) {
+        if (opts.maxReusableWorkflowDepth === 0) {
+          context.error(job.ref, new Error("Reusable workflows are not allowed"));
+          continue;
+        }
+        if (opts.fetchReusableWorkflowDepth === 0 || fileProvider === void 0) {
+          continue;
+        }
+        try {
+          const file = await fileProvider.getFileContent(parseFileReference(job.ref.value));
+          const workflow = parseWorkflow(file, context);
+          if (!workflow.value) {
+            continue;
+          }
+          convertReferencedWorkflow(context, workflow.value, job);
+        } catch {
+          context.error(job.ref, new Error("Unable to find reusable workflow"));
+        }
+      }
+    }
+  } catch (err) {
+    if (err instanceof TemplateTokenError) {
+      context.error(err.token, err);
+    } else {
+      context.error(root, err);
+    }
+  } finally {
+    if (context.errors.getErrors().length > 0) {
+      result.errors = context.errors.getErrors().map((x) => ({
+        Message: x.message
+      }));
+    }
+  }
+  return result;
+}
+function getOptionsWithDefaults(options) {
+  return {
+    maxReusableWorkflowDepth: options.maxReusableWorkflowDepth !== void 0 ? options.maxReusableWorkflowDepth : defaultOptions.maxReusableWorkflowDepth,
+    fetchReusableWorkflowDepth: options.fetchReusableWorkflowDepth !== void 0 ? options.fetchReusableWorkflowDepth : defaultOptions.fetchReusableWorkflowDepth,
+    errorPolicy: options.errorPolicy !== void 0 ? options.errorPolicy : defaultOptions.errorPolicy,
+    featureFlags: options.featureFlags ?? defaultOptions.featureFlags
+  };
+}
+
+// src/parse-needs.ts
+var EMPTY = { jobs: {}, order: [] };
+function jobName2(token) {
+  if (!token) return null;
+  if (isString(token)) return token.value;
+  if (isBasicExpression(token)) return token.source ?? token.toString();
+  return token.toString();
+}
+async function parseJobsNeeds(yamlText) {
+  try {
+    const { context, value } = parseWorkflow(
+      { name: "workflow.yml", content: yamlText },
+      new NoOperationTraceWriter()
+    );
+    if (!value) return EMPTY;
+    const template = await convertWorkflowTemplate(context, value, void 0, {
+      errorPolicy: ErrorPolicy.TryConversion
+    });
+    const out = {};
+    const order = [];
+    for (const job of template.jobs) {
+      const id = job.id.value;
+      const strategy = job.strategy;
+      out[id] = {
+        id,
+        name: jobName2(job.name),
+        needs: (job.needs ?? []).map((n) => n.value),
+        matrix: Boolean(strategy && isMapping(strategy) && strategy.find("matrix") !== void 0)
+      };
+      order.push(id);
+    }
+    return { jobs: out, order };
   } catch {
     return EMPTY;
   }
-  const jobs = doc?.jobs;
-  if (!jobs || typeof jobs !== "object" || Array.isArray(jobs)) return EMPTY;
-  const out = {};
-  const order = [];
-  for (const [id, raw] of Object.entries(jobs)) {
-    const def = raw && typeof raw === "object" ? raw : {};
-    const strategy = def.strategy && typeof def.strategy === "object" && !Array.isArray(def.strategy) ? def.strategy : null;
-    out[id] = {
-      id,
-      name: def.name != null ? String(def.name) : null,
-      needs: toNeeds(def.needs),
-      matrix: Boolean(strategy && strategy.matrix != null)
-    };
-    order.push(id);
-  }
-  return { jobs: out, order };
 }
 
 // src/run-data.ts
@@ -12548,8 +19080,8 @@ function nodeStatusFromLegs(legs) {
   }
   return { status: "completed", conclusion: worst };
 }
-function baseName(jobName) {
-  return jobName.replace(/\s*\(.*\)\s*$/, "").trim();
+function baseName(jobName3) {
+  return jobName3.replace(/\s*\(.*\)\s*$/, "").trim();
 }
 function namePrefix(name) {
   if (!name) return null;
@@ -12598,7 +19130,7 @@ async function fetchRunGraph({ repo, runId }) {
           mediaType: { format: "raw" }
         });
         const yaml = res.data;
-        parsed = parseJobsNeeds(yaml);
+        parsed = await parseJobsNeeds(yaml);
         cacheYaml(cacheKey, parsed);
       } catch (e) {
         yamlError = e instanceof Error ? e.message : String(e);
@@ -12783,13 +19315,13 @@ async function startServer(instanceId) {
   const server = http.createServer(async (req, res) => {
     try {
       if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
-        const html = await readFile(join(__dirname, "index.html"));
+        const html = await readFile(join2(__dirname, "index.html"));
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(html);
         return;
       }
       if (req.method === "GET" && req.url === "/anim.js") {
-        const js = await readFile(join(__dirname, "web", "anim.js"));
+        const js = await readFile(join2(__dirname, "web", "anim.js"));
         res.writeHead(200, {
           "Content-Type": "text/javascript; charset=utf-8",
           "Cache-Control": "max-age=3600"

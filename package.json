@@ -10,10 +10,10 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.web.json"
   },
   "dependencies": {
+    "@actions/workflow-parser": "^0.3.58",
     "@octokit/plugin-retry": "^7.1.4",
     "@octokit/rest": "^21.1.1",
-    "motion": "^12.40.0",
-    "yaml": "^2.7.0"
+    "motion": "^12.40.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

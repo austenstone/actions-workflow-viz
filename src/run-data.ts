@@ -3,6 +3,8 @@
 // job-dependency DAG annotated with live status. The output envelope is consumed
 // directly by index.html, so its shape is load-bearing — keep field names stable.
 
+import type { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
+
 import { getOctokit } from "./github.js";
 import { parseJobsNeeds, type ParsedJobs } from "./parse-needs.js";
 import type {
@@ -15,22 +17,10 @@ import type {
     RunRef,
 } from "./types.js";
 
-// Minimal view of the Actions jobs API payload we depend on.
-interface LiveStep {
-    name: string;
-    status: string;
-    conclusion: string | null;
-}
-interface LiveJob {
-    id: number;
-    name: string;
-    status: string;
-    conclusion: string | null;
-    started_at: string | null;
-    completed_at: string | null;
-    html_url: string | null;
-    steps?: LiveStep[];
-}
+// The Actions jobs API payload, derived straight from Octokit's typings rather
+// than redeclared by hand.
+type LiveJob =
+    RestEndpointMethodTypes["actions"]["listJobsForWorkflowRun"]["response"]["data"]["jobs"][number];
 
 // Accepts "owner/repo" + run id, or a full run URL like
 // https://github.com/owner/repo/actions/runs/123456789
@@ -152,7 +142,7 @@ export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> 
                     mediaType: { format: "raw" },
                 });
                 const yaml = res.data as unknown as string;
-                parsed = parseJobsNeeds(yaml);
+                parsed = await parseJobsNeeds(yaml);
                 cacheYaml(cacheKey, parsed);
             } catch (e) {
                 yamlError = e instanceof Error ? e.message : String(e);
