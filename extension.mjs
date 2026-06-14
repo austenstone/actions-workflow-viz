@@ -12503,10 +12503,12 @@ function parseJobsNeeds(yamlText) {
   const order = [];
   for (const [id, raw] of Object.entries(jobs)) {
     const def = raw && typeof raw === "object" ? raw : {};
+    const strategy = def.strategy && typeof def.strategy === "object" && !Array.isArray(def.strategy) ? def.strategy : null;
     out[id] = {
       id,
       name: def.name != null ? String(def.name) : null,
-      needs: toNeeds(def.needs)
+      needs: toNeeds(def.needs),
+      matrix: Boolean(strategy && strategy.matrix != null)
     };
     order.push(id);
   }
@@ -12548,6 +12550,13 @@ function nodeStatusFromLegs(legs) {
 }
 function baseName(jobName) {
   return jobName.replace(/\s*\(.*\)\s*$/, "").trim();
+}
+function namePrefix(name) {
+  if (!name) return null;
+  const i = name.indexOf("${{");
+  if (i <= 0) return null;
+  const prefix = name.slice(0, i).trim();
+  return prefix || null;
 }
 var yamlCache = /* @__PURE__ */ new Map();
 var YAML_CACHE_MAX = 64;
@@ -12659,10 +12668,27 @@ function buildGraph(parsed, liveJobs) {
     else unmatched.push(j);
   }
   const emptyJobIds = jobIds.filter((id) => legsById.get(id).length === 0);
-  if (unmatched.length > 0 && emptyJobIds.length === 1) {
-    const target = emptyJobIds[0];
-    for (const j of unmatched) legsById.get(target).push(legOf(j));
-    unmatched.length = 0;
+  const emptyMatrixJobs = emptyJobIds.filter((id) => parsed.jobs[id].matrix);
+  if (unmatched.length > 0) {
+    if (emptyMatrixJobs.length === 1) {
+      const target = emptyMatrixJobs[0];
+      for (const j of unmatched) legsById.get(target).push(legOf(j));
+      unmatched.length = 0;
+    } else if (emptyMatrixJobs.length > 1) {
+      const prefixed = emptyMatrixJobs.map((id) => ({ id, prefix: namePrefix(parsed.jobs[id].name) })).filter((p) => Boolean(p.prefix));
+      const leftover = [];
+      for (const j of unmatched) {
+        const hits = prefixed.filter((p) => j.name.startsWith(p.prefix));
+        if (hits.length === 1) legsById.get(hits[0].id).push(legOf(j));
+        else leftover.push(j);
+      }
+      unmatched.length = 0;
+      unmatched.push(...leftover);
+    } else if (emptyJobIds.length === 1) {
+      const target = emptyJobIds[0];
+      for (const j of unmatched) legsById.get(target).push(legOf(j));
+      unmatched.length = 0;
+    }
   }
   const nodes = jobIds.map((id) => {
     const def = parsed.jobs[id];
@@ -12675,7 +12701,7 @@ function buildGraph(parsed, liveJobs) {
       status,
       conclusion,
       legs,
-      matrix: legs.length > 1,
+      matrix: parsed.jobs[id].matrix || legs.length > 1,
       startedAt: minDate(legs.map((l) => l.startedAt)),
       completedAt: maxDate(legs.map((l) => l.completedAt)),
       url: legs[0]?.url || null

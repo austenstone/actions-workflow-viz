@@ -91,6 +91,17 @@ function baseName(jobName: string): string {
     return jobName.replace(/\s*\(.*\)\s*$/, "").trim();
 }
 
+function namePrefix(name: string | null): string | null {
+    // Static text before the first `${{` in a matrix job's name template, used
+    // to attribute expression-named legs (e.g. `name: bench-${{ matrix.x }}`
+    // → "bench-"). Returns null when there's no usable static prefix.
+    if (!name) return null;
+    const i = name.indexOf("${{");
+    if (i <= 0) return null;
+    const prefix = name.slice(0, i).trim();
+    return prefix || null;
+}
+
 // Workflow YAML is immutable per commit, so its parsed jobs/needs structure is
 // cached across polls keyed by repo+path+sha. Bounded to avoid unbounded growth.
 const yamlCache = new Map<string, ParsedJobs>();
@@ -174,7 +185,7 @@ export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> 
     };
 }
 
-function buildGraph(
+export function buildGraph(
     parsed: ParsedJobs,
     liveJobs: LiveJob[],
 ): { nodes: GraphNode[]; edges: GraphEdge[]; flat: boolean } {
@@ -223,15 +234,45 @@ function buildGraph(
         else unmatched.push(j);
     }
 
-    // Common case: a single matrix job whose live legs carry an expression-based
-    // `name:` (so they don't match the job id). If exactly one YAML job ended up
-    // with no legs and we have orphan live jobs, they almost certainly belong to
-    // it — claim them rather than scattering rootless nodes that break the edges.
+    // Fold any orphan live jobs (expression-named matrix legs that didn't match
+    // a job id or name) into their parent matrix job. A dynamic matrix's legs
+    // appear late and carry resolved names like "claude-opus-4.7" that match
+    // nothing — without this they'd scatter as rootless, edgeless nodes.
+    //
+    // Only EMPTY MATRIX jobs are claim candidates; a plain downstream job that
+    // merely hasn't started yet must not absorb matrix legs (that was the old
+    // single-empty-job bug — it failed whenever a matrix coexisted with a
+    // pending downstream job).
     const emptyJobIds = jobIds.filter((id) => legsById.get(id)!.length === 0);
-    if (unmatched.length > 0 && emptyJobIds.length === 1) {
-        const target = emptyJobIds[0];
-        for (const j of unmatched) legsById.get(target)!.push(legOf(j));
-        unmatched.length = 0;
+    const emptyMatrixJobs = emptyJobIds.filter((id) => parsed.jobs[id].matrix);
+    if (unmatched.length > 0) {
+        if (emptyMatrixJobs.length === 1) {
+            const target = emptyMatrixJobs[0];
+            for (const j of unmatched) legsById.get(target)!.push(legOf(j));
+            unmatched.length = 0;
+        } else if (emptyMatrixJobs.length > 1) {
+            // Multiple dynamic matrices: assign each leg to the matrix job whose
+            // static name prefix it matches (e.g. `name: bench-${{...}}` →
+            // "bench-"). Anything ambiguous stays a rootless node.
+            const prefixed = emptyMatrixJobs
+                .map((id) => ({ id, prefix: namePrefix(parsed.jobs[id].name) }))
+                .filter((p): p is { id: string; prefix: string } => Boolean(p.prefix));
+            const leftover: LiveJob[] = [];
+            for (const j of unmatched) {
+                const hits = prefixed.filter((p) => j.name.startsWith(p.prefix));
+                if (hits.length === 1) legsById.get(hits[0].id)!.push(legOf(j));
+                else leftover.push(j);
+            }
+            unmatched.length = 0;
+            unmatched.push(...leftover);
+        } else if (emptyJobIds.length === 1) {
+            // Fallback: exactly one empty (non-matrix) job and we have orphans —
+            // preserve the original heuristic so YAML the parser couldn't flag as
+            // a matrix still folds rather than scattering.
+            const target = emptyJobIds[0];
+            for (const j of unmatched) legsById.get(target)!.push(legOf(j));
+            unmatched.length = 0;
+        }
     }
 
     const nodes: GraphNode[] = jobIds.map((id) => {
@@ -247,7 +288,7 @@ function buildGraph(
             status,
             conclusion,
             legs,
-            matrix: legs.length > 1,
+            matrix: parsed.jobs[id].matrix || legs.length > 1,
             startedAt: minDate(legs.map((l) => l.startedAt)),
             completedAt: maxDate(legs.map((l) => l.completedAt)),
             url: legs[0]?.url || null,

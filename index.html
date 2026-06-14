@@ -231,6 +231,21 @@
                 background: var(--wait-bg);
                 color: var(--muted);
             }
+            .c-name-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+            .c-name-wrap .c-name { flex: 0 1 auto; }
+            .mtx {
+                flex: 0 0 auto;
+                font-size: 9.5px;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                padding: 1px 5px;
+                border-radius: 999px;
+                background: var(--run-bg);
+                color: var(--run);
+                border: 1px solid var(--run);
+                cursor: default;
+            }
             .c-step { margin-top: 7px; }
             .sbar {
                 height: 4px; border-radius: 999px; background: var(--wait-bg);
@@ -428,18 +443,25 @@
                 top.className = "c-top";
                 const ico = document.createElement("span");
                 ico.className = "ico";
+                const nameWrap = document.createElement("span");
+                nameWrap.className = "c-name-wrap";
                 const name = document.createElement("span");
                 name.className = "c-name";
                 name.textContent = node.label;
                 name.title = node.label;
-                top.append(ico, name);
+                const mtx = document.createElement("span");
+                mtx.className = "mtx";
+                mtx.textContent = "matrix";
+                mtx.style.display = "none";
+                nameWrap.append(name, mtx);
+                top.append(ico, nameWrap);
                 const sub = document.createElement("div");
                 sub.className = "c-sub";
                 const dur = document.createElement("span");
                 dur.className = "dur";
                 sub.append(dur);
                 el.append(top, sub);
-                el._ico = ico; el._name = name; el._dur = dur; el._sub = sub;
+                el._ico = ico; el._name = name; el._dur = dur; el._sub = sub; el._mtx = mtx;
                 el._tag = null; el._step = null;
                 cardEls.set(node.id, el);
                 // Stagger the reveal; the card is appended synchronously this tick,
@@ -469,11 +491,25 @@
                 if (el._ico.className !== icoCls) el._ico.className = icoCls;
                 if (el._ico.textContent !== st.ico) el._ico.textContent = st.ico;
                 if (el._name.textContent !== node.label) { el._name.textContent = node.label; el._name.title = node.label; }
+                if (node.matrix) {
+                    if (el._mtx.style.display !== "") el._mtx.style.display = "";
+                    const n = node.legs.length;
+                    const mTxt = n ? `matrix · ${n}` : "matrix";
+                    if (el._mtx.textContent !== mTxt) el._mtx.textContent = mTxt;
+                    // Hover reveals the individual legs (resolved matrix values)
+                    // so the rollup never hides which combinations ran.
+                    const tip = node.legs.length
+                        ? node.legs.map((l) => `${l.name} — ${l.conclusion || l.status}`).join("\n")
+                        : "waiting for matrix legs…";
+                    if (el._mtx.title !== tip) el._mtx.title = tip;
+                } else if (el._mtx.style.display !== "none") {
+                    el._mtx.style.display = "none";
+                }
                 const durTxt = durOf(node, now) || st.label;
                 if (el._dur.textContent !== durTxt) el._dur.textContent = durTxt;
 
                 let tagTxt = null;
-                if (node.matrix) { const lp = legProgress(node); tagTxt = `${lp.done}/${lp.total} legs`; }
+                if (node.matrix && node.legs.length) { const lp = legProgress(node); tagTxt = `${lp.done}/${lp.total} legs`; }
                 else if (node.status === "completed") tagTxt = st.label;
                 if (tagTxt) {
                     if (!el._tag) { el._tag = document.createElement("span"); el._tag.className = "tag"; el._sub.append(el._tag); }
@@ -494,7 +530,7 @@
                     }
                     const wpct = Math.round(pct * 100);
                     if (el._step.pct !== wpct) { el._step.pct = wpct; tweenWidth(el._step.fill, wpct); }
-                    const lbl = sp && sp.cur ? `▸ ${sp.cur}` : (node.matrix ? `${lp.done}/${lp.total} legs done` : "running…");
+                    const lbl = sp && sp.cur ? `▸ ${sp.cur}` : (node.matrix && lp.total ? `${lp.done}/${lp.total} legs done` : "running…");
                     if (el._step.lbl.textContent !== lbl) el._step.lbl.textContent = lbl;
                 } else if (el._step) { el._step.wrap.remove(); el._step = null; }
                 return el;

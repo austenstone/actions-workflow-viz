@@ -11,6 +11,10 @@ export interface JobDef {
     id: string;
     name: string | null;
     needs: string[];
+    // True when the job declares a `strategy.matrix` — including dynamic matrices
+    // whose value is an expression (e.g. `${{ fromJson(...) }}`). Used to fold
+    // expression-named live legs back into their parent job node.
+    matrix: boolean;
 }
 
 export interface ParsedJobs {
@@ -44,11 +48,17 @@ export function parseJobsNeeds(yamlText: string): ParsedJobs {
         const def = (raw && typeof raw === "object" ? raw : {}) as {
             name?: unknown;
             needs?: unknown;
+            strategy?: unknown;
         };
+        const strategy =
+            def.strategy && typeof def.strategy === "object" && !Array.isArray(def.strategy)
+                ? (def.strategy as { matrix?: unknown })
+                : null;
         out[id] = {
             id,
             name: def.name != null ? String(def.name) : null,
             needs: toNeeds(def.needs),
+            matrix: Boolean(strategy && strategy.matrix != null),
         };
         order.push(id);
     }
