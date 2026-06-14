@@ -1,65 +1,50 @@
-// Live GitHub Actions run data: fetch run + jobs via the `gh` CLI, fetch the
-// workflow YAML for the run's commit, and fold them into a job dependency DAG
-// annotated with live status. No external deps; `gh` handles auth.
+// Live GitHub Actions run data via Octokit. Fetch the run + its jobs from the
+// Actions API, fetch the workflow YAML at the run's commit, and fold them into a
+// job-dependency DAG annotated with live status. The output envelope is consumed
+// directly by index.html, so its shape is load-bearing — keep field names stable.
 
-import { execFile } from "node:child_process";
-import { parseJobsNeeds } from "./parse-needs.mjs";
+import { getOctokit } from "./github.js";
+import { parseJobsNeeds, type ParsedJobs } from "./parse-needs.js";
+import type {
+    Conclusion,
+    GraphEdge,
+    GraphNode,
+    Leg,
+    NodeStatus,
+    RunGraph,
+    RunRef,
+} from "./types.js";
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-function ghOnce(args, { raw = false } = {}) {
-    return new Promise((resolve, reject) => {
-        execFile("gh", args, { maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
-            if (err) {
-                err.message = `gh ${args.join(" ")} failed: ${stderr || err.message}`;
-                err.stderr = stderr || "";
-                reject(err);
-                return;
-            }
-            if (raw) {
-                resolve(stdout);
-                return;
-            }
-            try {
-                resolve(JSON.parse(stdout));
-            } catch (e) {
-                reject(new Error(`Could not parse gh JSON output: ${e.message}`));
-            }
-        });
-    });
+// Minimal view of the Actions jobs API payload we depend on.
+interface LiveStep {
+    name: string;
+    status: string;
+    conclusion: string | null;
 }
-
-// GitHub's API throws transient 5xx (502/503/504) under load. Retry those a
-// couple times with backoff so a single blip doesn't kill the poll.
-function isTransient(err) {
-    const s = String(err?.stderr || err?.message || "");
-    return /HTTP 5\d\d|502|503|504|timeout|ETIMEDOUT|ECONNRESET|EAI_AGAIN/i.test(s);
-}
-
-async function gh(args, opts = {}) {
-    let lastErr;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            return await ghOnce(args, opts);
-        } catch (e) {
-            lastErr = e;
-            if (attempt < 2 && isTransient(e)) {
-                await sleep(400 * (attempt + 1));
-                continue;
-            }
-            throw e;
-        }
-    }
-    throw lastErr;
+interface LiveJob {
+    id: number;
+    name: string;
+    status: string;
+    conclusion: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    html_url: string | null;
+    steps?: LiveStep[];
 }
 
 // Accepts "owner/repo" + run id, or a full run URL like
 // https://github.com/owner/repo/actions/runs/123456789
-export function parseRunRef({ repo, runId, runUrl }) {
+export function parseRunRef({
+    repo,
+    runId,
+    runUrl,
+}: {
+    repo?: string;
+    runId?: number | string;
+    runUrl?: string;
+}): RunRef {
     if (runUrl) {
-        const m = String(runUrl).match(
-            /github\.com\/([^/]+\/[^/]+)\/actions\/runs\/(\d+)/,
-        );
+        const m = String(runUrl).match(/github\.com\/([^/]+\/[^/]+)\/actions\/runs\/(\d+)/);
         if (m) return { repo: m[1], runId: Number(m[2]) };
     }
     if (repo && runId != null) {
@@ -70,13 +55,24 @@ export function parseRunRef({ repo, runId, runUrl }) {
 
 // Normalize the GitHub job status/conclusion into a small status set the
 // renderer colors by.
-function nodeStatusFromLegs(legs) {
+function nodeStatusFromLegs(legs: Array<Pick<LiveJob, "status" | "conclusion"> | Leg>): {
+    status: NodeStatus;
+    conclusion: Conclusion;
+} {
     if (legs.length === 0) return { status: "pending", conclusion: null };
 
     if (legs.some((l) => l.status === "in_progress")) {
         return { status: "in_progress", conclusion: null };
     }
-    if (legs.some((l) => l.status === "queued" || l.status === "waiting" || l.status === "requested" || l.status === "pending")) {
+    if (
+        legs.some(
+            (l) =>
+                l.status === "queued" ||
+                l.status === "waiting" ||
+                l.status === "requested" ||
+                l.status === "pending",
+        )
+    ) {
         return { status: "queued", conclusion: null };
     }
     // All completed → roll up the worst conclusion.
@@ -89,43 +85,67 @@ function nodeStatusFromLegs(legs) {
     return { status: "completed", conclusion: worst };
 }
 
-function baseName(jobName) {
+function baseName(jobName: string): string {
     // Matrix legs look like "build (ubuntu-latest, 18)" — strip the suffix to
     // recover the base job display name.
     return jobName.replace(/\s*\(.*\)\s*$/, "").trim();
 }
 
-export async function fetchRunGraph({ repo, runId }) {
-    const run = await gh([
-        "api",
-        `repos/${repo}/actions/runs/${runId}`,
-    ]);
+// Workflow YAML is immutable per commit, so its parsed jobs/needs structure is
+// cached across polls keyed by repo+path+sha. Bounded to avoid unbounded growth.
+const yamlCache = new Map<string, ParsedJobs>();
+const YAML_CACHE_MAX = 64;
+function cacheYaml(key: string, value: ParsedJobs): void {
+    if (yamlCache.size >= YAML_CACHE_MAX) {
+        const oldest = yamlCache.keys().next().value;
+        if (oldest !== undefined) yamlCache.delete(oldest);
+    }
+    yamlCache.set(key, value);
+}
 
-    const jobsResp = await gh([
-        "api",
-        "--paginate",
-        `repos/${repo}/actions/runs/${runId}/jobs?per_page=100`,
-    ]);
-    const liveJobs = Array.isArray(jobsResp.jobs) ? jobsResp.jobs : [];
+export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
 
-    // Try to recover the dependency structure from the workflow YAML at the
-    // run's commit. If anything goes wrong we fall back to a flat board.
-    let parsed = { jobs: {}, order: [] };
-    let yamlError = null;
+    const { data: run } = await octokit.rest.actions.getWorkflowRun({
+        owner,
+        repo: name,
+        run_id: runId,
+    });
+
+    const liveJobs = (await octokit.paginate(octokit.rest.actions.listJobsForWorkflowRun, {
+        owner,
+        repo: name,
+        run_id: runId,
+        per_page: 100,
+    })) as unknown as LiveJob[];
+
+    // Recover the dependency structure from the workflow YAML at the run's
+    // commit. The YAML is immutable for a given commit, so cache the parse by
+    // repo+path+sha — repeat polls then cost 2 API calls instead of 3. Any
+    // failure here falls back to a flat board.
+    let parsed: ParsedJobs = { jobs: {}, order: [] };
+    let yamlError: string | null = null;
     if (run.path && run.head_sha) {
-        try {
-            const yaml = await gh(
-                [
-                    "api",
-                    `repos/${repo}/contents/${run.path}?ref=${run.head_sha}`,
-                    "-H",
-                    "Accept: application/vnd.github.raw",
-                ],
-                { raw: true },
-            );
-            parsed = parseJobsNeeds(yaml);
-        } catch (e) {
-            yamlError = e.message;
+        const cacheKey = `${repo}:${run.path}@${run.head_sha}`;
+        const cached = yamlCache.get(cacheKey);
+        if (cached) {
+            parsed = cached;
+        } else {
+            try {
+                const res = await octokit.rest.repos.getContent({
+                    owner,
+                    repo: name,
+                    path: run.path,
+                    ref: run.head_sha,
+                    mediaType: { format: "raw" },
+                });
+                const yaml = res.data as unknown as string;
+                parsed = parseJobsNeeds(yaml);
+                cacheYaml(cacheKey, parsed);
+            } catch (e) {
+                yamlError = e instanceof Error ? e.message : String(e);
+            }
         }
     }
 
@@ -135,16 +155,16 @@ export async function fetchRunGraph({ repo, runId }) {
         repo,
         runId,
         runName: run.name || run.display_title || `Run #${run.run_number}`,
-        runNumber: run.run_number,
+        runNumber: run.run_number ?? null,
         workflowName: run.name || null,
-        status: run.status, // queued | in_progress | completed
-        conclusion: run.conclusion, // success | failure | ...
-        event: run.event,
-        headBranch: run.head_branch,
+        status: run.status ?? "queued",
+        conclusion: run.conclusion ?? null,
+        event: run.event ?? null,
+        headBranch: run.head_branch ?? null,
         headSha: run.head_sha ? run.head_sha.slice(0, 7) : null,
-        htmlUrl: run.html_url,
-        runStartedAt: run.run_started_at,
-        updatedAt: run.updated_at,
+        htmlUrl: run.html_url ?? null,
+        runStartedAt: run.run_started_at ?? null,
+        updatedAt: run.updated_at ?? null,
         actor: run.actor?.login || run.triggering_actor?.login || null,
         nodes: graph.nodes,
         edges: graph.edges,
@@ -154,13 +174,16 @@ export async function fetchRunGraph({ repo, runId }) {
     };
 }
 
-function buildGraph(parsed, liveJobs) {
+function buildGraph(
+    parsed: ParsedJobs,
+    liveJobs: LiveJob[],
+): { nodes: GraphNode[]; edges: GraphEdge[]; flat: boolean } {
     const jobIds = parsed.order;
     const hasStructure = jobIds.length > 0;
 
     if (!hasStructure) {
         // Flat board: one node per live job, no edges.
-        const nodes = liveJobs.map((j) => {
+        const nodes: GraphNode[] = liveJobs.map((j) => {
             const { status, conclusion } = nodeStatusFromLegs([j]);
             return {
                 id: String(j.id),
@@ -178,25 +201,25 @@ function buildGraph(parsed, liveJobs) {
 
     // Map each YAML job id to its live legs. Match a live job to a base job by
     // exact name, by base (matrix-stripped) name, or by the raw job id.
-    const displayToId = new Map();
+    const displayToId = new Map<string, string>();
     for (const id of jobIds) {
         const def = parsed.jobs[id];
         displayToId.set(id, id);
         if (def.name) displayToId.set(def.name, id);
     }
 
-    const legsById = new Map(jobIds.map((id) => [id, []]));
-    const unmatched = [];
+    const legsById = new Map<string, Leg[]>(jobIds.map((id) => [id, []]));
+    const unmatched: LiveJob[] = [];
     for (const j of liveJobs) {
         const candidates = [j.name, baseName(j.name)];
-        let target = null;
+        let target: string | null = null;
         for (const c of candidates) {
             if (displayToId.has(c)) {
-                target = displayToId.get(c);
+                target = displayToId.get(c)!;
                 break;
             }
         }
-        if (target) legsById.get(target).push(legOf(j));
+        if (target) legsById.get(target)!.push(legOf(j));
         else unmatched.push(j);
     }
 
@@ -204,16 +227,16 @@ function buildGraph(parsed, liveJobs) {
     // `name:` (so they don't match the job id). If exactly one YAML job ended up
     // with no legs and we have orphan live jobs, they almost certainly belong to
     // it — claim them rather than scattering rootless nodes that break the edges.
-    const emptyJobIds = jobIds.filter((id) => legsById.get(id).length === 0);
+    const emptyJobIds = jobIds.filter((id) => legsById.get(id)!.length === 0);
     if (unmatched.length > 0 && emptyJobIds.length === 1) {
         const target = emptyJobIds[0];
-        for (const j of unmatched) legsById.get(target).push(legOf(j));
+        for (const j of unmatched) legsById.get(target)!.push(legOf(j));
         unmatched.length = 0;
     }
 
-    const nodes = jobIds.map((id) => {
+    const nodes: GraphNode[] = jobIds.map((id) => {
         const def = parsed.jobs[id];
-        const legs = legsById.get(id);
+        const legs = legsById.get(id)!;
         const { status, conclusion } = nodeStatusFromLegs(legs);
         // Expression-valued `name:` (e.g. "${{ matrix.model }}") is useless as a
         // node title — fall back to the job id.
@@ -249,7 +272,7 @@ function buildGraph(parsed, liveJobs) {
     }
 
     const nodeIds = new Set(nodes.map((n) => n.id));
-    const edges = [];
+    const edges: GraphEdge[] = [];
     for (const id of jobIds) {
         for (const dep of parsed.jobs[id].needs) {
             if (nodeIds.has(dep)) edges.push({ from: dep, to: id });
@@ -259,7 +282,7 @@ function buildGraph(parsed, liveJobs) {
     return { nodes, edges, flat: false };
 }
 
-function legOf(j) {
+function legOf(j: LiveJob): Leg {
     return {
         name: j.name,
         status: j.status,
@@ -273,12 +296,12 @@ function legOf(j) {
     };
 }
 
-function minDate(dates) {
-    const valid = dates.filter(Boolean).sort();
+function minDate(dates: Array<string | null>): string | null {
+    const valid = dates.filter((d): d is string => Boolean(d)).sort();
     return valid[0] || null;
 }
 
-function maxDate(dates) {
-    const valid = dates.filter(Boolean).sort();
+function maxDate(dates: Array<string | null>): string | null {
+    const valid = dates.filter((d): d is string => Boolean(d)).sort();
     return valid[valid.length - 1] || null;
 }

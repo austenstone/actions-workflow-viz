@@ -1,520 +1,702 @@
 <!doctype html>
-<html lang="en">
+<html>
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Actions Workflow Run</title>
+        <title>Workflow Run</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <style>
             :root {
                 --ok: var(--true-color-green, #1a7f37);
-                --ok-muted: var(--true-color-green-muted, rgba(26, 127, 55, 0.15));
-                --bad: var(--true-color-red, #cf222e);
-                --bad-muted: var(--true-color-red-muted, rgba(207, 34, 46, 0.15));
+                --ok-bg: var(--true-color-green-muted, rgba(74, 194, 107, 0.16));
                 --run: var(--true-color-yellow, #bf8700);
-                --run-muted: var(--true-color-yellow-muted, rgba(191, 135, 0, 0.18));
-                --idle: var(--text-color-muted, #656d76);
-                --idle-muted: rgba(110, 118, 129, 0.12);
-                --edge: var(--border-color-default, #d0d7de);
+                --run-bg: var(--true-color-yellow-muted, rgba(212, 167, 44, 0.18));
+                --fail: var(--true-color-red, #cf222e);
+                --fail-bg: var(--true-color-red-muted, rgba(255, 129, 130, 0.16));
+                --wait: var(--text-color-muted, #59636e);
+                --wait-bg: rgba(125, 133, 144, 0.12);
+                --line: var(--border-color-default, #d1d9e0);
+                --bg: var(--background-color-default, #ffffff);
+                --fg: var(--text-color-default, #1f2328);
+                --muted: var(--text-color-muted, #59636e);
             }
-
-            * {
-                box-sizing: border-box;
-            }
-
-            html,
+            * { box-sizing: border-box; }
+            html, body { height: 100%; }
             body {
                 margin: 0;
-                height: 100%;
-            }
-
-            body {
-                background: var(--background-color-default, #ffffff);
-                color: var(--text-color-default, #1f2328);
+                background: var(--bg);
+                color: var(--fg);
                 font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-                font-size: var(--text-body-medium, 14px);
-                line-height: var(--leading-body-medium, 20px);
+                font-size: var(--text-body-medium, 13px);
+                line-height: var(--leading-body-medium, 18px);
                 display: flex;
                 flex-direction: column;
+                overflow: hidden;
             }
 
+            /* ---- header ---- */
             header {
-                padding: 12px 16px;
-                border-bottom: 1px solid var(--border-color-default, #d0d7de);
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
+                padding: 12px 14px 10px;
+                border-bottom: 1px solid var(--line);
+                flex: 0 0 auto;
             }
-
-            .title-row {
+            .h-top {
                 display: flex;
                 align-items: center;
-                gap: 10px;
-                flex-wrap: wrap;
+                gap: 8px;
             }
-
-            h1 {
+            .h-title {
+                font-family: var(--font-sans-display, var(--font-sans));
+                font-size: var(--text-title-medium, 16px);
+                font-weight: var(--font-weight-semibold, 600);
+                line-height: 1.25;
                 margin: 0;
-                font-size: var(--text-title-medium, 18px);
-                font-weight: var(--font-weight-semibold, 600);
-                line-height: 1.2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1 1 auto;
             }
-
-            .meta {
-                color: var(--text-color-muted, #656d76);
-                font-size: var(--text-body-small, 12px);
-                display: flex;
-                gap: 12px;
-                flex-wrap: wrap;
-                align-items: center;
-            }
-
-            .meta a {
-                color: var(--text-color-link, #0969da);
-                text-decoration: none;
-            }
-            .meta a:hover {
-                text-decoration: underline;
-            }
-
-            .badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 2px 10px;
-                border-radius: 2em;
-                font-size: var(--text-body-small, 12px);
-                font-weight: var(--font-weight-semibold, 600);
+            .pill {
+                flex: 0 0 auto;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 2px 9px;
+                border-radius: 999px;
                 border: 1px solid transparent;
-            }
-            .badge .dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: currentColor;
-            }
-            .badge.ok { color: var(--ok); background: var(--ok-muted); }
-            .badge.bad { color: var(--bad); background: var(--bad-muted); }
-            .badge.run { color: var(--run); background: var(--run-muted); }
-            .badge.idle { color: var(--idle); background: var(--idle-muted); }
-
-            .legend {
-                display: flex;
-                gap: 14px;
-                flex-wrap: wrap;
-                font-size: var(--text-body-small, 12px);
-                color: var(--text-color-muted, #656d76);
-            }
-            .legend span {
                 display: inline-flex;
                 align-items: center;
                 gap: 5px;
+                white-space: nowrap;
             }
-            .legend i {
-                width: 10px;
-                height: 10px;
-                border-radius: 2px;
-                display: inline-block;
+            .pill.ok { color: var(--ok); background: var(--ok-bg); }
+            .pill.fail { color: var(--fail); background: var(--fail-bg); }
+            .pill.run { color: var(--run); background: var(--run-bg); }
+            .pill.wait { color: var(--wait); background: var(--wait-bg); }
+            .pill .dot {
+                width: 7px; height: 7px; border-radius: 50%;
+                background: currentColor;
+            }
+            .pill.run .dot { animation: pulse 1.1s ease-in-out infinite; }
+            .h-meta {
+                margin-top: 6px;
+                color: var(--muted);
+                font-size: 11.5px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 10px;
+            }
+            .h-meta a { color: var(--muted); text-decoration: none; }
+            .h-meta a:hover { color: var(--fg); text-decoration: underline; }
+            .h-meta code {
+                font-family: var(--font-mono, monospace);
+                font-size: 11px;
             }
 
-            #stage {
-                flex: 1;
+            /* ---- progress band ---- */
+            .prog { padding: 10px 14px 11px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+            .prog-bar {
+                height: 8px;
+                border-radius: 999px;
+                background: var(--wait-bg);
+                overflow: hidden;
+                display: flex;
+            }
+            .prog-bar i { height: 100%; display: block; flex: 0 0 auto; transition: width 0.5s ease; }
+            .prog-bar i.ok { background: var(--ok); }
+            .prog-bar i.fail { background: var(--fail); }
+            .prog-bar i.run {
+                background: repeating-linear-gradient(
+                    -45deg, var(--run), var(--run) 6px,
+                    color-mix(in srgb, var(--run) 60%, transparent) 6px,
+                    color-mix(in srgb, var(--run) 60%, transparent) 12px);
+                background-size: 200% 100%;
+                animation: flow 1s linear infinite;
+            }
+            .prog-bar i.skip { background: var(--wait); opacity: 0.55; }
+            .prog-meta {
+                margin-top: 8px;
+                display: flex;
+                align-items: baseline;
+                gap: 8px;
+                flex-wrap: wrap;
+                font-size: 12px;
+                color: var(--muted);
+            }
+            .prog-meta .big {
+                color: var(--fg);
+                font-weight: 600;
+                font-size: 13px;
+            }
+            .prog-meta .sep { opacity: 0.4; }
+            .prog-meta .cnt { display: inline-flex; align-items: center; gap: 4px; }
+            .prog-meta .swatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+            /* ---- graph scroll area ---- */
+            .scroll {
+                flex: 1 1 auto;
                 overflow: auto;
                 position: relative;
+                padding: 16px 12px 22px;
             }
-
-            #empty {
+            .content { position: relative; min-height: 100%; }
+            svg.edges {
                 position: absolute;
                 inset: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: var(--text-color-muted, #656d76);
-                text-align: center;
-                padding: 24px;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                overflow: visible;
+                z-index: 0;
             }
-            #empty.hidden { display: none; }
-
-            .node {
-                cursor: pointer;
-            }
-            .node rect.box {
-                rx: 8;
-                stroke-width: 1.5;
-            }
-            .node text {
-                font-size: 12px;
-                fill: var(--text-color-default, #1f2328);
-            }
-            .node .sub {
-                fill: var(--text-color-muted, #656d76);
-                font-size: 10.5px;
-            }
-
-            .running rect.box {
-                animation: pulse 1.4s ease-in-out infinite;
-            }
-            @keyframes pulse {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.55; }
-            }
-
-            .edge {
-                fill: none;
-                stroke: var(--edge);
-                stroke-width: 1.5;
-            }
+            .edge { fill: none; stroke: var(--line); stroke-width: 1.5; }
             .edge.active {
                 stroke: var(--run);
                 stroke-width: 2;
+                stroke-dasharray: 4 5;
+                animation: march 0.7s linear infinite;
+            }
+            .stages { position: relative; z-index: 1; display: flex; flex-direction: column; }
+            .stage {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 14px 16px;
+                padding: 13px 0;
             }
 
-            .spin {
-                width: 11px;
-                height: 11px;
-                border: 2px solid currentColor;
-                border-right-color: transparent;
+            /* ---- job cards ---- */
+            .card {
+                width: 196px;
+                max-width: 46vw;
+                min-width: 150px;
+                background: var(--bg);
+                border: 1px solid var(--line);
+                border-left-width: 4px;
+                border-radius: 9px;
+                padding: 9px 11px;
+                text-decoration: none;
+                color: inherit;
+                display: block;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+                transition: box-shadow 0.15s ease, transform 0.1s ease,
+                    border-left-color 0.4s ease, background-color 0.4s ease, filter 0.4s ease;
+            }
+            .card:hover { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1); transform: translateY(-1px); }
+            .card.s-ok { border-left-color: var(--ok); }
+            .card.s-fail { border-left-color: var(--fail); }
+            .card.s-run { border-left-color: var(--run); background: linear-gradient(0deg, var(--run-bg), transparent 70%); }
+            .card.s-wait { border-left-color: var(--wait); filter: opacity(0.82); }
+            .card.s-skip { border-left-color: var(--wait); filter: opacity(0.6); }
+            .card.s-run { animation: ring 1.8s ease-in-out infinite; }
+
+            .c-top { display: flex; align-items: center; gap: 7px; }
+            .ico {
+                flex: 0 0 auto;
+                width: 16px; height: 16px;
+                display: inline-flex; align-items: center; justify-content: center;
+                font-size: 12px; font-weight: 700;
                 border-radius: 50%;
-                display: inline-block;
-                animation: spin 0.7s linear infinite;
             }
-            @keyframes spin { to { transform: rotate(360deg); } }
+            .ico.ok { color: #fff; background: var(--ok); }
+            .ico.fail { color: #fff; background: var(--fail); }
+            .ico.skip { color: var(--muted); }
+            .ico.wait { color: var(--muted); border: 1.5px solid var(--line); }
+            .ico.run {
+                border: 2px solid var(--run-bg);
+                border-top-color: var(--run);
+                animation: spin 0.8s linear infinite;
+            }
+            .c-name {
+                font-weight: 600;
+                font-size: 12.5px;
+                line-height: 1.2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1 1 auto;
+            }
+            .c-sub {
+                margin-top: 5px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .c-sub .dur { font-variant-numeric: tabular-nums; }
+            .c-sub .tag {
+                font-size: 10px;
+                padding: 0px 5px;
+                border-radius: 4px;
+                background: var(--wait-bg);
+                color: var(--muted);
+            }
+            .c-step { margin-top: 7px; }
+            .sbar {
+                height: 4px; border-radius: 999px; background: var(--wait-bg);
+                overflow: hidden;
+            }
+            .sbar i { display: block; height: 100%; background: var(--run); }
+            .c-step .lbl {
+                margin-top: 4px;
+                font-size: 10.5px;
+                color: var(--muted);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
 
+            /* ---- footer ---- */
             footer {
-                padding: 6px 16px;
-                border-top: 1px solid var(--border-color-default, #d0d7de);
-                font-size: var(--text-body-small, 12px);
-                color: var(--text-color-muted, #656d76);
+                flex: 0 0 auto;
+                border-top: 1px solid var(--line);
+                padding: 7px 14px;
+                color: var(--muted);
+                font-size: 11px;
                 display: flex;
                 justify-content: space-between;
-                gap: 12px;
+                gap: 10px;
+            }
+
+            /* ---- overlay states ---- */
+            .overlay {
+                position: absolute; inset: 0;
+                display: none;
+                align-items: center; justify-content: center;
+                flex-direction: column; gap: 10px;
+                text-align: center; padding: 24px;
+                color: var(--muted);
+                background: var(--bg);
+                z-index: 5;
+            }
+            .overlay.show { display: flex; }
+            .overlay .big { font-size: 14px; color: var(--fg); font-weight: 600; }
+            .spin {
+                width: 22px; height: 22px; border-radius: 50%;
+                border: 3px solid var(--wait-bg); border-top-color: var(--run);
+                animation: spin 0.8s linear infinite;
+            }
+
+            @keyframes spin { to { transform: rotate(360deg); } }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+            @keyframes march { to { stroke-dashoffset: -18; } }
+            @keyframes flow { to { background-position: -200% 0; } }
+            @keyframes ring {
+                0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 0 var(--run-bg); }
+                50% { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 4px var(--run-bg); }
             }
         </style>
     </head>
     <body>
         <header>
-            <div class="title-row">
-                <h1 id="wf-name">Actions Workflow Run</h1>
-                <span id="status-badge" class="badge idle"><span class="dot"></span><span id="status-text">idle</span></span>
+            <div class="h-top">
+                <h1 class="h-title" id="title">Workflow Run</h1>
+                <span class="pill wait" id="pill"><span class="dot"></span><span id="pill-txt">…</span></span>
             </div>
-            <div class="meta" id="meta"></div>
-            <div class="legend">
-                <span><i style="background: var(--ok)"></i> success</span>
-                <span><i style="background: var(--bad)"></i> failure</span>
-                <span><i style="background: var(--run)"></i> in&nbsp;progress</span>
-                <span><i style="background: var(--idle)"></i> queued</span>
-                <span><i style="background: var(--idle); opacity: 0.5"></i> skipped</span>
-            </div>
+            <div class="h-meta" id="meta"></div>
         </header>
 
-        <div id="stage">
-            <div id="empty">Open a run with <code>load_run</code> to see the live graph.</div>
-            <svg id="graph" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="prog" id="prog">
+            <div class="prog-bar" id="prog-bar"></div>
+            <div class="prog-meta" id="prog-meta"></div>
+        </div>
+
+        <div class="scroll" id="scroll">
+            <div class="content" id="content">
+                <svg class="edges" id="edges"></svg>
+                <div class="stages" id="stages"></div>
+            </div>
+            <div class="overlay" id="overlay">
+                <div class="spin" id="ov-spin"></div>
+                <div class="big" id="ov-title">Loading…</div>
+                <div id="ov-msg"></div>
+            </div>
         </div>
 
         <footer>
-            <span id="foot-left">Waiting for data…</span>
+            <span id="foot-left"></span>
             <span id="foot-right"></span>
         </footer>
 
-        <script>
+        <script type="module">
+            import { enterCard, flipStatus, tweenWidth, enterEdge, popPill } from "/anim.js";
             const SVGNS = "http://www.w3.org/2000/svg";
-            const COL_W = 230;
-            const ROW_H = 78;
-            const BOX_W = 188;
-            const BOX_H = 54;
-            const PAD_X = 28;
-            const PAD_Y = 24;
-
             let lastRun = null;
+            let stageRows = [];          // persistent .stage row elements
+            let progSegs = null;         // persistent progress-bar segments
+            let newCardSeq = 0;          // stagger index for cards entering this render
+            const edgeEls = new Map();   // "from->to" -> <path>
 
-            function el(name, attrs = {}, text) {
-                const node = document.createElementNS(SVGNS, name);
-                for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-                if (text != null) node.textContent = text;
-                return node;
+            // ---------- formatting ----------
+            function fmtDur(ms) {
+                if (ms == null || ms < 0) return "";
+                const s = Math.floor(ms / 1000);
+                if (s < 60) return s + "s";
+                const m = Math.floor(s / 60);
+                const r = s % 60;
+                if (m < 60) return r ? `${m}m ${r}s` : `${m}m`;
+                const h = Math.floor(m / 60);
+                return `${h}h ${m % 60}m`;
+            }
+            function durOf(node, now) {
+                if (!node.startedAt) return "";
+                const start = new Date(node.startedAt).getTime();
+                const end = node.completedAt ? new Date(node.completedAt).getTime() : now;
+                return fmtDur(end - start);
+            }
+            function elapsedOf(run, now) {
+                if (!run.runStartedAt) return "";
+                const start = new Date(run.runStartedAt).getTime();
+                const end = run.status === "completed" && run.updatedAt
+                    ? new Date(run.updatedAt).getTime()
+                    : now;
+                return fmtDur(end - start);
             }
 
-            function statusClass(node) {
-                if (node.status === "in_progress") return "run";
-                if (node.status === "queued" || node.status === "pending") return "idle";
-                if (node.status === "completed") {
-                    if (node.conclusion === "success") return "ok";
-                    if (node.conclusion === "skipped" || node.conclusion === "neutral") return "skip";
-                    return "bad";
-                }
-                return "idle";
+            // ---------- status mapping ----------
+            // -> { cls, ico, label } where cls in ok|fail|run|wait|skip
+            function statusOf(node) {
+                if (node.status === "in_progress") return { cls: "run", ico: "", label: "Running" };
+                if (node.status === "queued") return { cls: "wait", ico: "○", label: "Queued" };
+                if (node.status === "pending") return { cls: "wait", ico: "○", label: "Pending" };
+                const c = node.conclusion;
+                if (c === "success") return { cls: "ok", ico: "✓", label: "Passed" };
+                if (c === "skipped") return { cls: "skip", ico: "↷", label: "Skipped" };
+                if (c === "cancelled") return { cls: "skip", ico: "⊘", label: "Cancelled" };
+                if (c === "neutral" || c === "action_required") return { cls: "wait", ico: "!", label: c };
+                return { cls: "fail", ico: "✕", label: c === "timed_out" ? "Timed out" : "Failed" };
             }
-
-            const FILL = {
-                ok: "var(--ok-muted)",
-                bad: "var(--bad-muted)",
-                run: "var(--run-muted)",
-                idle: "var(--idle-muted)",
-                skip: "var(--idle-muted)",
-            };
-            const STROKE = {
-                ok: "var(--ok)",
-                bad: "var(--bad)",
-                run: "var(--run)",
-                idle: "var(--idle)",
-                skip: "var(--idle)",
-            };
-
-            // Longest-path layering for a DAG: layer(n) = 0 if no deps, else
-            // max(layer(parent)) + 1. Iterate to a fixed point (DAG → converges).
-            function computeLayers(nodes, edges) {
-                const incoming = new Map(nodes.map((n) => [n.id, []]));
-                for (const e of edges) {
-                    if (incoming.has(e.to)) incoming.get(e.to).push(e.from);
-                }
-                const layer = new Map(nodes.map((n) => [n.id, 0]));
-                for (let pass = 0; pass < nodes.length + 1; pass++) {
-                    let changed = false;
-                    for (const n of nodes) {
-                        const parents = incoming.get(n.id);
-                        let best = 0;
-                        for (const p of parents) {
-                            if (layer.has(p)) best = Math.max(best, layer.get(p) + 1);
-                        }
-                        if (best !== layer.get(n.id)) {
-                            layer.set(n.id, best);
-                            changed = true;
-                        }
-                    }
-                    if (!changed) break;
-                }
-                return layer;
-            }
-
-            function legSummary(node) {
-                if (!node.legs || node.legs.length <= 1) return null;
+            function legProgress(node) {
+                // matrix rollup: completed legs / total
                 const total = node.legs.length;
                 const done = node.legs.filter((l) => l.status === "completed").length;
-                const ok = node.legs.filter((l) => l.conclusion === "success").length;
-                return `matrix · ${done}/${total} done · ${ok} ok`;
+                return { done, total };
+            }
+            function stepProgress(node) {
+                // single-leg step rollup for an in-progress job
+                if (node.legs.length !== 1) return null;
+                const steps = node.legs[0].steps || [];
+                if (!steps.length) return null;
+                const total = steps.length;
+                const done = steps.filter((s) => s.status === "completed").length;
+                const cur = steps.find((s) => s.status === "in_progress");
+                return { done, total, cur: cur ? cur.name : null };
             }
 
-            function render(run) {
-                const svg = document.getElementById("graph");
-                const empty = document.getElementById("empty");
-                svg.innerHTML = "";
-
-                const nodes = run?.nodes || [];
-                if (nodes.length === 0) {
-                    empty.classList.remove("hidden");
-                    svg.setAttribute("width", 0);
-                    svg.setAttribute("height", 0);
-                    return;
-                }
-                empty.classList.add("hidden");
-
-                const edges = run.edges || [];
-                const layer = computeLayers(nodes, edges);
-
-                // Bucket nodes per layer, preserving declaration order.
-                const cols = new Map();
-                for (const n of nodes) {
-                    const l = layer.get(n.id) || 0;
-                    if (!cols.has(l)) cols.set(l, []);
-                    cols.get(l).push(n);
-                }
-
-                const pos = new Map();
-                let maxRows = 0;
-                for (const [l, group] of cols) {
-                    group.forEach((n, i) => {
-                        pos.set(n.id, {
-                            x: PAD_X + l * COL_W,
-                            y: PAD_Y + i * ROW_H,
-                        });
-                    });
-                    maxRows = Math.max(maxRows, group.length);
-                }
-
-                const maxLayer = Math.max(...[...cols.keys()]);
-                const width = PAD_X * 2 + maxLayer * COL_W + BOX_W;
-                const height = PAD_Y * 2 + maxRows * ROW_H;
-                svg.setAttribute("width", width);
-                svg.setAttribute("height", height);
-                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-
-                // Edges first (under nodes).
-                for (const e of edges) {
-                    const a = pos.get(e.from);
-                    const b = pos.get(e.to);
-                    if (!a || !b) continue;
-                    const x1 = a.x + BOX_W;
-                    const y1 = a.y + BOX_H / 2;
-                    const x2 = b.x;
-                    const y2 = b.y + BOX_H / 2;
-                    const mx = (x1 + x2) / 2;
-                    const fromNode = nodes.find((n) => n.id === e.from);
-                    const active = fromNode && fromNode.status === "in_progress";
-                    svg.appendChild(
-                        el("path", {
-                            class: "edge" + (active ? " active" : ""),
-                            d: `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`,
-                        }),
-                    );
-                }
-
-                // Nodes.
-                for (const n of nodes) {
-                    const p = pos.get(n.id);
-                    const cls = statusClass(n);
-                    const g = el("g", {
-                        class: "node" + (n.status === "in_progress" ? " running" : ""),
-                        transform: `translate(${p.x}, ${p.y})`,
-                    });
-                    if (n.url) {
-                        g.style.cursor = "pointer";
-                        g.addEventListener("click", () => window.open(n.url, "_blank", "noopener"));
-                    }
-
-                    g.appendChild(
-                        el("rect", {
-                            class: "box",
-                            width: BOX_W,
-                            height: BOX_H,
-                            rx: 8,
-                            fill: FILL[cls],
-                            stroke: STROKE[cls],
-                            "stroke-dasharray": cls === "skip" ? "4 3" : "",
-                        }),
-                    );
-
-                    const label = n.label.length > 26 ? n.label.slice(0, 25) + "…" : n.label;
-                    g.appendChild(el("text", { x: 12, y: 22, "font-weight": "600" }, label));
-
-                    const sub = legSummary(n) || conclusionLabel(n);
-                    g.appendChild(el("text", { class: "sub", x: 12, y: 40 }, sub));
-
-                    // status glyph top-right
-                    g.appendChild(statusGlyph(n, BOX_W - 20, 18));
-
-                    const tip = el("title", {}, tooltip(n));
-                    g.appendChild(tip);
-
-                    svg.appendChild(g);
-                }
-            }
-
-            function conclusionLabel(n) {
-                if (n.status === "in_progress") return "running…";
-                if (n.status === "queued" || n.status === "pending") return "queued";
-                if (n.status === "completed") return n.conclusion || "done";
-                return n.status;
-            }
-
-            function statusGlyph(n, x, y) {
-                const cls = statusClass(n);
-                const sym = {
-                    ok: "✓",
-                    bad: "✕",
-                    run: "●",
-                    idle: "○",
-                    skip: "–",
-                }[cls];
-                return el(
-                    "text",
-                    { x, y, "text-anchor": "middle", "font-size": 13, fill: STROKE[cls], "font-weight": "700" },
-                    sym,
-                );
-            }
-
-            function tooltip(n) {
-                const lines = [n.label];
-                lines.push(`status: ${conclusionLabel(n)}`);
-                if (n.legs && n.legs.length > 1) {
-                    lines.push(`${n.legs.length} matrix legs:`);
-                    for (const l of n.legs.slice(0, 12)) {
-                        lines.push(`  • ${l.name} — ${l.conclusion || l.status}`);
+            // ---------- layering (top-down longest path) ----------
+            function computeLayers(run) {
+                const nodes = run.nodes;
+                const byId = new Map(nodes.map((n) => [n.id, n]));
+                const preds = new Map(nodes.map((n) => [n.id, []]));
+                const succ = new Map(nodes.map((n) => [n.id, []]));
+                for (const e of run.edges) {
+                    if (byId.has(e.from) && byId.has(e.to)) {
+                        preds.get(e.to).push(e.from);
+                        succ.get(e.from).push(e.to);
                     }
                 }
-                if (n.unmatched) lines.push("(not matched to workflow YAML)");
-                return lines.join("\n");
+                const layer = new Map();
+                function depth(id, seen) {
+                    if (layer.has(id)) return layer.get(id);
+                    if (seen.has(id)) return 0;
+                    seen.add(id);
+                    const ps = preds.get(id) || [];
+                    let d = 0;
+                    for (const p of ps) d = Math.max(d, depth(p, seen) + 1);
+                    layer.set(id, d);
+                    return d;
+                }
+                for (const n of nodes) depth(n.id, new Set());
+                const maxLayer = Math.max(0, ...nodes.map((n) => layer.get(n.id) || 0));
+                const stages = Array.from({ length: maxLayer + 1 }, () => []);
+                for (const n of nodes) stages[layer.get(n.id) || 0].push(n);
+                return { stages, layer };
             }
 
-            function fmtElapsed(startIso, endIso) {
-                if (!startIso) return "";
-                const start = new Date(startIso).getTime();
-                const end = endIso ? new Date(endIso).getTime() : Date.now();
-                let s = Math.max(0, Math.round((end - start) / 1000));
-                const h = Math.floor(s / 3600);
-                s -= h * 3600;
-                const m = Math.floor(s / 60);
-                s -= m * 60;
-                return (h ? `${h}h ` : "") + (m || h ? `${m}m ` : "") + `${s}s`;
+            // ---------- card registry (built once, updated in place) ----------
+            const cardEls = new Map();   // id -> <a.card>
+            const prevCls = new Map();   // id -> last status cls (to detect flips)
+
+            function ensureCard(node) {
+                let el = cardEls.get(node.id);
+                if (el) return el;
+                el = document.createElement("a");
+                el.className = "card";
+                el.style.opacity = "0";   // revealed by enterCard on the next frame
+                el.dataset.id = node.id;
+                const top = document.createElement("div");
+                top.className = "c-top";
+                const ico = document.createElement("span");
+                ico.className = "ico";
+                const name = document.createElement("span");
+                name.className = "c-name";
+                name.textContent = node.label;
+                name.title = node.label;
+                top.append(ico, name);
+                const sub = document.createElement("div");
+                sub.className = "c-sub";
+                const dur = document.createElement("span");
+                dur.className = "dur";
+                sub.append(dur);
+                el.append(top, sub);
+                el._ico = ico; el._name = name; el._dur = dur; el._sub = sub;
+                el._tag = null; el._step = null;
+                cardEls.set(node.id, el);
+                // Stagger the reveal; the card is appended synchronously this tick,
+                // so the rAF runs after it's in the DOM. Motion handles the tween.
+                const idx = newCardSeq++;
+                requestAnimationFrame(() => enterCard(el, idx));
+                return el;
             }
 
-            function paint(state) {
-                const badge = document.getElementById("status-badge");
-                const statusText = document.getElementById("status-text");
-                const footLeft = document.getElementById("foot-left");
-                const footRight = document.getElementById("foot-right");
-
-                if (state.status === "error") {
-                    footLeft.textContent = "Error: " + (state.message || "unknown");
-                    return;
+            // Update one card's bound fields in place — only touch the DOM when a
+            // value actually changed, so polls don't restart animations or flicker.
+            function updateCard(node, now) {
+                const el = ensureCard(node);
+                const st = statusOf(node);
+                const cls = "s-" + st.cls;
+                if (!el.classList.contains(cls)) {
+                    el.classList.remove("s-ok", "s-fail", "s-run", "s-wait", "s-skip");
+                    el.classList.add(cls);
+                    const was = prevCls.get(node.id);
+                    if (was && was !== st.cls) flipStatus(el._ico);
+                    prevCls.set(node.id, st.cls);
                 }
-                if (state.status === "loading" || state.status === "idle") {
-                    statusText.textContent = state.status === "loading" ? "loading" : "idle";
-                    badge.className = "badge idle";
-                    footLeft.textContent = state.message || "";
-                    if (!state.run) render(null);
-                    return;
+                if (node.url && el.getAttribute("href") !== node.url) {
+                    el.href = node.url; el.target = "_blank"; el.rel = "noreferrer";
                 }
+                const icoCls = "ico " + st.cls;
+                if (el._ico.className !== icoCls) el._ico.className = icoCls;
+                if (el._ico.textContent !== st.ico) el._ico.textContent = st.ico;
+                if (el._name.textContent !== node.label) { el._name.textContent = node.label; el._name.title = node.label; }
+                const durTxt = durOf(node, now) || st.label;
+                if (el._dur.textContent !== durTxt) el._dur.textContent = durTxt;
 
-                const run = state.run;
-                if (!run) return;
+                let tagTxt = null;
+                if (node.matrix) { const lp = legProgress(node); tagTxt = `${lp.done}/${lp.total} legs`; }
+                else if (node.status === "completed") tagTxt = st.label;
+                if (tagTxt) {
+                    if (!el._tag) { el._tag = document.createElement("span"); el._tag.className = "tag"; el._sub.append(el._tag); }
+                    if (el._tag.textContent !== tagTxt) el._tag.textContent = tagTxt;
+                } else if (el._tag) { el._tag.remove(); el._tag = null; }
+
+                if (node.status === "in_progress") {
+                    const sp = stepProgress(node);
+                    const lp = legProgress(node);
+                    const pct = sp ? (sp.total ? sp.done / sp.total : 0) : (lp.total ? lp.done / lp.total : 0);
+                    if (!el._step) {
+                        const wrap = document.createElement("div"); wrap.className = "c-step";
+                        const bar = document.createElement("div"); bar.className = "sbar";
+                        const fill = document.createElement("i"); bar.append(fill);
+                        const lbl = document.createElement("div"); lbl.className = "lbl";
+                        wrap.append(bar, lbl); el.append(wrap);
+                        el._step = { wrap, fill, lbl };
+                    }
+                    const wpct = Math.round(pct * 100);
+                    if (el._step.pct !== wpct) { el._step.pct = wpct; tweenWidth(el._step.fill, wpct); }
+                    const lbl = sp && sp.cur ? `▸ ${sp.cur}` : (node.matrix ? `${lp.done}/${lp.total} legs done` : "running…");
+                    if (el._step.lbl.textContent !== lbl) el._step.lbl.textContent = lbl;
+                } else if (el._step) { el._step.wrap.remove(); el._step = null; }
+                return el;
+            }
+
+            function setText(id, txt) {
+                const el = document.getElementById(id);
+                if (el && el.textContent !== txt) el.textContent = txt;
+            }
+            // Reconcile a parent's children to exactly `desired` (in order), moving
+            // existing nodes instead of recreating them.
+            function syncChildren(parent, desired) {
+                for (let i = 0; i < desired.length; i++) {
+                    if (parent.children[i] !== desired[i]) parent.insertBefore(desired[i], parent.children[i] || null);
+                }
+                while (parent.children.length > desired.length) parent.lastChild.remove();
+            }
+
+            // ---------- render ----------
+            function renderRun(run) {
                 lastRun = run;
+                newCardSeq = 0;   // stagger only the cards created during this render
+                syncTicker();
+                const now = Date.now();
+                document.getElementById("overlay").classList.remove("show");
 
-                document.getElementById("wf-name").textContent = run.runName || "Workflow run";
-
-                // Top-level run badge.
-                let cls = "idle",
-                    label = run.status;
-                if (run.status === "in_progress" || run.status === "queued") {
-                    cls = run.status === "in_progress" ? "run" : "idle";
-                } else if (run.status === "completed") {
-                    label = run.conclusion || "completed";
-                    cls = run.conclusion === "success" ? "ok" : run.conclusion === "skipped" ? "idle" : "bad";
-                }
-                badge.className = "badge " + cls;
-                statusText.innerHTML =
-                    run.status === "in_progress" ? '<span class="spin"></span> ' + label : label;
+                // header (idempotent — only write when changed)
+                setText("title", run.workflowName || run.runName || "Workflow Run");
+                const pill = document.getElementById("pill");
+                let pc = "wait", ptxt = run.status;
+                if (run.status === "completed") {
+                    pc = run.conclusion === "success" ? "ok"
+                        : run.conclusion === "skipped" || run.conclusion === "cancelled" ? "wait" : "fail";
+                    ptxt = run.conclusion || "completed";
+                } else if (run.status === "in_progress") { pc = "run"; ptxt = "in progress"; }
+                else { pc = "wait"; ptxt = run.status; }
+                const pillCls = "pill " + pc;
+                if (pill.className !== pillCls) { pill.className = pillCls; popPill(pill); }
+                setText("pill-txt", ptxt);
 
                 const meta = document.getElementById("meta");
-                meta.innerHTML = "";
-                const bits = [
-                    run.htmlUrl ? `<a href="${run.htmlUrl}" target="_blank" rel="noopener">${run.repo} #${run.runNumber}</a>` : `${run.repo} #${run.runNumber}`,
-                    run.headBranch ? `⎇ ${run.headBranch}` : null,
-                    run.headSha ? `@ ${run.headSha}` : null,
-                    run.event ? `on ${run.event}` : null,
-                    run.actor ? `by ${run.actor}` : null,
-                ].filter(Boolean);
-                meta.innerHTML = bits.map((b) => `<span>${b}</span>`).join("");
+                const bits = [];
+                if (run.repo) bits.push(`${run.repo} #${run.runNumber}`);
+                if (run.headBranch) bits.push(`⎇ ${run.headBranch}`);
+                if (run.headSha) bits.push(`<code>${run.headSha}</code>`);
+                if (run.event) bits.push(run.event);
+                if (run.actor) bits.push(`@${run.actor}`);
+                const metaHtml = bits.map((b) => `<span>${b}</span>`).join("");
+                if (meta._html !== metaHtml) { meta.innerHTML = metaHtml; meta._html = metaHtml; }
 
-                render(run);
+                // progress band
+                paintProgress(run, now);
 
-                const elapsed = fmtElapsed(run.runStartedAt, run.status === "completed" ? run.updatedAt : null);
-                footLeft.textContent =
-                    `${run.nodes.length} jobs · ${run.edges.length} deps` +
-                    (elapsed ? ` · ${elapsed}` : "") +
-                    (run.flat ? " · flat (no needs found)" : "") +
-                    (run.yamlError ? " · ⚠ workflow yaml unavailable" : "");
-                footRight.textContent = "updated " + new Date(state.updatedAt).toLocaleTimeString();
+                // graph — reconcile stages + cards in place (no teardown)
+                const stagesEl = document.getElementById("stages");
+                let stages;
+                if (run.flat || run.edges.length === 0) stages = [run.nodes];
+                else stages = computeLayers(run).stages;
+
+                const liveIds = new Set();
+                for (let i = 0; i < stages.length; i++) {
+                    let row = stageRows[i];
+                    if (!row) { row = document.createElement("div"); row.className = "stage"; stagesEl.append(row); stageRows[i] = row; }
+                    const desired = [];
+                    for (const n of stages[i]) { liveIds.add(n.id); desired.push(updateCard(n, now)); }
+                    syncChildren(row, desired);
+                }
+                while (stageRows.length > stages.length) { stageRows.pop().remove(); }
+                for (const [id, el] of cardEls) {
+                    if (!liveIds.has(id)) { el.remove(); cardEls.delete(id); prevCls.delete(id); }
+                }
+
+                // footer
+                setText("foot-left", `${run.nodes.length} jobs · ${run.edges.length} deps` + (run.flat ? " · flat" : ""));
+                setText("foot-right", run.fetchedAt ? "updated " + new Date(run.fetchedAt).toLocaleTimeString() : "");
+
+                requestAnimationFrame(() => drawEdges(run));
             }
 
-            // Live updates via SSE, with a fetch fallback for the first paint.
-            function connect() {
-                const es = new EventSource("/events");
-                es.onmessage = (ev) => {
-                    try {
-                        paint(JSON.parse(ev.data));
-                    } catch {
-                        /* ignore malformed frame */
+            function paintProgress(run, now) {
+                const total = run.nodes.length || 1;
+                let ok = 0, fail = 0, runc = 0, skip = 0, wait = 0;
+                for (const n of run.nodes) {
+                    const s = statusOf(n).cls;
+                    if (s === "ok") ok++;
+                    else if (s === "fail") fail++;
+                    else if (s === "run") runc++;
+                    else if (s === "skip") skip++;
+                    else wait++;
+                }
+                const bar = document.getElementById("prog-bar");
+                if (!progSegs) {
+                    progSegs = {};
+                    for (const k of ["ok", "fail", "run", "skip"]) {
+                        const i = document.createElement("i");
+                        i.className = k; i.style.width = "0%";
+                        bar.append(i); progSegs[k] = i;
                     }
+                }
+                // CSS transition on .prog-bar i animates these width changes smoothly
+                progSegs.ok.style.width = (ok / total) * 100 + "%";
+                progSegs.fail.style.width = (fail / total) * 100 + "%";
+                progSegs.run.style.width = (runc / total) * 100 + "%";
+                progSegs.skip.style.width = (skip / total) * 100 + "%";
+
+                const finished = ok + fail + skip;
+                const meta = document.getElementById("prog-meta");
+                const elapsed = elapsedOf(run, now);
+                const parts = [];
+                parts.push(`<span class="big">${finished}/${total} jobs</span>`);
+                if (elapsed) parts.push(`<span class="sep">·</span><span>${elapsed}</span>`);
+                const cnts = [];
+                if (runc) cnts.push(`<span class="cnt"><span class="swatch" style="background:var(--run)"></span>${runc} running</span>`);
+                if (fail) cnts.push(`<span class="cnt"><span class="swatch" style="background:var(--fail)"></span>${fail} failed</span>`);
+                if (wait) cnts.push(`<span class="cnt"><span class="swatch" style="background:var(--wait)"></span>${wait} queued</span>`);
+                if (cnts.length) parts.push(`<span class="sep">·</span>` + cnts.join(`<span class="sep">·</span>`));
+                const html = parts.join(" ");
+                if (meta._html !== html) { meta.innerHTML = html; meta._html = html; }
+            }
+
+            // ---------- edges (measured from laid-out cards, reconciled) ----------
+            function drawEdges(run) {
+                const svg = document.getElementById("edges");
+                const content = document.getElementById("content");
+                if (run.flat || run.edges.length === 0) {
+                    for (const [, p] of edgeEls) p.remove();
+                    edgeEls.clear();
+                    return;
+                }
+                const cRect = content.getBoundingClientRect();
+                const cards = new Map();
+                content.querySelectorAll(".card").forEach((el) => cards.set(el.dataset.id, el));
+                const byId = new Map(run.nodes.map((n) => [n.id, n]));
+                const live = new Set();
+
+                for (const e of run.edges) {
+                    const from = cards.get(e.from);
+                    const to = cards.get(e.to);
+                    if (!from || !to) continue;
+                    const fr = from.getBoundingClientRect();
+                    const tr = to.getBoundingClientRect();
+                    const x1 = fr.left - cRect.left + fr.width / 2;
+                    const y1 = fr.top - cRect.top + fr.height;
+                    const x2 = tr.left - cRect.left + tr.width / 2;
+                    const y2 = tr.top - cRect.top;
+                    const dy = Math.max(18, (y2 - y1) / 2);
+                    const d = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+                    const key = e.from + "->" + e.to;
+                    live.add(key);
+                    let path = edgeEls.get(key);
+                    let isNew = false;
+                    if (!path) {
+                        path = document.createElementNS(SVGNS, "path");
+                        path.style.opacity = "0";   // faded in by enterEdge once positioned
+                        svg.append(path); edgeEls.set(key, path); isNew = true;
+                    }
+                    if (path.getAttribute("d") !== d) path.setAttribute("d", d);
+                    const pn = byId.get(e.from), cn = byId.get(e.to);
+                    const active = pn && (pn.status === "in_progress" ||
+                        (pn.status === "completed" && cn && cn.status === "in_progress"));
+                    const cls = "edge" + (active ? " active" : "");
+                    if (path.getAttribute("class") !== cls) path.setAttribute("class", cls);
+                    if (isNew) enterEdge(path);
+                }
+                for (const [key, p] of edgeEls) { if (!live.has(key)) { p.remove(); edgeEls.delete(key); } }
+            }
+
+            // ---------- paint envelope ----------
+            function paint(state) {
+                if (!state || typeof state !== "object") return;
+                const ov = document.getElementById("overlay");
+                const ovt = document.getElementById("ov-title");
+                const ovm = document.getElementById("ov-msg");
+                const ovs = document.getElementById("ov-spin");
+                if (state.status === "ok" && state.run) {
+                    renderRun(state.run);
+                    return;
+                }
+                ov.classList.add("show");
+                if (state.status === "loading") {
+                    ovs.style.display = "block";
+                    ovt.textContent = "Loading run…";
+                    ovm.textContent = state.message || "";
+                } else if (state.status === "error") {
+                    ovs.style.display = "none";
+                    ovt.textContent = "Couldn't load run";
+                    ovm.textContent = state.message || "";
+                } else {
+                    ovs.style.display = "none";
+                    ovt.textContent = "No run loaded";
+                    ovm.textContent = state.message || "Use the load_run action to point this at a run.";
+                }
+            }
+
+            // ---------- live connection ----------
+            function connect() {
+                let es;
+                try {
+                    es = new EventSource("/events");
+                } catch (_) { return; }
+                es.onmessage = (ev) => {
+                    try { paint(JSON.parse(ev.data)); } catch (_) {}
                 };
                 es.onerror = () => {
                     es.close();
@@ -522,23 +704,37 @@
                 };
             }
 
-            fetch("/state")
-                .then((r) => r.json())
-                .then(paint)
-                .catch(() => {});
+            fetch("/state").then((r) => r.json()).then(paint).catch(() => {});
             connect();
+            window.addEventListener("resize", () => { if (lastRun) drawEdges(lastRun); });
 
-            // Keep elapsed timers live for in-progress runs.
-            setInterval(() => {
-                if (lastRun && lastRun.status !== "completed") {
-                    const elapsed = fmtElapsed(lastRun.runStartedAt, null);
-                    const fl = document.getElementById("foot-left");
-                    if (elapsed && fl) {
-                        fl.textContent = `${lastRun.nodes.length} jobs · ${lastRun.edges.length} deps · ${elapsed}` +
-                            (lastRun.flat ? " · flat" : "");
-                    }
+            // Live tick: update durations + elapsed for in-progress runs without refetch.
+            // Self-managing — runs only while a run is active, clears itself on completion,
+            // and restarts if a fresh in-progress run is loaded into the same canvas.
+            let tickTimer = null;
+            function tickOnce() {
+                if (!lastRun) { stopTicker(); return; }
+                const now = Date.now();
+                paintProgress(lastRun, now);
+                if (lastRun.status === "completed") { stopTicker(); return; }
+                for (const node of lastRun.nodes) {
+                    const el = cardEls.get(node.id);
+                    if (!el || !el._dur) continue;
+                    const txt = durOf(node, now) || statusOf(node).label;
+                    if (el._dur.textContent !== txt) el._dur.textContent = txt;
                 }
-            }, 1000);
+            }
+            function stopTicker() {
+                if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+            }
+            function syncTicker() {
+                if (lastRun && lastRun.status !== "completed") {
+                    if (!tickTimer) tickTimer = setInterval(tickOnce, 1000);
+                } else {
+                    stopTicker();
+                }
+            }
+            window.addEventListener("beforeunload", stopTicker);
         </script>
     </body>
 </html>
