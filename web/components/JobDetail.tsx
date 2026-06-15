@@ -20,6 +20,7 @@ import type { GraphNode, Leg, RunGraph, Step } from "../types";
 import { fmtDur, labelVariant, type StatusInfo } from "../format";
 import { useAction, useNow } from "../hooks";
 import { LogTerminal } from "./LogTerminal";
+import { StepActivityFeed } from "./StepActivityFeed";
 
 type Mode = "formatted" | "raw";
 
@@ -411,6 +412,7 @@ export function JobDetail({
 
             <div className="jd-steps">
                 {err && <div className="jd-err">{err}</div>}
+                {running && steps.length > 0 && <StepActivityFeed steps={steps} now={now} />}
                 {steps.length === 0 ? (
                     <div className="jd-empty">
                         {loading ? <Spinner size="small" /> : "No steps reported yet."}
