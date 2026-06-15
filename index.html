@@ -447,7 +447,82 @@
                 const maxLayer = Math.max(0, ...nodes.map((n) => layer.get(n.id) || 0));
                 const stages = Array.from({ length: maxLayer + 1 }, () => []);
                 for (const n of nodes) stages[layer.get(n.id) || 0].push(n);
+                const idx = new Map(nodes.map((n, i) => [n.id, i]));
+                orderStages(stages, preds, succ, idx);
                 return { stages, layer };
+            }
+
+            function orderStages(stages, preds, succ, idx) {
+                if (stages.length < 2) return;
+                const median = (positions) => {
+                    if (positions.length === 0) return -1;
+                    const s = positions.slice().sort((a, b) => a - b);
+                    const m = Math.floor(s.length / 2);
+                    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+                };
+                const posOf = (stage) => {
+                    const p = new Map();
+                    stage.forEach((n, i) => p.set(n.id, i));
+                    return p;
+                };
+                const countCrossings = () => {
+                    let total = 0;
+                    for (let i = 0; i < stages.length - 1; i++) {
+                        const pos = posOf(stages[i + 1]);
+                        const topPos = posOf(stages[i]);
+                        const segs = [];
+                        for (const n of stages[i]) {
+                            const tops = topPos.get(n.id);
+                            for (const t of succ.get(n.id) || []) {
+                                if (pos.has(t)) segs.push([tops, pos.get(t)]);
+                            }
+                        }
+                        for (let a = 0; a < segs.length; a++) {
+                            for (let b = a + 1; b < segs.length; b++) {
+                                const [u1, v1] = segs[a];
+                                const [u2, v2] = segs[b];
+                                if ((u1 < u2 && v1 > v2) || (u1 > u2 && v1 < v2)) total++;
+                            }
+                        }
+                    }
+                    return total;
+                };
+                const orderBy = (neighbors, refStage) => {
+                    const refPos = posOf(refStage);
+                    return (stage) => {
+                        const keyed = stage.map((n) => {
+                            const ns = (neighbors.get(n.id) || [])
+                                .map((m) => refPos.get(m))
+                                .filter((v) => v !== undefined);
+                            return { n, med: median(ns) };
+                        });
+                        const movable = keyed.filter((k) => k.med >= 0);
+                        movable.sort((a, b) => a.med - b.med || idx.get(a.n.id) - idx.get(b.n.id));
+                        let mi = 0;
+                        return keyed.map((k) => (k.med < 0 ? k.n : movable[mi++].n));
+                    };
+                };
+                const snapshot = () => stages.map((s) => s.slice());
+                const restore = (snap) => snap.forEach((s, i) => (stages[i] = s.slice()));
+                let best = snapshot();
+                let bestCross = countCrossings();
+                for (let sweep = 0; sweep < 4; sweep++) {
+                    if (sweep % 2 === 0) {
+                        for (let i = 1; i < stages.length; i++) {
+                            stages[i] = orderBy(preds, stages[i - 1])(stages[i]);
+                        }
+                    } else {
+                        for (let i = stages.length - 2; i >= 0; i--) {
+                            stages[i] = orderBy(succ, stages[i + 1])(stages[i]);
+                        }
+                    }
+                    const c = countCrossings();
+                    if (c < bestCross) {
+                        bestCross = c;
+                        best = snapshot();
+                    }
+                }
+                restore(best);
             }
 
             // ---------- card registry (built once, updated in place) ----------
