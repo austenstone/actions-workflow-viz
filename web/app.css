@@ -105,30 +105,11 @@ body { margin: 0; }
     flex: 0 0 auto;
 }
 
-/* ---- per-card re-run button ---- */
-.card .rerun {
-    appearance: none;
-    font: inherit;
+/* ---- per-card re-run action bar ---- */
+.card .rerun-bar {
     flex: 0 0 auto;
-    width: 22px; height: 22px;
-    padding: 0;
     margin-left: auto;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 12px;
-    line-height: 1;
-    transition: background-color 0.12s ease, color 0.12s ease;
 }
-.card.can-rerun .rerun { display: inline-flex; }
-.card .rerun:hover { background: var(--wait-bg); color: var(--fg); }
-.card .rerun:focus-visible { outline: 2px solid var(--run); outline-offset: 1px; }
-.card .rerun[aria-busy="true"] { cursor: progress; opacity: 0.7; pointer-events: none; }
 
 /* ---- toast ---- */
 .awv-toast {

@@ -135,7 +135,7 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
         // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <a
             ref={setCardRef}
-            className={"card s-" + st.cls + (canRerun ? " can-rerun" : "")}
+            className={"card s-" + st.cls}
             data-id={node.id}
             role="button"
             tabIndex={0}
@@ -158,20 +158,16 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
                         </span>
                     )}
                 </span>
-                <button
-                    type="button"
-                    className="rerun"
-                    title="Re-run this job"
-                    aria-label={"Re-run job " + node.label}
-                    aria-busy={rerunBusy}
-                    onClick={fireRerun}
-                    onKeyDown={(e) => {
-                        e.stopPropagation();
-                        if (e.key === "Enter" || e.key === " ") fireRerun(e);
-                    }}
-                >
-                    ⟳
-                </button>
+                {canRerun && (
+                    <ActionBar className="rerun-bar" size="small" aria-label={"Actions for " + node.label}>
+                        <ActionBar.IconButton
+                            icon={SyncIcon}
+                            aria-label={"Re-run job " + node.label}
+                            loading={rerunBusy}
+                            onClick={fireRerun}
+                        />
+                    </ActionBar>
+                )}
             </div>
             <div className="c-sub">
                 <span className="dur">{durTxt}</span>
