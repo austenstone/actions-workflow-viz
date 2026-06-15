@@ -7,8 +7,8 @@
 
 // The canvas type is owned by copilot-canvas-kit now; `host.toCanvas()` produces
 // it and `joinSession` consumes it, so we re-use the kit's `Canvas` shape here
-// instead of maintaining a parallel (and previously stale) declaration.
-import type { Canvas } from "copilot-canvas-kit";
+// (via an inline import so this file stays a global ambient script) instead of
+// maintaining a parallel, previously stale declaration.
 
 declare module "@github/copilot-sdk/extension" {
     export interface LogOptions {
@@ -57,7 +57,7 @@ declare module "@github/copilot-sdk/extension" {
     }
 
     export interface JoinSessionConfig {
-        canvases?: Canvas[];
+        canvases?: import("copilot-canvas-kit").Canvas[];
     }
 
     export function joinSession(config: JoinSessionConfig): Promise<CopilotSession>;

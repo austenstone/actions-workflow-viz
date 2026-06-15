@@ -9890,13 +9890,283 @@ var require_cronstrue = __commonJS({
 });
 
 // src/extension.ts
-import http from "node:http";
 import { dirname, join as join2 } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// ../../../source/copilot-canvas-kit/dist/server/index.js
+import http from "node:http";
 import { readFile } from "node:fs/promises";
+
+// ../../../source/copilot-canvas-kit/dist/server/agent.js
+async function notifyAgent(session2, message) {
+  if (typeof message === "string") {
+    return session2.send(message);
+  }
+  return session2.send(message);
+}
+
+// ../../../source/copilot-canvas-kit/dist/server/index.js
+var CanvasError = class extends Error {
+  code;
+  constructor(code, message) {
+    super(message);
+    this.name = "CanvasError";
+    this.code = code;
+  }
+};
+function sendJson(res, status, payload) {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(payload));
+}
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req)
+    chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8");
+}
+function createCanvasHost(options) {
+  const instances = /* @__PURE__ */ new Map();
+  const bind2 = options.host ?? "127.0.0.1";
+  const actions2 = options.actions ?? {};
+  const initial = () => typeof options.initialState === "function" ? options.initialState() : structuredClone(options.initialState);
+  let agent = options.agent;
+  function notifyAgent2(message) {
+    if (!agent)
+      return Promise.resolve(null);
+    return notifyAgent(agent, message);
+  }
+  function broadcast(inst) {
+    const frame = `data: ${JSON.stringify(inst.state)}
+
+`;
+    for (const res of inst.subscribers) {
+      try {
+        res.write(frame);
+      } catch {
+      }
+    }
+  }
+  function setState2(inst, next) {
+    inst.state = next;
+    broadcast(inst);
+  }
+  function getInstance(instanceId) {
+    const inst = instances.get(instanceId);
+    if (!inst) {
+      throw new CanvasError("not_open", `Canvas instance ${instanceId} is not open.`);
+    }
+    return inst;
+  }
+  function access(inst) {
+    return {
+      getState: () => inst.state,
+      setState: (next) => setState2(inst, next),
+      patchState: (patch) => setState2(inst, { ...inst.state, ...patch })
+    };
+  }
+  async function dispatch(instanceId, action, input) {
+    const inst = getInstance(instanceId);
+    const config = actions2[action];
+    if (!config) {
+      throw new CanvasError("unknown_action", `Unknown action: ${action}`);
+    }
+    return await config.handler({
+      sessionId: inst.sessionId,
+      extensionId: inst.extensionId,
+      canvasId: options.id,
+      instanceId,
+      actionName: action,
+      input,
+      notifyAgent: notifyAgent2,
+      ...access(inst)
+    });
+  }
+  async function serveAsset(res, asset) {
+    const headers = {
+      "Content-Type": asset.contentType
+    };
+    if (asset.cacheControl)
+      headers["Cache-Control"] = asset.cacheControl;
+    const data = asset.body ?? (asset.file ? await readFile(asset.file) : null);
+    if (data == null) {
+      sendJson(res, 500, { error: "Asset has no body or file." });
+      return;
+    }
+    res.writeHead(200, headers);
+    res.end(data);
+  }
+  async function handle(inst, req, res) {
+    const url = (req.url ?? "/").split("?")[0] ?? "/";
+    if (req.method === "GET" && url === "/state") {
+      sendJson(res, 200, inst.state);
+      return;
+    }
+    if (req.method === "GET" && url === "/events") {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive"
+      });
+      res.write(`data: ${JSON.stringify(inst.state)}
+
+`);
+      inst.subscribers.add(res);
+      req.on("close", () => {
+        inst.subscribers.delete(res);
+      });
+      return;
+    }
+    if (req.method === "POST" && url === "/action") {
+      try {
+        const raw = await readBody(req);
+        const { actionName, input } = JSON.parse(raw || "{}");
+        if (!actionName) {
+          throw new CanvasError("bad_request", "Missing actionName.");
+        }
+        const result = await dispatch(inst.instanceId, actionName, input);
+        sendJson(res, 200, result ?? {});
+      } catch (err) {
+        const status = err instanceof CanvasError ? 400 : 500;
+        const message = err instanceof Error ? err.message : String(err);
+        sendJson(res, status, { error: message });
+      }
+      return;
+    }
+    const asset = options.assets[url];
+    if (req.method === "GET" && asset) {
+      await serveAsset(res, asset);
+      return;
+    }
+    if (req.method === "GET" && url === "/favicon.ico") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  }
+  async function open(ctx) {
+    const existing = instances.get(ctx.instanceId);
+    if (existing)
+      return { url: existing.url };
+    const server = http.createServer();
+    const inst = {
+      instanceId: ctx.instanceId,
+      sessionId: ctx.sessionId,
+      extensionId: ctx.extensionId,
+      server,
+      url: "",
+      state: initial(),
+      subscribers: /* @__PURE__ */ new Set()
+    };
+    server.on("request", (req, res) => {
+      handle(inst, req, res).catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        try {
+          sendJson(res, 500, { error: message });
+        } catch {
+        }
+      });
+    });
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, bind2, () => resolve());
+    });
+    const addr = server.address();
+    inst.url = `http://${bind2}:${addr.port}/`;
+    instances.set(ctx.instanceId, inst);
+    return { url: inst.url };
+  }
+  async function close(instanceId) {
+    const inst = instances.get(instanceId);
+    if (!inst)
+      return;
+    instances.delete(instanceId);
+    for (const res of inst.subscribers) {
+      try {
+        res.end();
+      } catch {
+      }
+    }
+    inst.subscribers.clear();
+    await new Promise((resolve) => inst.server.close(() => resolve()));
+  }
+  function toCanvas(opts) {
+    const actionHandlers = /* @__PURE__ */ new Map();
+    const wireActions = [];
+    for (const [name, config] of Object.entries(actions2)) {
+      if (!config.agent)
+        continue;
+      if (name.startsWith("canvas.")) {
+        throw new CanvasError("reserved_action", `Action "${name}" is reserved; names must not start with "canvas.".`);
+      }
+      wireActions.push({
+        name,
+        description: config.description,
+        inputSchema: config.inputSchema
+      });
+      actionHandlers.set(name, (ctx) => dispatch(ctx.instanceId, name, ctx.input));
+    }
+    return {
+      declaration: {
+        id: options.id,
+        displayName: opts.displayName,
+        description: opts.description,
+        inputSchema: opts.inputSchema,
+        actions: wireActions.length > 0 ? wireActions : void 0
+      },
+      actionHandlers,
+      async open(ctx) {
+        const { url } = await open(ctx);
+        if (!opts.onOpen)
+          return { url };
+        const extra = await opts.onOpen({
+          ...ctx,
+          notifyAgent: notifyAgent2,
+          ...access(getInstance(ctx.instanceId))
+        });
+        return { url, ...extra ?? {} };
+      },
+      async onClose(ctx) {
+        if (opts.onClose) {
+          const inst = instances.get(ctx.instanceId);
+          const getState2 = () => {
+            if (!inst) {
+              throw new CanvasError("not_open", "Canvas already closed.");
+            }
+            return inst.state;
+          };
+          try {
+            await opts.onClose({ ...ctx, getState: getState2 });
+          } catch (err) {
+            console.error(`[copilot-canvas-kit] onClose hook for canvas ${options.id} threw:`, err);
+          }
+        }
+        await close(ctx.instanceId);
+      }
+    };
+  }
+  return {
+    id: options.id,
+    open,
+    close,
+    has: (instanceId) => instances.has(instanceId),
+    getState: (instanceId) => getInstance(instanceId).state,
+    setState: (instanceId, next) => setState2(getInstance(instanceId), next),
+    patchState: (instanceId, patch) => {
+      const inst = getInstance(instanceId);
+      setState2(inst, { ...inst.state, ...patch });
+    },
+    dispatch,
+    toCanvas,
+    setAgent: (session2) => {
+      agent = session2;
+    }
+  };
+}
+
+// src/extension.ts
 import {
-  CanvasError,
-  createCanvas,
   joinSession
 } from "@github/copilot-sdk/extension";
 
@@ -19389,215 +19659,109 @@ function maxDate(dates) {
 
 // src/extension.ts
 var __dirname = dirname(fileURLToPath(import.meta.url));
-var instances = /* @__PURE__ */ new Map();
+var polls = /* @__PURE__ */ new Map();
+function pollFor(instanceId) {
+  let poll = polls.get(instanceId);
+  if (!poll) {
+    poll = { ref: null, gen: 0, timer: null, polling: false };
+    polls.set(instanceId, poll);
+  }
+  return poll;
+}
+var host;
+function setState(instanceId, next) {
+  if (host.has(instanceId)) host.setState(instanceId, next);
+}
+function getState(instanceId) {
+  return host.has(instanceId) ? host.getState(instanceId) : null;
+}
 var POLL_MS = 1200;
 function emptyState() {
   return { status: "idle", message: "Open a run to begin.", run: null, updatedAt: null };
 }
-function broadcast(entry) {
-  const payload = `data: ${JSON.stringify(entry.state)}
-
-`;
-  for (const res of entry.subscribers) {
-    try {
-      res.write(payload);
-    } catch {
-    }
+var FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2da44e"/><path d="M6.8 10.4 4.6 8.2l1-1 1.2 1.2 3-3 1 1z" fill="#fff"/></svg>`;
+function stopPolling(poll) {
+  if (poll.timer) {
+    clearTimeout(poll.timer);
+    poll.timer = null;
   }
 }
-async function startServer(instanceId) {
-  const entry = {
-    instanceId,
-    server: null,
-    url: "",
-    ref: null,
-    state: emptyState(),
-    subscribers: /* @__PURE__ */ new Set(),
-    timer: null,
-    polling: false,
-    gen: 0
-  };
-  const server = http.createServer(async (req, res) => {
-    try {
-      if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
-        const html = await readFile(join2(__dirname, "index.html"));
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(html);
-        return;
-      }
-      if (req.method === "GET" && req.url === "/main.js") {
-        const js = await readFile(join2(__dirname, "web", "main.js"));
-        res.writeHead(200, {
-          "Content-Type": "text/javascript; charset=utf-8",
-          "Cache-Control": "max-age=3600"
-        });
-        res.end(js);
-        return;
-      }
-      if (req.method === "GET" && req.url === "/main.css") {
-        const css = await readFile(join2(__dirname, "web", "main.css"));
-        res.writeHead(200, {
-          "Content-Type": "text/css; charset=utf-8",
-          "Cache-Control": "max-age=3600"
-        });
-        res.end(css);
-        return;
-      }
-      if (req.method === "GET" && req.url === "/state") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(entry.state));
-        return;
-      }
-      if (req.method === "GET" && req.url === "/events") {
-        res.writeHead(200, {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive"
-        });
-        res.write(`data: ${JSON.stringify(entry.state)}
-
-`);
-        entry.subscribers.add(res);
-        req.on("close", () => entry.subscribers.delete(res));
-        return;
-      }
-      if (req.method === "GET" && req.url === "/favicon.svg") {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2da44e"/><path d="M6.8 10.4 4.6 8.2l1-1 1.2 1.2 3-3 1 1z" fill="#fff"/></svg>`;
-        res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "max-age=86400" });
-        res.end(svg);
-        return;
-      }
-      if (req.method === "GET" && req.url === "/favicon.ico") {
-        res.writeHead(204);
-        res.end();
-        return;
-      }
-      if (req.method === "POST" && req.url === "/action") {
-        let body = "";
-        req.on("data", (c) => {
-          body += c;
-        });
-        req.on("end", async () => {
-          try {
-            const { action, input } = JSON.parse(body || "{}");
-            if (action === "addContext") {
-              const result = await addJobContext(
-                entry,
-                input
-              );
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify(result));
-              return;
-            }
-            if (action === "rerun_all" || action === "rerun_failed" || action === "cancel_run" || action === "rerun_job") {
-              const result = await runMutation(
-                entry,
-                action,
-                input
-              );
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify(result));
-              return;
-            }
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: `Unknown action: ${action}` }));
-          } catch (err) {
-            const status = err instanceof CanvasError ? 400 : 500;
-            res.writeHead(status, { "Content-Type": "application/json" });
-            res.end(
-              JSON.stringify({ error: err instanceof Error ? err.message : String(err) })
-            );
-          }
-        });
-        return;
-      }
-      res.writeHead(404);
-      res.end();
-    } catch (err) {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
-    }
-  });
-  await new Promise((r) => server.listen(0, "127.0.0.1", () => r()));
-  const { port } = server.address();
-  entry.server = server;
-  entry.url = `http://127.0.0.1:${port}/`;
-  return entry;
-}
-function getEntry(instanceId) {
-  const entry = instances.get(instanceId);
-  if (!entry) {
-    throw new CanvasError(
-      "canvas_instance_not_found",
-      `No open canvas for instanceId=${instanceId}. Call open_canvas first.`
-    );
-  }
-  return entry;
-}
-function stopPolling(entry) {
-  if (entry.timer) {
-    clearTimeout(entry.timer);
-    entry.timer = null;
-  }
-}
-async function pollOnce(entry, log, gen) {
-  if (!entry.ref || entry.gen !== gen) return;
-  const ref = entry.ref;
-  entry.polling = true;
+async function pollOnce(instanceId, log, gen) {
+  const poll = polls.get(instanceId);
+  if (!poll || !poll.ref || poll.gen !== gen || !host.has(instanceId)) return;
+  const ref = poll.ref;
+  poll.polling = true;
   try {
     const run = await fetchRunGraph(ref);
-    if (entry.gen !== gen) return;
-    entry.state = {
-      status: "ok",
-      message: null,
-      run,
-      updatedAt: Date.now()
-    };
-    broadcast(entry);
-    stopPolling(entry);
-    if (run.status !== "completed") {
-      entry.timer = setTimeout(() => void pollOnce(entry, log, gen), POLL_MS);
+    if (poll.gen !== gen) return;
+    setState(instanceId, { status: "ok", message: null, run, updatedAt: Date.now() });
+    stopPolling(poll);
+    if (run.status !== "completed" && host.has(instanceId)) {
+      poll.timer = setTimeout(() => void pollOnce(instanceId, log, gen), POLL_MS);
     }
   } catch (err) {
-    if (entry.gen !== gen) return;
+    if (poll.gen !== gen) return;
     const message = err instanceof Error ? err.message : String(err);
-    entry.state = { status: "error", message, run: entry.state.run, updatedAt: Date.now() };
-    broadcast(entry);
+    const prev = getState(instanceId);
+    setState(instanceId, {
+      status: "error",
+      message,
+      run: prev?.run ?? null,
+      updatedAt: Date.now()
+    });
     log?.(`workflow-viz poll error: ${message}`, { level: "warn" });
-    stopPolling(entry);
-    entry.timer = setTimeout(() => void pollOnce(entry, log, gen), POLL_MS * 2);
+    stopPolling(poll);
+    if (host.has(instanceId)) {
+      poll.timer = setTimeout(() => void pollOnce(instanceId, log, gen), POLL_MS * 2);
+    }
   } finally {
-    if (entry.gen === gen) entry.polling = false;
+    if (poll.gen === gen) poll.polling = false;
   }
 }
 async function loadRun(instanceId, input, log) {
-  const entry = getEntry(instanceId);
+  const poll = pollFor(instanceId);
   let ref;
   try {
     ref = parseRunRef(input || {});
   } catch (e) {
     throw new CanvasError("canvas_input_invalid", e instanceof Error ? e.message : String(e));
   }
-  entry.ref = ref;
-  const gen = ++entry.gen;
-  entry.state = {
+  poll.ref = ref;
+  const gen = ++poll.gen;
+  setState(instanceId, {
     status: "loading",
     message: `Loading ${ref.repo} run #${ref.runId}\u2026`,
     run: null,
     updatedAt: Date.now()
-  };
-  broadcast(entry);
-  stopPolling(entry);
-  entry.polling = false;
-  await pollOnce(entry, log, gen);
+  });
+  stopPolling(poll);
+  poll.polling = false;
+  await pollOnce(instanceId, log, gen);
+  const st = getState(instanceId);
   return {
-    status: entry.state.status,
+    status: st?.status ?? "idle",
     repo: ref.repo,
     runId: ref.runId,
-    runStatus: entry.state.run?.status ?? null,
-    conclusion: entry.state.run?.conclusion ?? null,
-    nodes: entry.state.run?.nodes?.length ?? 0,
-    error: entry.state.status === "error" ? entry.state.message : void 0
+    runStatus: st?.run?.status ?? null,
+    conclusion: st?.run?.conclusion ?? null,
+    nodes: st?.run?.nodes?.length ?? 0,
+    error: st?.status === "error" ? st.message : void 0
+  };
+}
+async function refresh(instanceId, log) {
+  const poll = pollFor(instanceId);
+  if (!poll.ref) {
+    throw new CanvasError("canvas_input_invalid", "No run loaded. Call load_run first.");
+  }
+  const gen = ++poll.gen;
+  stopPolling(poll);
+  poll.polling = false;
+  await pollOnce(instanceId, log, gen);
+  const st = getState(instanceId);
+  return {
+    status: st?.status ?? "idle",
+    runStatus: st?.run?.status ?? null,
+    conclusion: st?.run?.conclusion ?? null
   };
 }
 var FAIL_CONCLUSIONS = /* @__PURE__ */ new Set(["failure", "timed_out"]);
@@ -19662,8 +19826,8 @@ function stepIcon(s) {
   if (s.status !== "completed") return "\u2022";
   return FAIL_CONCLUSIONS.has(s.conclusion ?? "") ? "\u2717" : "\u2713";
 }
-async function addJobContext(entry, input) {
-  const run = entry.state.run;
+async function addJobContext(instanceId, input) {
+  const run = getState(instanceId)?.run;
   if (!run) {
     throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
   }
@@ -19699,7 +19863,7 @@ async function addJobContext(entry, input) {
   const title = `${node.label} \u2014 ${workflow} ${runLabel}`;
   try {
     await sessionPushAttachments?.({
-      instanceId: entry.instanceId,
+      instanceId,
       attachments: [{ type: "extension_context", title, payload }]
     });
   } catch (e) {
@@ -19710,8 +19874,8 @@ async function addJobContext(entry, input) {
   }
   return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
 }
-async function runMutation(entry, kind, input) {
-  const run = entry.state.run;
+async function runMutation(instanceId, kind, input) {
+  const run = getState(instanceId)?.run;
   if (!run) {
     throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
   }
@@ -19741,11 +19905,12 @@ async function runMutation(entry, kind, input) {
     if (e instanceof CanvasError) throw e;
     throw new CanvasError("canvas_action_failed", e instanceof Error ? e.message : String(e));
   }
-  const gen = ++entry.gen;
-  stopPolling(entry);
-  entry.polling = false;
-  await pollOnce(entry, sessionLog, gen);
-  return { ok: true, kind, runStatus: entry.state.run?.status ?? null };
+  const poll = pollFor(instanceId);
+  const gen = ++poll.gen;
+  stopPolling(poll);
+  poll.polling = false;
+  await pollOnce(instanceId, sessionLog, gen);
+  return { ok: true, kind, runStatus: getState(instanceId)?.run?.status ?? null };
 }
 var loadInputSchema = {
   type: "object",
@@ -19763,100 +19928,116 @@ var loadInputSchema = {
 };
 var sessionLog;
 var sessionPushAttachments;
-var canvas = createCanvas({
+var assets = {
+  "/": { contentType: "text/html; charset=utf-8", file: join2(__dirname, "index.html") },
+  "/index.html": {
+    contentType: "text/html; charset=utf-8",
+    file: join2(__dirname, "index.html")
+  },
+  "/main.js": {
+    contentType: "text/javascript; charset=utf-8",
+    file: join2(__dirname, "web", "main.js"),
+    cacheControl: "max-age=3600"
+  },
+  "/main.css": {
+    contentType: "text/css; charset=utf-8",
+    file: join2(__dirname, "web", "main.css"),
+    cacheControl: "max-age=3600"
+  },
+  "/favicon.svg": {
+    contentType: "image/svg+xml",
+    body: FAVICON_SVG,
+    cacheControl: "max-age=86400"
+  }
+};
+var actions = {
+  load_run: {
+    description: "Point the canvas at a GitHub Actions run and start live polling. Accepts { repo, runId } or { runUrl }.",
+    inputSchema: loadInputSchema,
+    agent: true,
+    handler: ({ instanceId, input }) => loadRun(instanceId, input, sessionLog)
+  },
+  refresh: {
+    description: "Force an immediate refresh of the currently loaded run.",
+    agent: true,
+    handler: ({ instanceId }) => refresh(instanceId, sessionLog)
+  },
+  rerun_all: {
+    description: "Re-run all jobs in the currently loaded run.",
+    agent: true,
+    handler: ({ instanceId }) => runMutation(instanceId, "rerun_all")
+  },
+  rerun_failed: {
+    description: "Re-run only the failed jobs in the currently loaded run.",
+    agent: true,
+    handler: ({ instanceId }) => runMutation(instanceId, "rerun_failed")
+  },
+  cancel_run: {
+    description: "Cancel the currently loaded run.",
+    agent: true,
+    handler: ({ instanceId }) => runMutation(instanceId, "cancel_run")
+  },
+  rerun_job: {
+    description: "Re-run a single job (and its dependents) by graph node id. Requires a completed run.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        jobId: { type: "string", description: "Graph node id of the job to re-run." }
+      },
+      required: ["jobId"]
+    },
+    agent: true,
+    handler: ({ instanceId, input }) => runMutation(instanceId, "rerun_job", input)
+  },
+  addContext: {
+    description: "Stage a job's logs and metadata as chat context.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        jobId: { type: "string", description: "Graph node id of the job to add." }
+      },
+      required: ["jobId"]
+    },
+    handler: ({ instanceId, input }) => addJobContext(instanceId, input)
+  }
+};
+host = createCanvasHost({
   id: "actions-workflow-viz",
+  initialState: emptyState,
+  assets,
+  actions
+});
+var canvas = host.toCanvas({
   displayName: "Actions Workflow Run",
   description: "Visualize a GitHub Actions run as a live job dependency graph, colored by real-time status. Open with { repo, runId } or a run URL.",
   inputSchema: loadInputSchema,
-  actions: [
-    {
-      name: "load_run",
-      description: "Point the canvas at a GitHub Actions run and start live polling. Accepts { repo, runId } or { runUrl }.",
-      inputSchema: loadInputSchema,
-      handler: ({ instanceId, input }) => loadRun(instanceId, input, sessionLog)
-    },
-    {
-      name: "refresh",
-      description: "Force an immediate refresh of the currently loaded run.",
-      handler: async ({ instanceId }) => {
-        const entry = getEntry(instanceId);
-        if (!entry.ref) {
-          throw new CanvasError("canvas_input_invalid", "No run loaded. Call load_run first.");
-        }
-        const gen = ++entry.gen;
-        stopPolling(entry);
-        entry.polling = false;
-        await pollOnce(entry, sessionLog, gen);
-        return {
-          status: entry.state.status,
-          runStatus: entry.state.run?.status ?? null,
-          conclusion: entry.state.run?.conclusion ?? null
-        };
-      }
-    },
-    {
-      name: "rerun_all",
-      description: "Re-run all jobs in the currently loaded run.",
-      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_all")
-    },
-    {
-      name: "rerun_failed",
-      description: "Re-run only the failed jobs in the currently loaded run.",
-      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_failed")
-    },
-    {
-      name: "cancel_run",
-      description: "Cancel the currently loaded run.",
-      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "cancel_run")
-    },
-    {
-      name: "rerun_job",
-      description: "Re-run a single job (and its dependents) by graph node id. Requires a completed run.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          jobId: { type: "string", description: "Graph node id of the job to re-run." }
-        },
-        required: ["jobId"]
-      },
-      handler: ({ instanceId, input }) => runMutation(getEntry(instanceId), "rerun_job", input)
-    }
-  ],
-  open: async ({ instanceId, input }) => {
-    let entry = instances.get(instanceId);
-    if (!entry) {
-      entry = await startServer(instanceId);
-      instances.set(instanceId, entry);
-    }
+  onOpen: async ({ instanceId, input }) => {
     const loadInput = input;
     if (loadInput && (loadInput.repo || loadInput.runUrl)) {
       try {
         await loadRun(instanceId, loadInput, sessionLog);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
-        entry.state = { status: "error", message, run: null, updatedAt: Date.now() };
-        broadcast(entry);
+        setState(instanceId, {
+          status: "error",
+          message,
+          run: null,
+          updatedAt: Date.now()
+        });
       }
     }
-    const run = entry.state.run;
+    const run = getState(instanceId)?.run ?? null;
     return {
-      url: entry.url,
       title: run ? `${run.display_title} \xB7 ${run.repo}` : "Actions Workflow Run",
       status: run ? `${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}` : "Waiting for a run"
     };
   },
-  onClose: async ({ instanceId }) => {
-    const entry = instances.get(instanceId);
-    if (!entry) return;
-    instances.delete(instanceId);
-    stopPolling(entry);
-    for (const res of entry.subscribers) {
-      try {
-        res.end();
-      } catch {
-      }
+  onClose: ({ instanceId }) => {
+    const poll = polls.get(instanceId);
+    if (poll) {
+      stopPolling(poll);
+      polls.delete(instanceId);
     }
-    await new Promise((r) => entry.server.close(() => r()));
   }
 });
 var session = await joinSession({ canvases: [canvas] });
