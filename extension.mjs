@@ -19250,6 +19250,53 @@ function buildGraph(parsed, liveJobs) {
   }
   return { nodes, edges, flat: false };
 }
+function mutationError(action, e) {
+  const status = e?.status;
+  if (status === 403) {
+    return new Error(`${action} failed: token is missing the \`workflow\` scope.`);
+  }
+  if (status === 409) {
+    return new Error(`${action} failed: the run is not in a re-runnable/cancellable state.`);
+  }
+  const message = e instanceof Error ? e.message : String(e);
+  return new Error(`${action} failed: ${message}`);
+}
+async function reRunAllJobs({ repo, runId }) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  try {
+    await octokit.rest.actions.reRunWorkflow({ owner, repo: name, run_id: runId });
+  } catch (e) {
+    throw mutationError("Re-run all jobs", e);
+  }
+}
+async function reRunFailedJobs({ repo, runId }) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  try {
+    await octokit.rest.actions.reRunWorkflowFailedJobs({ owner, repo: name, run_id: runId });
+  } catch (e) {
+    throw mutationError("Re-run failed jobs", e);
+  }
+}
+async function cancelRun({ repo, runId }) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  try {
+    await octokit.rest.actions.cancelWorkflowRun({ owner, repo: name, run_id: runId });
+  } catch (e) {
+    throw mutationError("Cancel run", e);
+  }
+}
+async function reRunJob(repo, jobId) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  try {
+    await octokit.rest.actions.reRunJobForWorkflowRun({ owner, repo: name, job_id: jobId });
+  } catch (e) {
+    throw mutationError("Re-run job", e);
+  }
+}
 function minDate(dates) {
   const valid = dates.filter((d) => Boolean(d)).sort();
   return valid[0] || null;
@@ -19346,6 +19393,16 @@ async function startServer(instanceId) {
             if (action === "addContext") {
               const result = await addJobContext(
                 entry,
+                input
+              );
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify(result));
+              return;
+            }
+            if (action === "rerun_all" || action === "rerun_failed" || action === "cancel_run" || action === "rerun_job") {
+              const result = await runMutation(
+                entry,
+                action,
                 input
               );
               res.writeHead(200, { "Content-Type": "application/json" });
@@ -19563,6 +19620,43 @@ async function addJobContext(entry, input) {
   }
   return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
 }
+async function runMutation(entry, kind, input) {
+  const run = entry.state.run;
+  if (!run) {
+    throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+  }
+  const ref = { repo: run.repo, runId: run.id };
+  try {
+    if (kind === "rerun_all") {
+      await reRunAllJobs(ref);
+    } else if (kind === "rerun_failed") {
+      await reRunFailedJobs(ref);
+    } else if (kind === "cancel_run") {
+      await cancelRun(ref);
+    } else {
+      const node = nodeById(run, input?.jobId);
+      if (!node) {
+        throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+      }
+      const jobId = allJobIds(node)[0];
+      if (!jobId) {
+        throw new CanvasError(
+          "canvas_input_invalid",
+          "This job has no re-runnable job id yet."
+        );
+      }
+      await reRunJob(run.repo, Number(jobId));
+    }
+  } catch (e) {
+    if (e instanceof CanvasError) throw e;
+    throw new CanvasError("canvas_action_failed", e instanceof Error ? e.message : String(e));
+  }
+  const gen = ++entry.gen;
+  stopPolling(entry);
+  entry.polling = false;
+  await pollOnce(entry, sessionLog, gen);
+  return { ok: true, kind, runStatus: entry.state.run?.status ?? null };
+}
 var loadInputSchema = {
   type: "object",
   properties: {
@@ -19609,6 +19703,33 @@ var canvas = createCanvas({
           conclusion: entry.state.run?.conclusion ?? null
         };
       }
+    },
+    {
+      name: "rerun_all",
+      description: "Re-run all jobs in the currently loaded run.",
+      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_all")
+    },
+    {
+      name: "rerun_failed",
+      description: "Re-run only the failed jobs in the currently loaded run.",
+      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_failed")
+    },
+    {
+      name: "cancel_run",
+      description: "Cancel the currently loaded run.",
+      handler: ({ instanceId }) => runMutation(getEntry(instanceId), "cancel_run")
+    },
+    {
+      name: "rerun_job",
+      description: "Re-run a single job (and its dependents) by graph node id. Requires a completed run.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          jobId: { type: "string", description: "Graph node id of the job to re-run." }
+        },
+        required: ["jobId"]
+      },
+      handler: ({ instanceId, input }) => runMutation(getEntry(instanceId), "rerun_job", input)
     }
   ],
   open: async ({ instanceId, input }) => {

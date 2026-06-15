@@ -245,7 +245,7 @@ describe("buildGraph status rollup", () => {
         const { nodes } = buildGraph(p, live);
 
         const node = nodeById(nodes, "test")!;
-        expect(node.startedAt).toBe("2024-01-01T00:00:01Z");
-        expect(node.completedAt).toBe("2024-01-01T00:02:00Z");
+        expect(node.started_at).toBe("2024-01-01T00:00:01Z");
+        expect(node.completed_at).toBe("2024-01-01T00:02:00Z");
     });
 });
