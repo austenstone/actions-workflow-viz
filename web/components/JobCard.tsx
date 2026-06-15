@@ -18,7 +18,7 @@ import {
     POP_KEYS,
     SHAKE,
     SHAKE_KEYS,
-    WIDTH_SPRING,
+    FILL_SPRING,
     useChangeFx,
 } from "../anim";
 import { useAction } from "../hooks";
@@ -205,9 +205,9 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
                 <div className="c-step">
                     <div className="sbar">
                         <motion.i
-                            initial={reduce ? false : { width: 0 }}
-                            animate={{ width: wpct + "%" }}
-                            transition={reduce ? { duration: 0 } : WIDTH_SPRING}
+                            initial={reduce ? false : { scaleX: 0 }}
+                            animate={{ scaleX: wpct / 100 }}
+                            transition={reduce ? { duration: 0 } : FILL_SPRING}
                         />
                     </div>
                     <div className="lbl">{stepLabel}</div>

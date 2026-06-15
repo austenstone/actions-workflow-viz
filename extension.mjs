@@ -9890,6 +9890,9 @@ var require_cronstrue = __commonJS({
 });
 
 // src/extension.ts
+import { joinSession } from "@github/copilot-sdk/extension";
+
+// src/canvas.ts
 import { dirname, join as join3 } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10163,11 +10166,6 @@ function createCanvasHost(options) {
     }
   };
 }
-
-// src/extension.ts
-import {
-  joinSession
-} from "@github/copilot-sdk/extension";
 
 // src/github.ts
 import { execFile } from "node:child_process";
@@ -19733,7 +19731,7 @@ async function fetchRunSummaries(repo, query = {}) {
   return runs.map(toRunSummary);
 }
 
-// src/extension.ts
+// src/canvas.ts
 var __dirname = dirname(fileURLToPath(import.meta.url));
 var polls = /* @__PURE__ */ new Map();
 var pickers = /* @__PURE__ */ new Map();
@@ -20103,18 +20101,18 @@ var assets = {
 };
 var actions = {
   load_run: {
-    description: "Point the canvas at a GitHub Actions run and start live polling. Accepts { repo, runId } or { runUrl }.",
+    description: "Swap the canvas view to a GitHub Actions run and start live polling. This is how you change which run is shown \u2014 call it on the already-open canvas instead of reopening. Accepts { repo, runId } or { runUrl }. Returns the new run status.",
     inputSchema: loadInputSchema,
     agent: true,
     handler: ({ instanceId, input }) => loadRun(instanceId, input, sessionLog)
   },
   refresh: {
-    description: "Force an immediate refresh of the currently loaded run.",
+    description: "Force an immediate refresh of the currently loaded run. A run must already be loaded (via load_run or open).",
     agent: true,
     handler: ({ instanceId }) => refresh(instanceId, sessionLog)
   },
   list_runs: {
-    description: "Show a clickable list of recent workflow runs to pick from (browse mode). Repo is auto-detected if omitted. Accepts { repo?, branch? }.",
+    description: "Swap the canvas view to browse mode: a clickable list of recent workflow runs the user can pick from. Use this when no specific run is in mind. Repo is auto-detected if omitted. Accepts { repo?, branch? }.",
     inputSchema: {
       type: "object",
       properties: {
@@ -20126,26 +20124,29 @@ var actions = {
     handler: ({ instanceId, input }) => listRuns(instanceId, input, sessionLog)
   },
   rerun_all: {
-    description: "Re-run all jobs in the currently loaded run.",
+    description: "Re-run all jobs in the currently loaded run. Requires a run to be loaded first. Returns { ok, kind, runStatus }.",
     agent: true,
     handler: ({ instanceId }) => runMutation(instanceId, "rerun_all")
   },
   rerun_failed: {
-    description: "Re-run only the failed jobs in the currently loaded run.",
+    description: "Re-run only the failed jobs in the currently loaded run. Requires a run to be loaded first. Returns { ok, kind, runStatus }.",
     agent: true,
     handler: ({ instanceId }) => runMutation(instanceId, "rerun_failed")
   },
   cancel_run: {
-    description: "Cancel the currently loaded run.",
+    description: "Cancel the currently loaded run. Requires a run to be loaded first. Returns { ok, kind, runStatus }.",
     agent: true,
     handler: ({ instanceId }) => runMutation(instanceId, "cancel_run")
   },
   rerun_job: {
-    description: "Re-run a single job (and its dependents) by graph node id. Requires a completed run.",
+    description: "Re-run a single job (and its dependents) in the loaded run. Requires a completed run. The jobId is a graph node id from the rendered run state (node.id in the current graph), not the GitHub job number. Returns { ok, kind, runStatus }.",
     inputSchema: {
       type: "object",
       properties: {
-        jobId: { type: "string", description: "Graph node id of the job to re-run." }
+        jobId: {
+          type: "string",
+          description: "Graph node id of the job to re-run, taken from the rendered run graph state."
+        }
       },
       required: ["jobId"]
     },
@@ -20172,7 +20173,7 @@ host = createCanvasHost({
 });
 var canvas = host.toCanvas({
   displayName: "Actions Workflow Run",
-  description: "Visualize a GitHub Actions run as a live job dependency graph, colored by real-time status. Open with { repo, runId } or a run URL.",
+  description: "Visualize a GitHub Actions run as a live job dependency graph, colored by real-time status. Open with { repo, runId } or a run URL (or open with nothing to land in browse mode). Open the canvas once, then drive it with actions: load_run to swap which run is shown, list_runs to browse, refresh/rerun_*/cancel_run to act on the loaded run. Each open instance is independent and polls on its own.",
   inputSchema: loadInputSchema,
   onOpen: async ({ instanceId, input }) => {
     const loadInput = input;
@@ -20215,11 +20216,19 @@ var canvas = host.toCanvas({
     pickers.delete(instanceId);
   }
 });
+function bindSession(log, pushAttachments) {
+  sessionLog = log;
+  sessionPushAttachments = pushAttachments;
+}
+
+// src/extension.ts
 var session = await joinSession({ canvases: [canvas] });
-sessionLog = (message, opts) => {
-  try {
-    session.log(message, opts);
-  } catch {
-  }
-};
-sessionPushAttachments = (params) => session.rpc.extensions.sendAttachmentsToMessage(params);
+bindSession(
+  (message, opts) => {
+    try {
+      session.log(message, opts);
+    } catch {
+    }
+  },
+  (params) => session.rpc.extensions.sendAttachmentsToMessage(params)
+);

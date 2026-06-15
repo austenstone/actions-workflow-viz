@@ -38,8 +38,9 @@ export const SHAKE_KEYS: DOMKeyframesDefinition = { x: [0, -3, 3, -2.5, 2.5, -1.
 export const PILL_POP: Transition = { duration: 0.4, ease: "easeOut" };
 export const PILL_POP_KEYS: DOMKeyframesDefinition = { scale: [1, 1.08, 1] };
 
-// Progress / step bar fill: spring to the new width.
-export const WIDTH_SPRING: Transition = {
+// Progress / step bar fill: spring the scaleX transform (hardware-accelerated,
+// avoids the layout+paint cost of animating `width`).
+export const FILL_SPRING: Transition = {
     type: "spring",
     stiffness: 210,
     damping: 30,

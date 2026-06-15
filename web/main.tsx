@@ -4,6 +4,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BaseStyles, ThemeProvider } from "@primer/react";
+import { MotionConfig } from "motion/react";
 import "@primer/primitives/dist/css/functional/themes/light.css";
 import "@primer/primitives/dist/css/functional/themes/dark.css";
 import "./app.css";
@@ -16,9 +17,11 @@ if (el) {
         <StrictMode>
             <ThemeProvider colorMode="auto">
                 <BaseStyles>
-                    <ToastProvider>
-                        <App />
-                    </ToastProvider>
+                    <MotionConfig reducedMotion="user">
+                        <ToastProvider>
+                            <App />
+                        </ToastProvider>
+                    </MotionConfig>
                 </BaseStyles>
             </ThemeProvider>
         </StrictMode>,
