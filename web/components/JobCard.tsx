@@ -7,9 +7,13 @@ import type { GraphNode } from "../types";
 import {
     durOf,
     legProgress,
+    queueMsOf,
+    QUEUE_NOISE_MS,
     RERUNNABLE_CLS,
+    runnerOf,
     statusOf,
     stepProgress,
+    fmtDur,
 } from "../format";
 import {
     ENTER_TRANSITION,
@@ -121,6 +125,14 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
     if (node.matrix && node.legs.length) tagTxt = `${lp.done}/${lp.total} legs`;
     else if (node.status === "completed") tagTxt = st.label;
 
+    // Runner labels (runs-on) and queue latency — pulled from the live legs but
+    // never surfaced before. Runner shows the union across matrix legs; queue is
+    // hidden when it's just scheduling noise.
+    const runners = runnerOf(node);
+    const runnerTxt = runners.length ? runners.join(", ") : null;
+    const queueMs = queueMsOf(node);
+    const queueTxt = queueMs != null && queueMs >= QUEUE_NOISE_MS ? fmtDur(queueMs) : null;
+
     const mtxTxt = node.legs.length ? `matrix · ${node.legs.length}` : "matrix";
     const mtxTip = node.legs.length
         ? node.legs.map((l) => `${l.name} — ${l.conclusion || l.status}`).join("\n")
@@ -198,6 +210,16 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
             </div>
             <div className="c-sub">
                 <span className="dur">{durTxt}</span>
+                {runnerTxt && (
+                    <span className="runner" title={"runs-on: " + runnerTxt}>
+                        {runnerTxt}
+                    </span>
+                )}
+                {queueTxt && (
+                    <span className="queue" title="Queued before a runner started">
+                        {queueTxt} queued
+                    </span>
+                )}
                 {tagTxt && <span className="tag">{tagTxt}</span>}
                 {ctx.show && <span className="ctx">{ctx.text}</span>}
             </div>

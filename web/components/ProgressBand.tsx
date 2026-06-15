@@ -38,9 +38,6 @@ export function ProgressBand({ run, now }: { run: RunGraph; now: number }) {
                 <i className="skip" style={{ width: pct(skip) }} />
             </div>
             <div className="prog-meta">
-                <span className="total">
-                    {total} {total === 1 ? "job" : "jobs"}
-                </span>
                 {legend.map((s) => (
                     <span className="cnt" key={s.label} style={s.faint ? { opacity: 0.7 } : undefined}>
                         <span

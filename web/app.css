@@ -164,7 +164,6 @@ body { margin: 0; }
     font-size: 12px;
     color: var(--muted);
 }
-.prog-meta .total { color: var(--fg); font-weight: 600; font-size: 13px; }
 .prog-meta .cnt { display: inline-flex; align-items: center; gap: 5px; }
 .prog-meta .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
 .prog-meta .dur { margin-left: auto; font-variant-numeric: tabular-nums; }
@@ -282,6 +281,27 @@ svg.edges {
     border-radius: 4px;
     background: var(--wait-bg);
     color: var(--muted);
+}
+.c-sub .runner {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--wait-bg);
+    color: var(--muted);
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.c-sub .queue {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--run-bg);
+    color: var(--run);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 .c-name-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
 .c-name-wrap .c-name { flex: 0 1 auto; }

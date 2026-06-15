@@ -13,6 +13,23 @@ export interface StatusInfo {
 export const FAIL_CONCLUSIONS = ["failure", "timed_out"];
 export const RERUNNABLE_CLS: StatusClass[] = ["ok", "fail", "skip"];
 
+// Map our status class onto a Primer Label variant so status pills/tags share
+// the same theming as the rest of the Primer chrome.
+export type LabelVariant = "success" | "danger" | "attention" | "secondary";
+
+export function labelVariant(cls: StatusClass): LabelVariant {
+    switch (cls) {
+        case "ok":
+            return "success";
+        case "fail":
+            return "danger";
+        case "run":
+            return "attention";
+        default:
+            return "secondary";
+    }
+}
+
 export function fmtDur(ms: number | null | undefined): string {
     if (ms == null || ms < 0) return "";
     const s = Math.floor(ms / 1000);
@@ -65,6 +82,34 @@ export function legProgress(node: GraphNode): LegProgress {
     const done = node.legs.filter((l) => l.status === "completed").length;
     return { done, total };
 }
+
+// The runs-on labels for a node, unioned across legs (matrix jobs can target
+// different runners per leg, e.g. ubuntu/windows/macos). Empty when the API
+// hasn't reported labels yet.
+export function runnerOf(node: GraphNode): string[] {
+    const seen = new Set<string>();
+    for (const leg of node.legs) {
+        for (const label of leg.labels || []) seen.add(label);
+    }
+    return [...seen];
+}
+
+// Queue latency: how long the job sat between creation and a runner picking it
+// up (started_at − created_at). Rolled up as the longest wait across legs.
+// Returns null when nothing has started yet or both timestamps are missing.
+export function queueMsOf(node: GraphNode): number | null {
+    let worst: number | null = null;
+    for (const leg of node.legs) {
+        if (!leg.created_at || !leg.started_at) continue;
+        const ms = new Date(leg.started_at).getTime() - new Date(leg.created_at).getTime();
+        if (ms <= 0) continue;
+        if (worst == null || ms > worst) worst = ms;
+    }
+    return worst;
+}
+
+// Below this, queue time is just scheduling noise and not worth the pixels.
+export const QUEUE_NOISE_MS = 3000;
 
 export interface StepProgress {
     done: number;

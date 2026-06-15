@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Button } from "@primer/react";
+import { Button, Link, Avatar, Label } from "@primer/react";
 import { ChevronLeftIcon } from "@primer/octicons-react";
 import type { RunGraph } from "../types";
-import { runPill } from "../format";
+import { runPill, labelVariant } from "../format";
 import { useChangeFx, PILL_POP, PILL_POP_KEYS } from "../anim";
 import { useAction } from "../hooks";
 import { Toolbar } from "./Toolbar";
@@ -17,13 +17,13 @@ function MetaLinks({ run }: { run: RunGraph }) {
         const runUrl = run.html_url || (run.id ? `${ghBase}/actions/runs/${run.id}` : null);
         bits.push(
             <span key="repo">
-                <a href={ghBase} {...ext}>
+                <Link muted href={ghBase} {...ext}>
                     {run.repo}
-                </a>{" "}
+                </Link>{" "}
                 {runUrl ? (
-                    <a href={runUrl} {...ext}>
+                    <Link muted href={runUrl} {...ext}>
                         #{run.run_number}
-                    </a>
+                    </Link>
                 ) : (
                     `#${run.run_number}`
                 )}
@@ -34,46 +34,50 @@ function MetaLinks({ run }: { run: RunGraph }) {
         bits.push(
             <span key="branch">
                 ⏎{" "}
-                <a href={`${ghBase}/tree/${encodeURIComponent(run.head_branch)}`} {...ext}>
+                <Link muted href={`${ghBase}/tree/${encodeURIComponent(run.head_branch)}`} {...ext}>
                     {run.head_branch}
-                </a>
+                </Link>
             </span>,
         );
     }
     if (run.head_sha && ghBase) {
         bits.push(
             <span key="sha">
-                <a href={`${ghBase}/commit/${run.head_sha}`} {...ext}>
+                <Link muted href={`${ghBase}/commit/${run.head_sha}`} {...ext}>
                     <code>{run.head_sha.slice(0, 7)}</code>
-                </a>
+                </Link>
             </span>,
         );
     }
     if (run.event) {
         bits.push(
             <span key="event">
-                <a
+                <Link
+                    muted
                     href={`https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#${run.event}`}
                     {...ext}
                 >
                     {run.event}
-                </a>
+                </Link>
             </span>,
         );
     }
     if (run.actor) {
         bits.push(
             <span key="actor">
-                <a href={run.actor.html_url ?? `https://github.com/${run.actor.login}`} className="actor" {...ext}>
-                    <img
-                        className="avatar"
+                <Link
+                    muted
+                    href={run.actor.html_url ?? `https://github.com/${run.actor.login}`}
+                    className="actor"
+                    {...ext}
+                >
+                    <Avatar
                         src={run.actor.avatar_url ?? `https://github.com/${run.actor.login}.png?size=32`}
-                        alt=""
-                        width={16}
-                        height={16}
+                        alt={run.actor.login}
+                        size={16}
                     />
                     {run.actor.login}
-                </a>
+                </Link>
             </span>,
         );
     }
