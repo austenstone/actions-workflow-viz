@@ -57,6 +57,28 @@ export interface RunRef {
     runId: number;
 }
 
+// Sidebar / tree model: the workflows in a repo, each with its recent runs.
+// Mirrors the Actions list endpoints (reused verbatim). This is the shallow
+// browse layer; run -> jobs -> steps for a selected run is fetchRunGraph.
+export type WorkflowDef =
+    RestEndpointMethodTypes["actions"]["listRepoWorkflows"]["response"]["data"]["workflows"][number];
+
+// Status filter accepted by the run list endpoints, reused so callers can't
+// pass a value the API rejects.
+export type RunListStatus =
+    RestEndpointMethodTypes["actions"]["listWorkflowRunsForRepo"]["parameters"]["status"];
+
+export interface WorkflowTreeItem {
+    workflow: WorkflowDef;
+    runs: WorkflowRunData[];
+}
+
+export interface WorkflowsTree {
+    repo: string;
+    workflows: WorkflowTreeItem[];
+    fetchedAt: number;
+}
+
 export type CanvasStatus = "idle" | "loading" | "ok" | "error";
 
 export interface CanvasState {
