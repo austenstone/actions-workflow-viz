@@ -299,6 +299,63 @@ export function buildGraph(
     return { nodes, edges, flat: false };
 }
 
+// --- Mutations ------------------------------------------------------------
+//
+// Thin wrappers over the Actions write endpoints. Each translates the common
+// HTTP failures into a friendly message the canvas can surface verbatim.
+
+function mutationError(action: string, e: unknown): Error {
+    const status = (e as { status?: number })?.status;
+    if (status === 403) {
+        return new Error(`${action} failed: token is missing the \`workflow\` scope.`);
+    }
+    if (status === 409) {
+        return new Error(`${action} failed: the run is not in a re-runnable/cancellable state.`);
+    }
+    const message = e instanceof Error ? e.message : String(e);
+    return new Error(`${action} failed: ${message}`);
+}
+
+export async function reRunAllJobs({ repo, runId }: RunRef): Promise<void> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
+    try {
+        await octokit.rest.actions.reRunWorkflow({ owner, repo: name, run_id: runId });
+    } catch (e) {
+        throw mutationError("Re-run all jobs", e);
+    }
+}
+
+export async function reRunFailedJobs({ repo, runId }: RunRef): Promise<void> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
+    try {
+        await octokit.rest.actions.reRunWorkflowFailedJobs({ owner, repo: name, run_id: runId });
+    } catch (e) {
+        throw mutationError("Re-run failed jobs", e);
+    }
+}
+
+export async function cancelRun({ repo, runId }: RunRef): Promise<void> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
+    try {
+        await octokit.rest.actions.cancelWorkflowRun({ owner, repo: name, run_id: runId });
+    } catch (e) {
+        throw mutationError("Cancel run", e);
+    }
+}
+
+export async function reRunJob(repo: string, jobId: number): Promise<void> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
+    try {
+        await octokit.rest.actions.reRunJobForWorkflowRun({ owner, repo: name, job_id: jobId });
+    } catch (e) {
+        throw mutationError("Re-run job", e);
+    }
+}
+
 function minDate(dates: Array<string | null>): string | null {
     const valid = dates.filter((d): d is string => Boolean(d)).sort();
     return valid[0] || null;

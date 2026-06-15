@@ -21,7 +21,14 @@ import {
     type MessageAttachment,
 } from "@github/copilot-sdk/extension";
 
-import { fetchRunGraph, parseRunRef } from "./run-data.js";
+import {
+    cancelRun,
+    fetchRunGraph,
+    parseRunRef,
+    reRunAllJobs,
+    reRunFailedJobs,
+    reRunJob,
+} from "./run-data.js";
 import { getOctokit } from "./github.js";
 import type { CanvasState, GraphNode, RunGraph, RunRef } from "./types.js";
 
@@ -138,6 +145,21 @@ async function startServer(instanceId: string): Promise<Instance> {
                             const result = await addJobContext(
                                 entry,
                                 input as ContextInput | undefined,
+                            );
+                            res.writeHead(200, { "Content-Type": "application/json" });
+                            res.end(JSON.stringify(result));
+                            return;
+                        }
+                        if (
+                            action === "rerun_all" ||
+                            action === "rerun_failed" ||
+                            action === "cancel_run" ||
+                            action === "rerun_job"
+                        ) {
+                            const result = await runMutation(
+                                entry,
+                                action,
+                                input as MutationInput | undefined,
                             );
                             res.writeHead(200, { "Content-Type": "application/json" });
                             res.end(JSON.stringify(result));
@@ -395,6 +417,55 @@ async function addJobContext(entry: Instance, input: ContextInput | undefined) {
     return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
 }
 
+type MutationKind = "rerun_all" | "rerun_failed" | "cancel_run" | "rerun_job";
+
+interface MutationInput {
+    jobId?: string;
+}
+
+// Shared core for the write actions: validate a run is loaded, call the matching
+// data-layer helper (translating failures to CanvasError so the POST handler
+// returns HTTP 400 with a surfaceable message), then immediately repaint by
+// reusing the poll/SSE machinery — re-runs flip the run back to in_progress,
+// which restarts polling on its own.
+async function runMutation(entry: Instance, kind: MutationKind, input?: MutationInput) {
+    const run = entry.state.run;
+    if (!run) {
+        throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+    }
+    const ref: RunRef = { repo: run.repo, runId: run.id };
+    try {
+        if (kind === "rerun_all") {
+            await reRunAllJobs(ref);
+        } else if (kind === "rerun_failed") {
+            await reRunFailedJobs(ref);
+        } else if (kind === "cancel_run") {
+            await cancelRun(ref);
+        } else {
+            const node = nodeById(run, input?.jobId);
+            if (!node) {
+                throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+            }
+            const jobId = allJobIds(node)[0];
+            if (!jobId) {
+                throw new CanvasError(
+                    "canvas_input_invalid",
+                    "This job has no re-runnable job id yet.",
+                );
+            }
+            await reRunJob(run.repo, Number(jobId));
+        }
+    } catch (e) {
+        if (e instanceof CanvasError) throw e;
+        throw new CanvasError("canvas_action_failed", e instanceof Error ? e.message : String(e));
+    }
+    const gen = ++entry.gen; // supersede any in-flight poll, then poll now
+    stopPolling(entry);
+    entry.polling = false;
+    await pollOnce(entry, sessionLog, gen);
+    return { ok: true, kind, runStatus: entry.state.run?.status ?? null };
+}
+
 const loadInputSchema = {
     type: "object",
     properties: {
@@ -447,6 +518,35 @@ const canvas = createCanvas({
                     conclusion: entry.state.run?.conclusion ?? null,
                 };
             },
+        },
+        {
+            name: "rerun_all",
+            description: "Re-run all jobs in the currently loaded run.",
+            handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_all"),
+        },
+        {
+            name: "rerun_failed",
+            description: "Re-run only the failed jobs in the currently loaded run.",
+            handler: ({ instanceId }) => runMutation(getEntry(instanceId), "rerun_failed"),
+        },
+        {
+            name: "cancel_run",
+            description: "Cancel the currently loaded run.",
+            handler: ({ instanceId }) => runMutation(getEntry(instanceId), "cancel_run"),
+        },
+        {
+            name: "rerun_job",
+            description:
+                "Re-run a single job (and its dependents) by graph node id. Requires a completed run.",
+            inputSchema: {
+                type: "object",
+                properties: {
+                    jobId: { type: "string", description: "Graph node id of the job to re-run." },
+                },
+                required: ["jobId"],
+            },
+            handler: ({ instanceId, input }) =>
+                runMutation(getEntry(instanceId), "rerun_job", input as MutationInput),
         },
     ],
     open: async ({ instanceId, input }) => {
