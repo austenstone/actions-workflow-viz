@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Button } from "@primer/react";
+import { ChevronLeftIcon } from "@primer/octicons-react";
 import type { RunGraph } from "../types";
 import { runPill } from "../format";
 import { useChangeFx, PILL_POP, PILL_POP_KEYS } from "../anim";
@@ -91,14 +93,15 @@ export function Header({ run }: { run: RunGraph }) {
     return (
         <header>
             <div className="h-top">
-                <button
-                    type="button"
-                    className="h-back"
+                <Button
+                    size="small"
+                    variant="invisible"
+                    leadingVisual={ChevronLeftIcon}
                     title="Browse recent runs"
                     onClick={() => callAction("list_runs", run.repo ? { repo: run.repo } : {})}
                 >
-                    ‹ Runs
-                </button>
+                    Runs
+                </Button>
                 <h1 className="h-title" title={title}>
                     {title}
                 </h1>
