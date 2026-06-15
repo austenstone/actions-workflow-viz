@@ -386,7 +386,7 @@ export function JobDetail({
 
     const st = stepStatus({ status: leg.status, conclusion: leg.conclusion } as Step);
     const steps = leg.steps ?? [];
-    const legAnns = node.annotations.filter((a) => !a.jobName || a.jobName === leg.name);
+    const legAnns = (node.annotations ?? []).filter((a) => !a.jobName || a.jobName === leg.name);
     const updated = run.fetchedAt ? new Date(run.fetchedAt).toLocaleTimeString() : "";
 
     return (

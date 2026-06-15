@@ -200,7 +200,7 @@ export function annotationCounts(anns: Annotation[]): AnnotationCounts {
 export function runAnnotationCounts(run: RunGraph): AnnotationCounts {
     const c: AnnotationCounts = { notice: 0, warning: 0, failure: 0, total: 0 };
     for (const n of run.nodes) {
-        for (const a of n.annotations) {
+        for (const a of n.annotations ?? []) {
             c[a.level]++;
             c.total++;
         }

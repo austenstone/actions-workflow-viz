@@ -157,8 +157,8 @@ export function JobCard({
 
     // Annotation rollup (notice/warning/failure) surfaced as compact badges so a
     // flagged job is visible without opening it.
-    const ann = annotationCounts(node.annotations);
-    const annTip = node.annotations
+    const ann = annotationCounts(node.annotations ?? []);
+    const annTip = (node.annotations ?? [])
         .slice(0, 6)
         .map((a) => `${a.level}: ${a.title || a.message}`.trim())
         .join("\n");

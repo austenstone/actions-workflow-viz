@@ -23,7 +23,7 @@ export function AnnotationsBand({
     if (counts.total === 0) return null;
 
     const firstWith = (level: AnnotationLevel): GraphNode | null =>
-        run.nodes.find((n) => n.annotations.some((a: Annotation) => a.level === level)) ?? null;
+        run.nodes.find((n) => (n.annotations ?? []).some((a: Annotation) => a.level === level)) ?? null;
 
     const items: { level: AnnotationLevel; n: number; label: string }[] = [
         { level: "failure", n: counts.failure, label: counts.failure === 1 ? "error" : "errors" },
