@@ -164,10 +164,10 @@ body { margin: 0; }
     font-size: 12px;
     color: var(--muted);
 }
-.prog-meta .big { color: var(--fg); font-weight: 600; font-size: 13px; }
-.prog-meta .sep { opacity: 0.4; }
-.prog-meta .cnt { display: inline-flex; align-items: center; gap: 4px; }
-.prog-meta .swatch { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.prog-meta .total { color: var(--fg); font-weight: 600; font-size: 13px; }
+.prog-meta .cnt { display: inline-flex; align-items: center; gap: 5px; }
+.prog-meta .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.prog-meta .dur { margin-left: auto; font-variant-numeric: tabular-nums; }
 
 /* ---- graph scroll area ---- */
 .scroll {

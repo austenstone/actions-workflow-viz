@@ -19,8 +19,15 @@ export function ProgressBand({ run, now }: { run: RunGraph; now: number }) {
         else wait++;
     }
     const pct = (n: number) => (n / total) * 100 + "%";
-    const finished = ok + fail + skip;
     const elapsed = elapsedOf(run, now);
+
+    const legend = [
+        { n: ok, color: "var(--ok)", label: "done" },
+        { n: runc, color: "var(--run)", label: "in progress" },
+        { n: fail, color: "var(--fail)", label: "failed" },
+        { n: wait, color: "var(--wait)", label: "queued" },
+        { n: skip, color: "var(--wait)", label: "skipped", faint: true },
+    ].filter((s) => s.n > 0);
 
     return (
         <div className="prog">
@@ -31,40 +38,19 @@ export function ProgressBand({ run, now }: { run: RunGraph; now: number }) {
                 <i className="skip" style={{ width: pct(skip) }} />
             </div>
             <div className="prog-meta">
-                <span className="big">
-                    {finished}/{total} jobs
+                <span className="total">
+                    {total} {total === 1 ? "job" : "jobs"}
                 </span>
-                {elapsed && (
-                    <>
-                        <span className="sep">·</span>
-                        <span>{elapsed}</span>
-                    </>
-                )}
-                {(runc > 0 || fail > 0 || wait > 0) && <span className="sep">·</span>}
-                {runc > 0 && (
-                    <span className="cnt">
-                        <span className="swatch" style={{ background: "var(--run)" }} />
-                        {runc} running
+                {legend.map((s) => (
+                    <span className="cnt" key={s.label} style={s.faint ? { opacity: 0.7 } : undefined}>
+                        <span
+                            className="dot"
+                            style={{ background: s.color, opacity: s.faint ? 0.55 : 1 }}
+                        />
+                        {s.n} {s.label}
                     </span>
-                )}
-                {fail > 0 && (
-                    <>
-                        {runc > 0 && <span className="sep">·</span>}
-                        <span className="cnt">
-                            <span className="swatch" style={{ background: "var(--fail)" }} />
-                            {fail} failed
-                        </span>
-                    </>
-                )}
-                {wait > 0 && (
-                    <>
-                        {(runc > 0 || fail > 0) && <span className="sep">·</span>}
-                        <span className="cnt">
-                            <span className="swatch" style={{ background: "var(--wait)" }} />
-                            {wait} queued
-                        </span>
-                    </>
-                )}
+                ))}
+                {elapsed && <span className="dur">{elapsed}</span>}
             </div>
         </div>
     );
