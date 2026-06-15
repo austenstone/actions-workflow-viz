@@ -357,6 +357,37 @@ svg.edges {
     overflow-y: auto;
 }
 .run-row-err { font-size: 11px; color: var(--fail); }
+.run-row-meta {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-variant-numeric: tabular-nums;
+}
+.run-row-meta .branch {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+}
+.run-row-meta .sha {
+    font-family: var(--fontStack-monospace, monospace);
+    font-size: 10.5px;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--wait-bg);
+}
+.run-row-trail {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+.run-row-time {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
 .dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 .dot.ok { background: var(--ok); }
 .dot.fail { background: var(--fail); }

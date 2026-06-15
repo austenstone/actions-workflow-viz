@@ -157,6 +157,16 @@ export function relTime(iso: string | null): string {
     const d = Math.floor(h / 24);
     return `${d}d ago`;
 }
+// Live elapsed runtime for a browse-list row that's still going (uses
+// run_started_at, falling back to createdAt). Driven by the canvas now-tick.
+export function runElapsed(run: RunSummary, now: number): string {
+    const startIso = run.runStartedAt ?? run.createdAt;
+    if (!startIso) return "";
+    const start = new Date(startIso).getTime();
+    if (Number.isNaN(start)) return "";
+    return fmtDur(now - start);
+}
+
 export function runPill(run: RunGraph): { cls: StatusClass; text: string } {
     if (run.status === "completed") {
         const cls: StatusClass =

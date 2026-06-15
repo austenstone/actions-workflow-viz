@@ -62,10 +62,14 @@ export function toRunSummary(run: WorkflowRunData): RunSummary {
         status: run.status ?? null,
         conclusion: run.conclusion ?? null,
         branch: run.head_branch ?? null,
+        baseBranch: run.pull_requests?.[0]?.base?.ref ?? null,
+        headSha: run.head_sha ?? null,
         event: run.event ?? null,
         createdAt: run.created_at ?? null,
+        runStartedAt: run.run_started_at ?? null,
         htmlUrl: run.html_url ?? null,
         actor: run.actor?.login ?? null,
+        actorAvatarUrl: run.actor?.avatar_url ?? null,
     };
 }
 

@@ -89,10 +89,14 @@ export interface RunSummary {
     status: string | null;
     conclusion: string | null;
     branch: string | null;
+    baseBranch: string | null;
+    headSha: string | null;
     event: string | null;
     createdAt: string | null;
+    runStartedAt: string | null;
     htmlUrl: string | null;
     actor: string | null;
+    actorAvatarUrl: string | null;
 }
 
 // Browse-mode model: the recent runs to pick from when no run is loaded.

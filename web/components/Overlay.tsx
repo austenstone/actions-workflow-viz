@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Button, Spinner, Label, ActionList } from "@primer/react";
+import { Button, Spinner, Label, ActionList, Avatar } from "@primer/react";
 import { SyncIcon } from "@primer/octicons-react";
 import type { CanvasState, RunSummary } from "../types";
-import { summaryPill, relTime, labelVariant } from "../format";
-import { useAction } from "../hooks";
+import { summaryPill, relTime, runElapsed, labelVariant } from "../format";
+import { useAction, useNow } from "../hooks";
 
 // One selectable run in the picker. Clicking loads it via the existing load_run
 // action; a per-row busy flag keeps the rest of the list interactive.
@@ -12,6 +12,8 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     const pill = summaryPill(run);
+    const running = run.status !== "completed";
+    const now = useNow(running);
 
     const pick = () => {
         if (busy) return;
@@ -33,25 +35,45 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
             });
     };
 
-    const meta = [
-        run.runNumber != null ? `#${run.runNumber}` : null,
-        run.branch ? `⏎ ${run.branch}` : null,
-        run.event || null,
-        run.createdAt ? relTime(run.createdAt) : null,
-    ]
-        .filter(Boolean)
-        .join(" · ");
+    const avatarUrl =
+        run.actorAvatarUrl ??
+        (run.actor ? `https://github.com/${run.actor}.png?size=40` : null);
+
+    // PR runs flow head -> base; everything else is just the one branch.
+    const refFlow =
+        run.baseBranch && run.branch ? `${run.branch} → ${run.baseBranch}` : run.branch;
+    const sha = run.headSha ? run.headSha.slice(0, 7) : null;
+
+    const time = running
+        ? runElapsed(run, now)
+        : run.createdAt
+          ? relTime(run.createdAt)
+          : "";
 
     return (
         <ActionList.Item onSelect={pick} disabled={busy} title={run.title || run.name}>
             <ActionList.LeadingVisual>
-                <span className={"dot " + pill.cls} />
+                {avatarUrl ? (
+                    <Avatar src={avatarUrl} alt={run.actor ?? "actor"} size={20} />
+                ) : (
+                    <span className={"dot " + pill.cls} />
+                )}
             </ActionList.LeadingVisual>
             {run.title || run.name}
-            <ActionList.Description variant="block">{meta}</ActionList.Description>
-            {err && <span className="run-row-err">{err}</span>}
+            <ActionList.Description variant="block">
+                <span className="run-row-meta">
+                    {run.runNumber != null && <span>#{run.runNumber}</span>}
+                    {refFlow && <span className="branch">⏎ {refFlow}</span>}
+                    {sha && <code className="sha">{sha}</code>}
+                    {run.event && <span>{run.event}</span>}
+                </span>
+                {err && <span className="run-row-err">{err}</span>}
+            </ActionList.Description>
             <ActionList.TrailingVisual>
-                <Label variant={labelVariant(pill.cls)}>{pill.text}</Label>
+                <span className="run-row-trail">
+                    <Label variant={labelVariant(pill.cls)}>{pill.text}</Label>
+                    {time && <span className="run-row-time">{time}</span>}
+                </span>
             </ActionList.TrailingVisual>
         </ActionList.Item>
     );
