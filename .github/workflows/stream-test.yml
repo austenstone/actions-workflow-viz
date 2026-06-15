@@ -1,0 +1,29 @@
+name: Stream Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: How many seconds to stream
+        required: false
+        default: "600"
+
+permissions:
+  contents: read
+
+jobs:
+  stream:
+    name: Stream logs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo every second
+        env:
+          SECONDS_TO_RUN: ${{ inputs.seconds }}
+        run: |
+          count="${SECONDS_TO_RUN:-600}"
+          echo "Starting stream test for ${count}s"
+          for i in $(seq 1 "$count"); do
+            echo "[$i/$count] $(date -u +%H:%M:%S.%3N) tick — streaming log line"
+            sleep 1
+          done
+          echo "Done streaming ${count} lines"
