@@ -2,7 +2,7 @@ import type { SyntheticEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ActionList, ActionMenu, IconButton, Label } from "@primer/react";
-import { KebabHorizontalIcon, SyncIcon } from "@primer/octicons-react";
+import { KebabHorizontalIcon, SyncIcon, PaperclipIcon } from "@primer/octicons-react";
 import type { GraphNode } from "../types";
 import {
     durOf,
@@ -34,13 +34,21 @@ interface JobCardProps {
     now: number;
     runCompleted: boolean;
     registerCard: (id: string, el: HTMLElement | null) => void;
+    onOpenDetail: (node: GraphNode) => void;
 }
 
-// One DAG node. Clicking pushes the job's logs into the agent's context; the
+// One DAG node. Clicking opens the Job Detail overlay (steps + live logs); the
 // status glyph pops/shakes on transitions; an in-progress job shows a step bar.
 // Layout/animation effects intentionally exclude `now` so the 1s tick only
 // updates duration text, never restarts animations.
-export function JobCard({ node, index, now, runCompleted, registerCard }: JobCardProps) {
+export function JobCard({
+    node,
+    index,
+    now,
+    runCompleted,
+    registerCard,
+    onOpenDetail,
+}: JobCardProps) {
     const callAction = useAction();
     const showToast = useToast();
     const reduce = useReducedMotion();
@@ -103,7 +111,7 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
 
     const onActivate = (e: SyntheticEvent) => {
         e.preventDefault();
-        addContext();
+        onOpenDetail(node);
     };
 
     // Per-card re-run.
@@ -156,7 +164,6 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
             whileHover={{ y: -1, transition: { duration: 0.12, ease: "easeOut" } }}
             onClick={onActivate}
             onContextMenu={(e) => {
-                if (!canRerun) return;
                 e.preventDefault();
                 e.stopPropagation();
                 setMenuOpen(true);
@@ -179,34 +186,40 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
                         </span>
                     )}
                 </span>
-                {canRerun && (
-                    <span
-                        className="rerun-bar"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                    >
-                        <ActionMenu open={menuOpen} onOpenChange={setMenuOpen}>
-                            <ActionMenu.Anchor>
-                                <IconButton
-                                    icon={KebabHorizontalIcon}
-                                    size="small"
-                                    variant="invisible"
-                                    aria-label={"Actions for " + node.label}
-                                />
-                            </ActionMenu.Anchor>
-                            <ActionMenu.Overlay width="small">
-                                <ActionList>
+                <span
+                    className="rerun-bar"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                >
+                    <ActionMenu open={menuOpen} onOpenChange={setMenuOpen}>
+                        <ActionMenu.Anchor>
+                            <IconButton
+                                icon={KebabHorizontalIcon}
+                                size="small"
+                                variant="invisible"
+                                aria-label={"Actions for " + node.label}
+                            />
+                        </ActionMenu.Anchor>
+                        <ActionMenu.Overlay width="small">
+                            <ActionList>
+                                <ActionList.Item onSelect={() => addContext()}>
+                                    <ActionList.LeadingVisual>
+                                        <PaperclipIcon />
+                                    </ActionList.LeadingVisual>
+                                    Add to chat
+                                </ActionList.Item>
+                                {canRerun && (
                                     <ActionList.Item disabled={rerunBusy} onSelect={fireRerun}>
                                         <ActionList.LeadingVisual>
                                             <SyncIcon />
                                         </ActionList.LeadingVisual>
                                         Re-run job
                                     </ActionList.Item>
-                                </ActionList>
-                            </ActionMenu.Overlay>
-                        </ActionMenu>
-                    </span>
-                )}
+                                )}
+                            </ActionList>
+                        </ActionMenu.Overlay>
+                    </ActionMenu>
+                </span>
             </div>
             <div className="c-sub">
                 <span className="dur">{durTxt}</span>

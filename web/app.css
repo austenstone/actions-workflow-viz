@@ -399,3 +399,193 @@ svg.edges {
     0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 0 var(--run-bg); }
     50% { box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 4px var(--run-bg); }
 }
+
+/* ---- job detail overlay ---- */
+.jd {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--bg);
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.jd-head {
+    flex: 0 0 auto;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--line);
+}
+.jd-head-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.jd-ico {
+    font-size: 14px;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+.jd-ico.ok { color: var(--ok); }
+.jd-ico.fail { color: var(--fail); }
+.jd-ico.run { color: var(--run); }
+.jd-ico.wait, .jd-ico.skip { color: var(--wait); }
+.jd-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.jd-spacer { flex: 1 1 auto; }
+.jd-gh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.jd-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.jd-meta a { color: var(--muted); text-decoration: none; }
+.jd-meta a:hover { color: var(--fg); text-decoration: underline; }
+.jd-meta code { font-family: var(--fontStack-monospace, monospace); font-size: 11px; }
+.jd-actor {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.jd-controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+}
+.jd-controls > :first-child { flex: 1 1 auto; min-width: 0; }
+.jd-steps {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 8px 14px 14px;
+}
+.jd-err {
+    color: var(--fail);
+    background: var(--fail-bg);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+.jd-empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 32px 0;
+    font-size: 13px;
+}
+.jd-step {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+.jd-step.s-ok { border-left: 2px solid var(--ok); }
+.jd-step.s-fail { border-left: 2px solid var(--fail); }
+.jd-step.s-run { border-left: 2px solid var(--run); }
+.jd-step.s-wait, .jd-step.s-skip { border-left: 2px solid var(--wait); }
+.jd-step-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.jd-step-head:hover { background: var(--wait-bg); }
+.jd-chev {
+    display: inline-flex;
+    color: var(--muted);
+    flex: 0 0 auto;
+}
+.jd-step-ico {
+    font-size: 12px;
+    line-height: 1;
+    flex: 0 0 auto;
+    width: 14px;
+    text-align: center;
+}
+.jd-step-ico.ok { color: var(--ok); }
+.jd-step-ico.fail { color: var(--fail); }
+.jd-step-ico.run { color: var(--run); }
+.jd-step-ico.wait, .jd-step-ico.skip { color: var(--wait); }
+.jd-step-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.jd-step-dur {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+.jd-step-body {
+    border-top: 1px solid var(--line);
+    background: #1e1e1e;
+}
+.jd-step-empty {
+    padding: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    background: var(--bg);
+}
+.logterm {
+    padding: 6px 8px;
+    overflow: auto;
+}
+.rawlog {
+    margin: 0;
+    padding: 8px 10px;
+    max-height: 320px;
+    overflow: auto;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: var(--fontStack-monospace, monospace);
+    font-size: 12px;
+    line-height: 17px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.rawline { min-height: 17px; }
+.hl {
+    background: var(--run);
+    color: #1e1e1e;
+    border-radius: 2px;
+}
+.jd-foot {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+}

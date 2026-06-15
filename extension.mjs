@@ -20030,6 +20030,79 @@ async function addJobContext(instanceId, input) {
   }
   return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
 }
+function legById(run, ghJobId) {
+  for (const node of run.nodes) {
+    const leg = node.legs.find((l) => l.id === ghJobId);
+    if (leg) return leg;
+  }
+  return void 0;
+}
+var LINE_TS = /^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\s/;
+function bucketLog(text, steps) {
+  const ordered = [...steps].sort((a, b) => a.number - b.number);
+  const started = ordered.filter((s) => s.started_at);
+  if (!started.length) {
+    return ordered.map((s, i) => ({
+      number: s.number,
+      name: s.name,
+      logText: i === 0 ? text : ""
+    }));
+  }
+  const startMs = started.map((s) => Date.parse(s.started_at));
+  const buckets = started.map(() => []);
+  let si = 0;
+  for (const line of text.split("\n")) {
+    const m = LINE_TS.exec(line);
+    const t = m ? Date.parse(m[1]) : NaN;
+    if (!Number.isNaN(t)) {
+      while (si + 1 < startMs.length && startMs[si + 1] <= t) si++;
+    }
+    buckets[si].push(line);
+  }
+  const byNumber = /* @__PURE__ */ new Map();
+  started.forEach((s, i) => byNumber.set(s.number, buckets[i].join("\n")));
+  return ordered.map((s) => ({
+    number: s.number,
+    name: s.name,
+    logText: byNumber.get(s.number) ?? ""
+  }));
+}
+async function getJobLog(instanceId, input) {
+  const run = getState(instanceId)?.run;
+  if (!run) {
+    throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+  }
+  const ghJobId = Number(input?.ghJobId);
+  if (!Number.isFinite(ghJobId)) {
+    throw new CanvasError("canvas_input_invalid", "A numeric ghJobId is required.");
+  }
+  const leg = legById(run, ghJobId);
+  if (!leg) {
+    throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+  }
+  const [owner, name] = run.repo.split("/");
+  let text = "";
+  try {
+    const octokit = await getOctokit();
+    const { data } = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+      owner,
+      repo: name,
+      job_id: ghJobId
+    });
+    text = typeof data === "string" ? data : String(data ?? "");
+  } catch (e) {
+    sessionLog?.(
+      `getJobLog: failed to fetch logs for job ${ghJobId}: ${e instanceof Error ? e.message : String(e)}`,
+      { level: "warn" }
+    );
+  }
+  return {
+    jobId: leg.id,
+    status: leg.status,
+    conclusion: leg.conclusion ?? null,
+    steps: bucketLog(text, leg.steps ?? [])
+  };
+}
 async function runMutation(instanceId, kind, input) {
   const run = getState(instanceId)?.run;
   if (!run) {
@@ -20170,6 +20243,20 @@ var actions = {
       required: ["jobId"]
     },
     handler: ({ instanceId, input }) => addJobContext(instanceId, input)
+  },
+  getJobLog: {
+    description: "Fetch full per-step log text for one job (web-only, drives JobDetail).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ghJobId: {
+          type: ["number", "string"],
+          description: "Numeric GitHub job id (leg.id), not the graph node id."
+        }
+      },
+      required: ["ghJobId"]
+    },
+    handler: ({ instanceId, input }) => getJobLog(instanceId, input)
   }
 };
 host = createCanvasHost({

@@ -8,6 +8,7 @@ import { MotionConfig } from "motion/react";
 import "@primer/primitives/dist/css/functional/themes/light.css";
 import "@primer/primitives/dist/css/functional/themes/dark.css";
 import "./app.css";
+import "@wterm/react/css";
 import { App } from "./components/App";
 import { ToastProvider } from "./components/Toast";
 

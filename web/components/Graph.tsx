@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RunGraph } from "../types";
+import type { GraphNode, RunGraph } from "../types";
 import { stagesFor } from "../layout";
 import { useResizeTick } from "../hooks";
 import { JobCard } from "./JobCard";
@@ -10,7 +10,15 @@ import { Edges, type EdgeGeom } from "./Edges";
 // layout effect keyed on the run envelope (which changes every poll) and on a
 // ResizeObserver tick — deliberately NOT on `now`, so the per-second duration
 // tick never triggers an edge remeasure.
-export function Graph({ run, now }: { run: RunGraph; now: number }) {
+export function Graph({
+    run,
+    now,
+    onOpenDetail,
+}: {
+    run: RunGraph;
+    now: number;
+    onOpenDetail: (node: GraphNode) => void;
+}) {
     const contentRef = useRef<HTMLDivElement>(null);
     const cardMap = useRef<Map<string, HTMLElement>>(new Map());
     const resizeTick = useResizeTick(contentRef);
@@ -73,6 +81,7 @@ export function Graph({ run, now }: { run: RunGraph; now: number }) {
                                     now={now}
                                     runCompleted={runCompleted}
                                     registerCard={registerCard}
+                                    onOpenDetail={onOpenDetail}
                                 />
                             ))}
                         </div>

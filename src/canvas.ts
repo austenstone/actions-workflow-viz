@@ -43,7 +43,7 @@ import {
 } from "./run-data.js";
 import { getOctokit, detectRepo } from "./github.js";
 import { fetchRunSummaries } from "./workflows.js";
-import type { CanvasState, GraphNode, RunGraph, RunPicker, RunRef } from "./types.js";
+import type { CanvasState, GraphNode, Leg, RunGraph, RunPicker, RunRef, Step } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -428,6 +428,106 @@ async function addJobContext(instanceId: string, input: ContextInput | undefined
     return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
 }
 
+// Find a live job (leg) by its numeric GitHub job id across all graph nodes.
+// JobDetail addresses logs by the real job id (leg.id), not the synthetic graph
+// node id, which can be a matrix rollup.
+function legById(run: RunGraph, ghJobId: number): Leg | undefined {
+    for (const node of run.nodes) {
+        const leg = node.legs.find((l) => l.id === ghJobId);
+        if (leg) return leg;
+    }
+    return undefined;
+}
+
+const LINE_TS = /^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\s/;
+
+interface JobLogStep {
+    number: number;
+    name: string;
+    logText: string;
+}
+
+// GitHub serves the whole job log as one timestamped blob with no per-step
+// endpoint, so we bucket lines into steps ourselves. Steps run sequentially, so
+// started_at is monotonic by step number; we walk a pointer forward as each
+// line's timestamp crosses the next started step. Lines before the first step
+// (or with no parseable timestamp) stick to the current bucket.
+function bucketLog(text: string, steps: Step[]): JobLogStep[] {
+    const ordered = [...steps].sort((a, b) => a.number - b.number);
+    const started = ordered.filter((s) => s.started_at);
+    if (!started.length) {
+        return ordered.map((s, i) => ({
+            number: s.number,
+            name: s.name,
+            logText: i === 0 ? text : "",
+        }));
+    }
+    const startMs = started.map((s) => Date.parse(s.started_at as string));
+    const buckets: string[][] = started.map(() => []);
+    let si = 0;
+    for (const line of text.split("\n")) {
+        const m = LINE_TS.exec(line);
+        const t = m ? Date.parse(m[1]) : NaN;
+        if (!Number.isNaN(t)) {
+            while (si + 1 < startMs.length && startMs[si + 1] <= t) si++;
+        }
+        buckets[si].push(line);
+    }
+    const byNumber = new Map<number, string>();
+    started.forEach((s, i) => byNumber.set(s.number, buckets[i].join("\n")));
+    return ordered.map((s) => ({
+        number: s.number,
+        name: s.name,
+        logText: byNumber.get(s.number) ?? "",
+    }));
+}
+
+interface JobLogInput {
+    ghJobId?: number | string;
+}
+
+// Web-only: return the full per-step log text for one job, bucketed by step.
+// Step metadata (status/duration) already lives in canvas state, so this only
+// supplies the log bodies. Bypasses the chat-attachment tail cap deliberately.
+async function getJobLog(instanceId: string, input: JobLogInput | undefined) {
+    const run = getState(instanceId)?.run;
+    if (!run) {
+        throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
+    }
+    const ghJobId = Number(input?.ghJobId);
+    if (!Number.isFinite(ghJobId)) {
+        throw new CanvasError("canvas_input_invalid", "A numeric ghJobId is required.");
+    }
+    const leg = legById(run, ghJobId);
+    if (!leg) {
+        throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
+    }
+    const [owner, name] = run.repo.split("/");
+    let text = "";
+    try {
+        const octokit = await getOctokit();
+        const { data } = await octokit.rest.actions.downloadJobLogsForWorkflowRun({
+            owner,
+            repo: name,
+            job_id: ghJobId,
+        });
+        text = typeof data === "string" ? data : String(data ?? "");
+    } catch (e) {
+        sessionLog?.(
+            `getJobLog: failed to fetch logs for job ${ghJobId}: ${
+                e instanceof Error ? e.message : String(e)
+            }`,
+            { level: "warn" },
+        );
+    }
+    return {
+        jobId: leg.id,
+        status: leg.status,
+        conclusion: leg.conclusion ?? null,
+        steps: bucketLog(text, leg.steps ?? []),
+    };
+}
+
 type MutationKind = "rerun_all" | "rerun_failed" | "cancel_run" | "rerun_job";
 
 interface MutationInput {
@@ -599,6 +699,20 @@ const actions: Record<string, CanvasActionConfig<CanvasState>> = {
             required: ["jobId"],
         },
         handler: ({ instanceId, input }) => addJobContext(instanceId, input as ContextInput),
+    },
+    getJobLog: {
+        description: "Fetch full per-step log text for one job (web-only, drives JobDetail).",
+        inputSchema: {
+            type: "object",
+            properties: {
+                ghJobId: {
+                    type: ["number", "string"],
+                    description: "Numeric GitHub job id (leg.id), not the graph node id.",
+                },
+            },
+            required: ["ghJobId"],
+        },
+        handler: ({ instanceId, input }) => getJobLog(instanceId, input as JobLogInput),
     },
 };
 
