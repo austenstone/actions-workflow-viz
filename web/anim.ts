@@ -18,10 +18,10 @@
 
 import { useEffect, useRef } from "react";
 import { useAnimate, useReducedMotion } from "motion/react";
-import type { DOMKeyframesDefinition, AnimationOptions } from "motion/react";
+import type { DOMKeyframesDefinition, Transition } from "motion/react";
 
 // Card enter: fade + rise + scale. `enterDelay` staggers the initial batch.
-export const ENTER_TRANSITION: AnimationOptions = {
+export const ENTER_TRANSITION: Transition = {
     duration: 0.34,
     ease: [0.16, 1, 0.3, 1],
 };
@@ -29,17 +29,17 @@ export const enterDelay = (index: number): number => Math.min(index * 0.04, 0.24
 
 // Success: spring-bounce pop. Failure: side-to-side shake (reads as "wrong" at a
 // glance instead of the celebratory bounce).
-export const POP: AnimationOptions = { type: "spring", stiffness: 540, damping: 16, mass: 0.7 };
-export const SHAKE: AnimationOptions = { duration: 0.44, ease: "easeInOut" };
+export const POP: Transition = { type: "spring", stiffness: 540, damping: 16, mass: 0.7 };
+export const SHAKE: Transition = { duration: 0.44, ease: "easeInOut" };
 export const POP_KEYS: DOMKeyframesDefinition = { scale: [1, 1.34, 1] };
 export const SHAKE_KEYS: DOMKeyframesDefinition = { x: [0, -3, 3, -2.5, 2.5, -1.5, 0] };
 
 // Header status pill: subtle pop to draw the eye on a status change.
-export const PILL_POP: AnimationOptions = { duration: 0.4, ease: "easeOut" };
+export const PILL_POP: Transition = { duration: 0.4, ease: "easeOut" };
 export const PILL_POP_KEYS: DOMKeyframesDefinition = { scale: [1, 1.08, 1] };
 
 // Progress / step bar fill: spring to the new width.
-export const WIDTH_SPRING: AnimationOptions = {
+export const WIDTH_SPRING: Transition = {
     type: "spring",
     stiffness: 210,
     damping: 30,
@@ -47,7 +47,7 @@ export const WIDTH_SPRING: AnimationOptions = {
 };
 
 // Dependency edge appearing for the first time: fade in instead of snapping.
-export const EDGE_FADE: AnimationOptions = { duration: 0.45, ease: "easeOut" };
+export const EDGE_FADE: Transition = { duration: 0.45, ease: "easeOut" };
 
 // Fire a one-shot keyframe burst on an element whenever `value` changes — but not
 // on first render, and never under reduced motion. `build` maps the new value to
@@ -55,7 +55,7 @@ export const EDGE_FADE: AnimationOptions = { duration: 0.45, ease: "easeOut" };
 // ref to the element you want to animate.
 export function useChangeFx<T extends Element = HTMLElement>(
     value: string,
-    build: (next: string) => { keys: DOMKeyframesDefinition; transition: AnimationOptions } | null,
+    build: (next: string) => { keys: DOMKeyframesDefinition; transition: Transition } | null,
 ) {
     const [scope, animate] = useAnimate<T>();
     const reduce = useReducedMotion();
