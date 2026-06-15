@@ -145,6 +145,7 @@ function StepRow({
     const st = stepStatus(step);
     const dur = stepDur(step, now);
     const hasLog = logText.length > 0;
+    const expandable = hasLog || step.status !== "completed";
 
     const formatted = useMemo(() => {
         if (mode !== "formatted") return "";
@@ -154,9 +155,16 @@ function StepRow({
     }, [mode, logText, q]);
 
     return (
-        <div className={"jd-step s-" + st.cls + (open ? " open" : "")}>
-            <button className="jd-step-head" onClick={onToggle} aria-expanded={open}>
-                <span className="jd-chev">{open ? <ChevronDownIcon /> : <ChevronRightIcon />}</span>
+        <div className={"jd-step s-" + st.cls + (open ? " open" : "") + (expandable ? "" : " no-expand")}>
+            <button
+                className="jd-step-head"
+                onClick={expandable ? onToggle : undefined}
+                aria-expanded={expandable ? open : undefined}
+                disabled={!expandable}
+            >
+                <span className="jd-chev">
+                    {expandable ? open ? <ChevronDownIcon /> : <ChevronRightIcon /> : null}
+                </span>
                 <span className="jd-step-ico">
                     <StatusIcon kind={st.kind} title={st.label} />
                 </span>
@@ -165,7 +173,7 @@ function StepRow({
                 </span>
                 {dur && <span className="jd-step-dur">{dur}</span>}
             </button>
-            {open && (
+            {expandable && open && (
                 <div className="jd-step-body">
                     {!hasLog ? (
                         <div className="jd-step-empty">

@@ -503,6 +503,9 @@ svg.edges {
     cursor: pointer;
 }
 .jd-step-head:hover { background: var(--wait-bg); }
+.jd-step.no-expand .jd-step-head { cursor: default; }
+.jd-step.no-expand .jd-step-head:hover { background: none; }
+.jd-step.no-expand .jd-chev { width: 14px; }
 .jd-chev {
     display: inline-flex;
     color: var(--muted);
