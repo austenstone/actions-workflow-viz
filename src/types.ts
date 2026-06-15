@@ -1,15 +1,26 @@
 // Shared shapes for the run graph envelope. The renderer (index.html) reads
 // these field names directly, so the names here are load-bearing — keep them in
 // sync with the DOM-binding code in index.html.
+//
+// The raw Actions API payloads and their lifecycle enums are reused straight
+// from Octokit's REST typings rather than redeclared, so they track the API.
 
-export type LegStatus = string; // queued | in_progress | completed | waiting | ...
-export type Conclusion = string | null; // success | failure | cancelled | skipped | ...
+import type { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 
-export interface Step {
-    name: string;
-    status: LegStatus;
-    conclusion: Conclusion;
-}
+// Raw Actions API payloads.
+export type WorkflowRunData =
+    RestEndpointMethodTypes["actions"]["getWorkflowRun"]["response"]["data"];
+export type WorkflowJob =
+    RestEndpointMethodTypes["actions"]["listJobsForWorkflowRun"]["response"]["data"]["jobs"][number];
+export type WorkflowStep = NonNullable<WorkflowJob["steps"]>[number];
+
+// Job-level lifecycle enums, reused from the job schema (strict unions). Note
+// the run schema types its own status/conclusion loosely (`string | null`), so
+// run-level fields below intentionally don't reuse these.
+export type LegStatus = WorkflowJob["status"];
+export type Conclusion = WorkflowJob["conclusion"];
+
+export type Step = Pick<WorkflowStep, "name" | "status" | "conclusion">;
 
 export interface Leg {
     name: string;
@@ -48,8 +59,8 @@ export interface RunGraph {
     runName: string;
     runNumber: number | null;
     workflowName: string | null;
-    status: string; // queued | in_progress | completed
-    conclusion: Conclusion;
+    status: string; // run-level status is loosely typed by the API
+    conclusion: WorkflowRunData["conclusion"];
     event: string | null;
     headBranch: string | null;
     headSha: string | null;

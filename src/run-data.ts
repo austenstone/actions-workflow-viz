@@ -3,8 +3,6 @@
 // job-dependency DAG annotated with live status. The output envelope is consumed
 // directly by index.html, so its shape is load-bearing — keep field names stable.
 
-import type { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
-
 import { getOctokit } from "./github.js";
 import { parseJobsNeeds, type ParsedJobs } from "./parse-needs.js";
 import type {
@@ -15,12 +13,12 @@ import type {
     NodeStatus,
     RunGraph,
     RunRef,
+    WorkflowJob,
 } from "./types.js";
 
 // The Actions jobs API payload, derived straight from Octokit's typings rather
 // than redeclared by hand.
-type LiveJob =
-    RestEndpointMethodTypes["actions"]["listJobsForWorkflowRun"]["response"]["data"]["jobs"][number];
+type LiveJob = WorkflowJob;
 
 // Accepts "owner/repo" + run id, or a full run URL like
 // https://github.com/owner/repo/actions/runs/123456789
@@ -66,10 +64,10 @@ function nodeStatusFromLegs(legs: Array<Pick<LiveJob, "status" | "conclusion"> |
         return { status: "queued", conclusion: null };
     }
     // All completed → roll up the worst conclusion.
-    const order = ["failure", "timed_out", "cancelled", "action_required", "neutral", "success", "skipped"];
-    let worst = "skipped";
+    const order: Conclusion[] = ["failure", "timed_out", "cancelled", "action_required", "neutral", "success", "skipped"];
+    let worst: Conclusion = "skipped";
     for (const l of legs) {
-        const c = l.conclusion || "success";
+        const c: Conclusion = l.conclusion || "success";
         if (order.indexOf(c) < order.indexOf(worst)) worst = c;
     }
     return { status: "completed", conclusion: worst };
