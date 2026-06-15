@@ -25,7 +25,7 @@ const toCrlf = (s: string): string => s.replace(/\r?\n/g, "\r\n");
 // Read-only wterm wrapper. wterm has no clear(), so we append in place while the
 // new text is a superset of what we've written (the live-tail case) and remount
 // the whole terminal when it diverges (search filter / leg switch).
-export function LogTerminal({ text, minRows = 2, maxRows = 32 }: LogTerminalProps) {
+export function LogTerminal({ text, minRows = 2, maxRows = 16 }: LogTerminalProps) {
     const term = useRef<WTerm | null>(null);
     const written = useRef("");
     const [gen, setGen] = useState(0);
@@ -50,7 +50,6 @@ export function LogTerminal({ text, minRows = 2, maxRows = 32 }: LogTerminalProp
             key={gen}
             className="logterm"
             rows={rowsFor(text, minRows, maxRows)}
-            autoResize
             cursorBlink={false}
             onData={NOOP}
             onReady={(wt) => {
