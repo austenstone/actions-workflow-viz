@@ -30,21 +30,11 @@ declare module "@github/copilot-sdk/extension" {
         displayPrompt?: string;
     }
 
-    export interface ExtensionContextPushInput {
-        type: "extension_context";
-        title: string;
-        payload: { [k: string]: unknown };
-    }
-
-    export interface SendAttachmentsToMessageParams {
-        instanceId?: string;
-        attachments: ExtensionContextPushInput[];
-    }
-
-    export interface SessionRpc {
-        extensions: {
-            sendAttachmentsToMessage(params: SendAttachmentsToMessageParams): Promise<void>;
-        };
+    export interface SendAttachmentBlob {
+        type: "blob";
+        data: string;
+        mimeType: string;
+        displayName?: string;
     }
 
     export interface CopilotSession {
@@ -53,7 +43,6 @@ declare module "@github/copilot-sdk/extension" {
         log(message: string, opts?: LogOptions): void;
         send(prompt: string): Promise<string>;
         send(options: MessageOptions): Promise<string>;
-        readonly rpc: SessionRpc;
     }
 
     export interface JoinSessionConfig {

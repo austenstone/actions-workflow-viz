@@ -2,9 +2,17 @@ import type { SyntheticEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ActionList, ActionMenu, IconButton, Label } from "@primer/react";
-import { KebabHorizontalIcon, SyncIcon, PaperclipIcon } from "@primer/octicons-react";
+import {
+    KebabHorizontalIcon,
+    SyncIcon,
+    PaperclipIcon,
+    AlertIcon,
+    StopIcon,
+    InfoIcon,
+} from "@primer/octicons-react";
 import type { GraphNode } from "../types";
 import {
+    annotationCounts,
     durOf,
     legProgress,
     queueMsOf,
@@ -26,6 +34,7 @@ import {
     useChangeFx,
 } from "../anim";
 import { useAction } from "../hooks";
+import { StatusIcon } from "./StatusIcon";
 import { useToast } from "./Toast";
 
 interface JobCardProps {
@@ -146,6 +155,14 @@ export function JobCard({
         ? node.legs.map((l) => `${l.name} — ${l.conclusion || l.status}`).join("\n")
         : "waiting for matrix legs…";
 
+    // Annotation rollup (notice/warning/failure) surfaced as compact badges so a
+    // flagged job is visible without opening it.
+    const ann = annotationCounts(node.annotations);
+    const annTip = node.annotations
+        .slice(0, 6)
+        .map((a) => `${a.level}: ${a.title || a.message}`.trim())
+        .join("\n");
+
     return (
         // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <motion.a
@@ -173,8 +190,8 @@ export function JobCard({
             }}
         >
             <div className="c-top">
-                <span className={"ico " + st.cls} ref={icoRef}>
-                    {st.ico}
+                <span className="ico" ref={icoRef}>
+                    <StatusIcon kind={st.kind} title={st.label} />
                 </span>
                 <span className="c-name-wrap">
                     <span className="c-name" title={node.label}>
@@ -234,6 +251,21 @@ export function JobCard({
                     </span>
                 )}
                 {tagTxt && <Label variant="secondary">{tagTxt}</Label>}
+                {ann.failure > 0 && (
+                    <span className="ann l-failure" title={annTip}>
+                        <StopIcon size={12} /> {ann.failure}
+                    </span>
+                )}
+                {ann.warning > 0 && (
+                    <span className="ann l-warning" title={annTip}>
+                        <AlertIcon size={12} /> {ann.warning}
+                    </span>
+                )}
+                {ann.failure === 0 && ann.warning === 0 && ann.notice > 0 && (
+                    <span className="ann l-notice" title={annTip}>
+                        <InfoIcon size={12} /> {ann.notice}
+                    </span>
+                )}
                 {ctx.show && <span className="ctx">{ctx.text}</span>}
             </div>
             {inProgress && (

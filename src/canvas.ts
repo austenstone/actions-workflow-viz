@@ -22,16 +22,14 @@ import { fileURLToPath } from "node:url";
 import {
     CanvasError,
     createCanvasHost,
+    type AgentMessageOptions,
+    type AgentSession,
     type CanvasActionConfig,
     type CanvasAssets,
     type CanvasHost,
 } from "copilot-canvas-kit";
 
-import type {
-    CopilotSession,
-    LogOptions,
-    MessageAttachment,
-} from "@github/copilot-sdk/extension";
+import type { CopilotSession, LogOptions, MessageAttachment } from "@github/copilot-sdk/extension";
 
 import {
     cancelRun,
@@ -48,6 +46,10 @@ import type { CanvasState, GraphNode, Leg, RunGraph, RunPicker, RunRef, Step } f
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type LogFn = (message: string, opts?: LogOptions) => void;
+
+// The kit's ergonomic "push a user turn into the agent" shortcut (ctx.notifyAgent).
+// Resolves with the new message id, or null when no live session is bound.
+type NotifyAgentFn = (message: string | AgentMessageOptions) => Promise<string | null>;
 
 // Poll bookkeeping lives beside the canvas (the kit owns the canvas state); this
 // tracks the run reference, generation counter, and active timer per instance.
@@ -377,7 +379,11 @@ interface ContextInput {
     jobId?: string;
 }
 
-async function addJobContext(instanceId: string, input: ContextInput | undefined) {
+async function addJobContext(
+    instanceId: string,
+    input: ContextInput | undefined,
+    notifyAgent: NotifyAgentFn,
+) {
     const run = getState(instanceId)?.run;
     if (!run) {
         throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
@@ -387,45 +393,47 @@ async function addJobContext(instanceId: string, input: ContextInput | undefined
         throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
     }
     const attachments = await fetchJobLogs(run, node, sessionLog);
-    const logs = attachments.map((a) => ({
-        name: a.type === "blob" ? a.displayName : "",
-        text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : "",
-    }));
     const workflow = run.name ?? run.display_title;
     const runLabel = run.run_number != null ? `#${run.run_number}` : `run ${run.id}`;
-    const steps = node.legs
+    const runRef = `${workflow} ${runLabel}`;
+
+    const stepLines = node.legs
         .flatMap((leg) => leg.steps ?? [])
-        .map((s) => ({
-            name: s.name,
-            status: s.status,
-            conclusion: s.conclusion,
-            outcome: stepIcon(s),
-        }));
-    const payload = {
-        job: node.label,
-        status: node.status,
-        conclusion: node.conclusion ?? null,
-        workflow,
-        run: `${workflow} ${runLabel}`,
-        runId: run.id,
-        repo: run.repo,
-        url: node.html_url ?? null,
-        steps,
-        logs,
-    };
-    const title = `${node.label} — ${workflow} ${runLabel}`;
+        .map((s) => `  ${stepIcon(s)} ${s.name} (${s.conclusion ?? s.status})`);
+
+    const summary = [
+        `Job **${node.label}** — ${runRef}`,
+        `Status: ${node.status}${node.conclusion ? ` (${node.conclusion})` : ""}`,
+        `Repo: ${run.repo}`,
+        node.html_url ? `URL: ${node.html_url}` : null,
+        stepLines.length ? `Steps:\n${stepLines.join("\n")}` : null,
+        attachments.length
+            ? `Logs attached: ${attachments.length} file(s).`
+            : "No logs available yet (they publish once the job completes).",
+    ]
+        .filter(Boolean)
+        .join("\n");
+
+    const prompt = `Adding the **${node.label}** job from ${runRef} as context.\n\n${summary}`;
+
     try {
-        await sessionPushAttachments?.({
-            instanceId,
-            attachments: [{ type: "extension_context", title, payload }],
+        const messageId = await notifyAgent({
+            prompt,
+            displayPrompt: `📎 Attached job "${node.label}" (${runRef})`,
+            attachments,
+            mode: "enqueue",
         });
+        if (!messageId) {
+            throw new CanvasError("canvas_internal", "No agent session is connected.");
+        }
     } catch (e) {
+        if (e instanceof CanvasError) throw e;
         sessionLog?.(`addContext push failed: ${e instanceof Error ? e.message : String(e)}`, {
             level: "warn",
         });
-        throw new CanvasError("canvas_internal", "Failed to stage job context.");
+        throw new CanvasError("canvas_internal", "Failed to attach job context.");
     }
-    return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
+    return { ok: true, job: node.label, staged: true, logsAttached: attachments.length };
 }
 
 // Find a live job (leg) by its numeric GitHub job id across all graph nodes.
@@ -595,8 +603,6 @@ const loadInputSchema = {
 };
 
 let sessionLog: LogFn | undefined;
-type PushAttachmentsFn = CopilotSession["rpc"]["extensions"]["sendAttachmentsToMessage"];
-let sessionPushAttachments: PushAttachmentsFn | undefined;
 
 // Static files served by the kit's loopback host. The kit reads `file` paths
 // itself (and auto-answers /favicon.ico with 204), so we only declare them.
@@ -698,7 +704,8 @@ const actions: Record<string, CanvasActionConfig<CanvasState>> = {
             },
             required: ["jobId"],
         },
-        handler: ({ instanceId, input }) => addJobContext(instanceId, input as ContextInput),
+        handler: ({ instanceId, input, notifyAgent }) =>
+            addJobContext(instanceId, input as ContextInput, notifyAgent),
     },
     getJobLog: {
         description: "Fetch full per-step log text for one job (web-only, drives JobDetail).",
@@ -776,13 +783,16 @@ const canvas = host.toCanvas({
     },
 });
 
-// Wire the live Copilot session hooks the action handlers call into.
-// `bindSession` is invoked by src/extension.ts once joinSession resolves; it is
-// simply never called on the dev path, where the handlers tolerate undefined
-// hooks (logging/attachments become no-ops in a plain browser).
-export function bindSession(log: LogFn, pushAttachments: PushAttachmentsFn): void {
+// Wire the live Copilot session into the canvas. `bindSession` is invoked by
+// src/extension.ts once joinSession resolves: it sets the logger and hands the
+// session to the kit (host.setAgent) so action handlers' `ctx.notifyAgent`
+// pushes turns + attachments back to the agent. Never called on the dev path,
+// where notifyAgent is a no-op (returns null) in a plain browser.
+export function bindSession(log: LogFn, session: CopilotSession): void {
     sessionLog = log;
-    sessionPushAttachments = pushAttachments;
+    // The live SDK session is a structural superset of the kit's AgentSession
+    // (our ambient CopilotSession is deliberately minimal), so cast at the seam.
+    host.setAgent(session as unknown as AgentSession);
 }
 
 export { host, canvas };

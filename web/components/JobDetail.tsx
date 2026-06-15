@@ -15,12 +15,16 @@ import {
     LinkExternalIcon,
     SearchIcon,
     XIcon,
+    AlertIcon,
+    InfoIcon,
+    StopIcon,
 } from "@primer/octicons-react";
-import type { GraphNode, Leg, RunGraph, Step } from "../types";
+import type { Annotation, GraphNode, Leg, RunGraph, Step } from "../types";
 import { fmtDur, labelVariant, type StatusInfo } from "../format";
 import { useAction, useNow } from "../hooks";
 import { LogTerminal } from "./LogTerminal";
 import { StepActivityFeed } from "./StepActivityFeed";
+import { StatusIcon } from "./StatusIcon";
 
 type Mode = "formatted" | "raw";
 
@@ -46,16 +50,16 @@ const stripTs = (line: string): string => line.replace(WEB_TS, "");
 // Step-level status glyphs. Steps use the same status vocabulary as jobs minus
 // "pending", so this mirrors statusOf without pulling in the GraphNode shape.
 function stepStatus(step: Step): StatusInfo {
-    if (step.status === "in_progress") return { cls: "run", ico: "", label: "Running" };
-    if (step.status === "queued") return { cls: "wait", ico: "○", label: "Queued" };
+    if (step.status === "in_progress") return { cls: "run", kind: "in_progress", ico: "", label: "Running" };
+    if (step.status === "queued") return { cls: "wait", kind: "queued", ico: "○", label: "Queued" };
     const c = step.conclusion;
-    if (c === "success") return { cls: "ok", ico: "✓", label: "Passed" };
-    if (c === "skipped") return { cls: "skip", ico: "↷", label: "Skipped" };
-    if (c === "cancelled") return { cls: "skip", ico: "⊘", label: "Cancelled" };
+    if (c === "success") return { cls: "ok", kind: "success", ico: "✓", label: "Passed" };
+    if (c === "skipped") return { cls: "skip", kind: "skipped", ico: "↷", label: "Skipped" };
+    if (c === "cancelled") return { cls: "skip", kind: "cancelled", ico: "⊘", label: "Cancelled" };
     if (c === "failure" || c === "timed_out")
-        return { cls: "fail", ico: "✕", label: c === "timed_out" ? "Timed out" : "Failed" };
-    if (c) return { cls: "wait", ico: "!", label: c };
-    return { cls: "wait", ico: "·", label: step.status };
+        return { cls: "fail", kind: "failure", ico: "✕", label: c === "timed_out" ? "Timed out" : "Failed" };
+    if (c) return { cls: "wait", kind: "neutral", ico: "!", label: c };
+    return { cls: "wait", kind: "pending", ico: "·", label: step.status };
 }
 
 function stepDur(step: Step, now: number): string {
@@ -153,7 +157,9 @@ function StepRow({
         <div className={"jd-step s-" + st.cls + (open ? " open" : "")}>
             <button className="jd-step-head" onClick={onToggle} aria-expanded={open}>
                 <span className="jd-chev">{open ? <ChevronDownIcon /> : <ChevronRightIcon />}</span>
-                <span className={"jd-step-ico " + st.cls}>{st.ico}</span>
+                <span className="jd-step-ico">
+                    <StatusIcon kind={st.kind} title={st.label} />
+                </span>
                 <span className="jd-step-name" title={step.name}>
                     {step.name}
                 </span>
@@ -174,6 +180,50 @@ function StepRow({
                     )}
                 </div>
             )}
+        </div>
+    );
+}
+
+const ANN_ICON = {
+    failure: <StopIcon />,
+    warning: <AlertIcon />,
+    notice: <InfoIcon />,
+} as const;
+
+function JobAnnotations({ anns }: { anns: Annotation[] }) {
+    return (
+        <div className="jd-anns">
+            {anns.map((a, i) => {
+                const loc = a.path && a.path !== ".github" ? a.path : "";
+                const line = a.startLine ? `:${a.startLine}` : "";
+                return (
+                    <div key={i} className={"jd-ann l-" + a.level}>
+                        <span className="jd-ann-ico">{ANN_ICON[a.level]}</span>
+                        <div className="jd-ann-body">
+                            {a.title && <div className="jd-ann-title">{a.title}</div>}
+                            {a.message && <div className="jd-ann-msg">{a.message}</div>}
+                            {loc &&
+                                (a.blobHref ? (
+                                    <Link
+                                        muted
+                                        href={a.blobHref}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="jd-ann-loc"
+                                    >
+                                        {loc}
+                                        {line} <LinkExternalIcon size={12} />
+                                    </Link>
+                                ) : (
+                                    <span className="jd-ann-loc">
+                                        {loc}
+                                        {line}
+                                    </span>
+                                ))}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -336,13 +386,16 @@ export function JobDetail({
 
     const st = stepStatus({ status: leg.status, conclusion: leg.conclusion } as Step);
     const steps = leg.steps ?? [];
+    const legAnns = node.annotations.filter((a) => !a.jobName || a.jobName === leg.name);
     const updated = run.fetchedAt ? new Date(run.fetchedAt).toLocaleTimeString() : "";
 
     return (
         <div className="jd" role="dialog" aria-label={node.label}>
             <div className="jd-head">
                 <div className="jd-head-top">
-                    <span className={"jd-ico " + st.cls}>{st.ico}</span>
+                    <span className="jd-ico">
+                        <StatusIcon kind={st.kind} title={st.label} />
+                    </span>
                     <h2 className="jd-title" title={node.label}>
                         {node.label}
                     </h2>
@@ -412,6 +465,7 @@ export function JobDetail({
 
             <div className="jd-steps">
                 {err && <div className="jd-err">{err}</div>}
+                {legAnns.length > 0 && <JobAnnotations anns={legAnns} />}
                 {running && steps.length > 0 && <StepActivityFeed steps={steps} now={now} />}
                 {steps.length === 0 ? (
                     <div className="jd-empty">

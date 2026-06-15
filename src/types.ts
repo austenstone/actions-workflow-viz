@@ -21,6 +21,22 @@ export type Conclusion = WorkflowJob["conclusion"];
 // Rolled-up status the renderer colors by (no API equivalent).
 export type NodeStatus = "pending" | "queued" | "in_progress" | "completed";
 
+// A check-run annotation (the notice/warning/failure messages GitHub surfaces on
+// the run summary page). Flattened from the checks API into a renderer-friendly
+// shape and tagged with the job leg it came from so matrix nodes can attribute it.
+export type AnnotationLevel = "notice" | "warning" | "failure";
+export interface Annotation {
+    level: AnnotationLevel;
+    title: string;
+    message: string;
+    path: string | null;
+    startLine: number | null;
+    endLine: number | null;
+    rawDetails: string | null;
+    blobHref: string | null;
+    jobName: string;
+}
+
 // A DAG node: one workflow job, or a matrix rollup of its legs. Field names
 // follow the Actions API casing where they mirror it.
 export interface GraphNode {
@@ -31,6 +47,7 @@ export interface GraphNode {
     legs: Leg[];
     matrix?: boolean;
     unmatched?: boolean;
+    annotations: Annotation[];
     started_at: string | null;
     completed_at: string | null;
     html_url: string | null;

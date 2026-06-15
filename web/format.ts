@@ -1,11 +1,13 @@
 // Pure formatting + status-mapping helpers, lifted verbatim from the old
 // index.html renderer so the visual semantics are unchanged.
-import type { GraphNode, RunGraph, RunSummary } from "./types";
+import type { Annotation, GraphNode, RunGraph, RunSummary } from "./types";
+import type { StatusKind } from "./components/StatusIcon";
 
 export type StatusClass = "ok" | "fail" | "run" | "wait" | "skip";
 
 export interface StatusInfo {
     cls: StatusClass;
+    kind: StatusKind;
     ico: string;
     label: string;
 }
@@ -60,16 +62,16 @@ export function elapsedOf(run: RunGraph, now: number): string {
 
 // -> { cls, ico, label } where cls in ok|fail|run|wait|skip
 export function statusOf(node: GraphNode): StatusInfo {
-    if (node.status === "in_progress") return { cls: "run", ico: "", label: "Running" };
-    if (node.status === "queued") return { cls: "wait", ico: "○", label: "Queued" };
-    if (node.status === "pending") return { cls: "wait", ico: "○", label: "Pending" };
+    if (node.status === "in_progress") return { cls: "run", kind: "in_progress", ico: "", label: "Running" };
+    if (node.status === "queued") return { cls: "wait", kind: "queued", ico: "○", label: "Queued" };
+    if (node.status === "pending") return { cls: "wait", kind: "pending", ico: "○", label: "Pending" };
     const c = node.conclusion;
-    if (c === "success") return { cls: "ok", ico: "✓", label: "Passed" };
-    if (c === "skipped") return { cls: "skip", ico: "↷", label: "Skipped" };
-    if (c === "cancelled") return { cls: "skip", ico: "⊘", label: "Cancelled" };
+    if (c === "success") return { cls: "ok", kind: "success", ico: "✓", label: "Passed" };
+    if (c === "skipped") return { cls: "skip", kind: "skipped", ico: "↷", label: "Skipped" };
+    if (c === "cancelled") return { cls: "skip", kind: "cancelled", ico: "⊘", label: "Cancelled" };
     if (c === "neutral" || c === "action_required")
-        return { cls: "wait", ico: "!", label: c };
-    return { cls: "fail", ico: "✕", label: c === "timed_out" ? "Timed out" : "Failed" };
+        return { cls: "wait", kind: "neutral", ico: "!", label: c };
+    return { cls: "fail", kind: "failure", ico: "✕", label: c === "timed_out" ? "Timed out" : "Failed" };
 }
 
 export interface LegProgress {
@@ -167,8 +169,7 @@ export function runElapsed(run: RunSummary, now: number): string {
     return fmtDur(now - start);
 }
 
-export function runPill(run: RunGraph): { cls: StatusClass; text: string } {
-    if (run.status === "completed") {
+export function runPill(run: RunGraph): { cls: StatusClass; text: string } {    if (run.status === "completed") {
         const cls: StatusClass =
             run.conclusion === "success"
                 ? "ok"
@@ -179,4 +180,38 @@ export function runPill(run: RunGraph): { cls: StatusClass; text: string } {
     }
     if (run.status === "in_progress") return { cls: "run", text: "in progress" };
     return { cls: "wait", text: run.status ?? "queued" };
+}
+
+// --- Annotations ----------------------------------------------------------
+
+export interface AnnotationCounts {
+    notice: number;
+    warning: number;
+    failure: number;
+    total: number;
+}
+
+export function annotationCounts(anns: Annotation[]): AnnotationCounts {
+    const c: AnnotationCounts = { notice: 0, warning: 0, failure: 0, total: anns.length };
+    for (const a of anns) c[a.level]++;
+    return c;
+}
+
+export function runAnnotationCounts(run: RunGraph): AnnotationCounts {
+    const c: AnnotationCounts = { notice: 0, warning: 0, failure: 0, total: 0 };
+    for (const n of run.nodes) {
+        for (const a of n.annotations) {
+            c[a.level]++;
+            c.total++;
+        }
+    }
+    return c;
+}
+
+// Worst level present, for picking a single badge color. null when none.
+export function worstLevel(anns: Annotation[]): "failure" | "warning" | "notice" | null {
+    if (anns.some((a) => a.level === "failure")) return "failure";
+    if (anns.some((a) => a.level === "warning")) return "warning";
+    if (anns.length) return "notice";
+    return null;
 }

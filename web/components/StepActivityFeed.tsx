@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Step } from "../types";
 import { fmtDur } from "../format";
+import { StatusIcon, type StatusKind } from "./StatusIcon";
 
 // Live step-event feed. GitHub only publishes the REST job-log blob when the
 // whole job completes (in-progress jobs return 404 BlobNotFound), so there is no
@@ -10,13 +11,13 @@ import { fmtDur } from "../format";
 // ticks live, and queued steps trail. On completion the parent swaps this out for
 // the real per-step logs.
 
-function doneGlyph(step: Step): { ico: string; cls: string } {
+function doneKind(step: Step): { kind: StatusKind; cls: string } {
     const c = step.conclusion;
-    if (c === "success") return { ico: "✓", cls: "ok" };
-    if (c === "skipped") return { ico: "↷", cls: "skip" };
-    if (c === "cancelled") return { ico: "⊘", cls: "skip" };
-    if (c === "failure" || c === "timed_out") return { ico: "✕", cls: "fail" };
-    return { ico: "•", cls: "wait" };
+    if (c === "success") return { kind: "success", cls: "ok" };
+    if (c === "skipped") return { kind: "skipped", cls: "skip" };
+    if (c === "cancelled") return { kind: "cancelled", cls: "skip" };
+    if (c === "failure" || c === "timed_out") return { kind: "failure", cls: "fail" };
+    return { kind: "neutral", cls: "wait" };
 }
 
 function clockTime(iso: string | null | undefined): string {
@@ -58,12 +59,14 @@ export function StepActivityFeed({ steps, now }: { steps: Step[]; now: number })
             </div>
             <div className="jd-live-feed" ref={feedRef}>
                 {done.map((s) => {
-                    const g = doneGlyph(s);
+                    const g = doneKind(s);
                     const dur = fmtDur(stepDurMs(s, now));
                     return (
                         <div key={s.number} className={"jd-live-line " + g.cls}>
                             <span className="jd-live-ts">{clockTime(s.completed_at)}</span>
-                            <span className={"jd-live-ico " + g.cls}>{g.ico}</span>
+                            <span className="jd-live-ico">
+                                <StatusIcon kind={g.kind} />
+                            </span>
                             <span className="jd-live-name" title={s.name}>
                                 {s.name}
                             </span>
@@ -74,7 +77,9 @@ export function StepActivityFeed({ steps, now }: { steps: Step[]; now: number })
                 {running && (
                     <div className="jd-live-line run cur">
                         <span className="jd-live-ts">{clockTime(running.started_at)}</span>
-                        <span className="jd-live-ico run">▶</span>
+                        <span className="jd-live-ico">
+                            <StatusIcon kind="in_progress" />
+                        </span>
                         <span className="jd-live-name" title={running.name}>
                             {running.name}
                         </span>
@@ -83,7 +88,9 @@ export function StepActivityFeed({ steps, now }: { steps: Step[]; now: number })
                 )}
                 {!done.length && !running && (
                     <div className="jd-live-line wait">
-                        <span className="jd-live-ico wait">○</span>
+                        <span className="jd-live-ico">
+                            <StatusIcon kind="queued" />
+                        </span>
                         <span className="jd-live-name">Waiting for the first step to start…</span>
                     </div>
                 )}

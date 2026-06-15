@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useCanvasState, useNow } from "../hooks";
 import { Header } from "./Header";
 import { ProgressBand } from "./ProgressBand";
+import { AnnotationsBand } from "./AnnotationsBand";
 import { Graph } from "./Graph";
 import { JobDetail } from "./JobDetail";
 import { Overlay } from "./Overlay";
@@ -33,6 +34,7 @@ function RunView({ run }: { run: RunGraph }) {
         <>
             <Header run={run} />
             <ProgressBand run={run} now={now} />
+            <AnnotationsBand run={run} onOpenDetail={(node) => setSelectedJobId(node.id)} />
             <Graph run={run} now={now} onOpenDetail={(node) => setSelectedJobId(node.id)} />
             <Footer run={run} />
             {selected && (

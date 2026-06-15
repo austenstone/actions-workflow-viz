@@ -19438,6 +19438,61 @@ async function parseJobsNeeds(yamlText) {
 }
 
 // src/run-data.ts
+var annotationCache = /* @__PURE__ */ new Map();
+var ANNOTATION_CACHE_MAX = 256;
+function cacheAnnotations(checkRunId, value) {
+  if (annotationCache.size >= ANNOTATION_CACHE_MAX) {
+    const oldest = annotationCache.keys().next().value;
+    if (oldest !== void 0) annotationCache.delete(oldest);
+  }
+  annotationCache.set(checkRunId, value);
+}
+function checkRunIdOf(job) {
+  const url = job.check_run_url;
+  if (!url) return null;
+  const m = url.match(/\/check-runs\/(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+function normalizeLevel(level) {
+  return level === "failure" || level === "warning" ? level : "notice";
+}
+async function fetchAnnotationsByJob(octokit, owner, repo, jobs) {
+  const out = /* @__PURE__ */ new Map();
+  await Promise.all(
+    jobs.map(async (job) => {
+      if (job.status !== "in_progress" && job.status !== "completed") return;
+      const checkRunId = checkRunIdOf(job);
+      if (checkRunId == null) return;
+      if (job.status === "completed" && annotationCache.has(checkRunId)) {
+        out.set(job.id, annotationCache.get(checkRunId));
+        return;
+      }
+      try {
+        const raw = await octokit.paginate(octokit.rest.checks.listAnnotations, {
+          owner,
+          repo,
+          check_run_id: checkRunId,
+          per_page: 100
+        });
+        const anns = raw.map((a) => ({
+          level: normalizeLevel(a.annotation_level),
+          title: a.title || "",
+          message: a.message || "",
+          path: a.path || null,
+          startLine: a.start_line ?? null,
+          endLine: a.end_line ?? null,
+          rawDetails: a.raw_details || null,
+          blobHref: a.blob_href || null,
+          jobName: job.name
+        }));
+        out.set(job.id, anns);
+        if (job.status === "completed") cacheAnnotations(checkRunId, anns);
+      } catch {
+      }
+    })
+  );
+  return out;
+}
 function parseRunRef({
   repo,
   runId,
@@ -19527,7 +19582,8 @@ async function fetchRunGraph({ repo, runId }) {
       }
     }
   }
-  const graph = buildGraph(parsed, liveJobs);
+  const annotationsByJob = await fetchAnnotationsByJob(octokit, owner, name, liveJobs);
+  const graph = buildGraph(parsed, liveJobs, annotationsByJob);
   return {
     ...run,
     repo,
@@ -19538,7 +19594,8 @@ async function fetchRunGraph({ repo, runId }) {
     fetchedAt: Date.now()
   };
 }
-function buildGraph(parsed, liveJobs) {
+function buildGraph(parsed, liveJobs, annotationsByJob = /* @__PURE__ */ new Map()) {
+  const annotationsFor = (legs) => legs.flatMap((j) => annotationsByJob.get(j.id) ?? []);
   const jobIds = parsed.order;
   const hasStructure = jobIds.length > 0;
   if (!hasStructure) {
@@ -19550,6 +19607,7 @@ function buildGraph(parsed, liveJobs) {
         status,
         conclusion,
         legs: [j],
+        annotations: annotationsFor([j]),
         started_at: j.started_at,
         completed_at: j.completed_at,
         html_url: j.html_url
@@ -19612,6 +19670,7 @@ function buildGraph(parsed, liveJobs) {
       conclusion,
       legs,
       matrix: parsed.jobs[id].matrix || legs.length > 1,
+      annotations: annotationsFor(legs),
       started_at: minDate(legs.map((l) => l.started_at)),
       completed_at: maxDate(legs.map((l) => l.completed_at)),
       html_url: legs[0]?.html_url || null
@@ -19626,6 +19685,7 @@ function buildGraph(parsed, liveJobs) {
       conclusion,
       legs: [j],
       unmatched: true,
+      annotations: annotationsFor([j]),
       started_at: j.started_at,
       completed_at: j.completed_at,
       html_url: j.html_url
@@ -19982,7 +20042,7 @@ function stepIcon(s) {
   if (s.status !== "completed") return "\u2022";
   return FAIL_CONCLUSIONS.has(s.conclusion ?? "") ? "\u2717" : "\u2713";
 }
-async function addJobContext(instanceId, input) {
+async function addJobContext(instanceId, input, notifyAgent2) {
   const run = getState(instanceId)?.run;
   if (!run) {
     throw new CanvasError("canvas_input_invalid", "No run loaded yet.");
@@ -19992,43 +20052,40 @@ async function addJobContext(instanceId, input) {
     throw new CanvasError("canvas_input_invalid", "Job not found in this run.");
   }
   const attachments = await fetchJobLogs(run, node, sessionLog);
-  const logs = attachments.map((a) => ({
-    name: a.type === "blob" ? a.displayName : "",
-    text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : ""
-  }));
   const workflow = run.name ?? run.display_title;
   const runLabel = run.run_number != null ? `#${run.run_number}` : `run ${run.id}`;
-  const steps = node.legs.flatMap((leg) => leg.steps ?? []).map((s) => ({
-    name: s.name,
-    status: s.status,
-    conclusion: s.conclusion,
-    outcome: stepIcon(s)
-  }));
-  const payload = {
-    job: node.label,
-    status: node.status,
-    conclusion: node.conclusion ?? null,
-    workflow,
-    run: `${workflow} ${runLabel}`,
-    runId: run.id,
-    repo: run.repo,
-    url: node.html_url ?? null,
-    steps,
-    logs
-  };
-  const title = `${node.label} \u2014 ${workflow} ${runLabel}`;
+  const runRef = `${workflow} ${runLabel}`;
+  const stepLines = node.legs.flatMap((leg) => leg.steps ?? []).map((s) => `  ${stepIcon(s)} ${s.name} (${s.conclusion ?? s.status})`);
+  const summary = [
+    `Job **${node.label}** \u2014 ${runRef}`,
+    `Status: ${node.status}${node.conclusion ? ` (${node.conclusion})` : ""}`,
+    `Repo: ${run.repo}`,
+    node.html_url ? `URL: ${node.html_url}` : null,
+    stepLines.length ? `Steps:
+${stepLines.join("\n")}` : null,
+    attachments.length ? `Logs attached: ${attachments.length} file(s).` : "No logs available yet (they publish once the job completes)."
+  ].filter(Boolean).join("\n");
+  const prompt = `Adding the **${node.label}** job from ${runRef} as context.
+
+${summary}`;
   try {
-    await sessionPushAttachments?.({
-      instanceId,
-      attachments: [{ type: "extension_context", title, payload }]
+    const messageId = await notifyAgent2({
+      prompt,
+      displayPrompt: `\u{1F4CE} Attached job "${node.label}" (${runRef})`,
+      attachments,
+      mode: "enqueue"
     });
+    if (!messageId) {
+      throw new CanvasError("canvas_internal", "No agent session is connected.");
+    }
   } catch (e) {
+    if (e instanceof CanvasError) throw e;
     sessionLog?.(`addContext push failed: ${e instanceof Error ? e.message : String(e)}`, {
       level: "warn"
     });
-    throw new CanvasError("canvas_internal", "Failed to stage job context.");
+    throw new CanvasError("canvas_internal", "Failed to attach job context.");
   }
-  return { ok: true, job: node.label, staged: true, logsAttached: logs.length };
+  return { ok: true, job: node.label, staged: true, logsAttached: attachments.length };
 }
 function legById(run, ghJobId) {
   for (const node of run.nodes) {
@@ -20156,7 +20213,6 @@ var loadInputSchema = {
   }
 };
 var sessionLog;
-var sessionPushAttachments;
 var assets = {
   "/": { contentType: "text/html; charset=utf-8", file: join3(__dirname, "index.html") },
   "/index.html": {
@@ -20242,7 +20298,7 @@ var actions = {
       },
       required: ["jobId"]
     },
-    handler: ({ instanceId, input }) => addJobContext(instanceId, input)
+    handler: ({ instanceId, input, notifyAgent: notifyAgent2 }) => addJobContext(instanceId, input, notifyAgent2)
   },
   getJobLog: {
     description: "Fetch full per-step log text for one job (web-only, drives JobDetail).",
@@ -20310,19 +20366,16 @@ var canvas = host.toCanvas({
     pickers.delete(instanceId);
   }
 });
-function bindSession(log, pushAttachments) {
+function bindSession(log, session2) {
   sessionLog = log;
-  sessionPushAttachments = pushAttachments;
+  host.setAgent(session2);
 }
 
 // src/extension.ts
 var session = await joinSession({ canvases: [canvas] });
-bindSession(
-  (message, opts) => {
-    try {
-      session.log(message, opts);
-    } catch {
-    }
-  },
-  (params) => session.rpc.extensions.sendAttachmentsToMessage(params)
-);
+bindSession((message, opts) => {
+  try {
+    session.log(message, opts);
+  } catch {
+  }
+}, session);

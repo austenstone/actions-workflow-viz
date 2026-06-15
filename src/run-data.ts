@@ -6,6 +6,8 @@
 import { getOctokit } from "./github.js";
 import { parseJobsNeeds, type ParsedJobs } from "./parse-needs.js";
 import type {
+    Annotation,
+    AnnotationLevel,
     Conclusion,
     GraphEdge,
     GraphNode,
@@ -19,6 +21,83 @@ import type {
 // The Actions jobs API payload, derived straight from Octokit's typings rather
 // than redeclared by hand.
 type LiveJob = WorkflowJob;
+
+// --- Annotations ----------------------------------------------------------
+//
+// Each job is backed by a check run, whose annotations carry the notice/warning/
+// failure messages GitHub shows on the run page. A completed job's annotations
+// are immutable, so cache them by check-run id to keep steady-state polling cheap
+// (only in-flight jobs re-fetch). Bounded to avoid unbounded growth.
+const annotationCache = new Map<number, Annotation[]>();
+const ANNOTATION_CACHE_MAX = 256;
+function cacheAnnotations(checkRunId: number, value: Annotation[]): void {
+    if (annotationCache.size >= ANNOTATION_CACHE_MAX) {
+        const oldest = annotationCache.keys().next().value;
+        if (oldest !== undefined) annotationCache.delete(oldest);
+    }
+    annotationCache.set(checkRunId, value);
+}
+
+function checkRunIdOf(job: LiveJob): number | null {
+    const url = job.check_run_url;
+    if (!url) return null;
+    const m = url.match(/\/check-runs\/(\d+)/);
+    return m ? Number(m[1]) : null;
+}
+
+function normalizeLevel(level: string | null | undefined): AnnotationLevel {
+    return level === "failure" || level === "warning" ? level : "notice";
+}
+
+type Octokit = Awaited<ReturnType<typeof getOctokit>>;
+
+// Fetch annotations for every job that could have them (in-progress or completed)
+// and key them by job id. Per-job failures degrade to an empty list rather than
+// failing the whole poll; queued jobs are skipped (no check run yet).
+async function fetchAnnotationsByJob(
+    octokit: Octokit,
+    owner: string,
+    repo: string,
+    jobs: LiveJob[],
+): Promise<Map<number, Annotation[]>> {
+    const out = new Map<number, Annotation[]>();
+    await Promise.all(
+        jobs.map(async (job) => {
+            if (job.status !== "in_progress" && job.status !== "completed") return;
+            const checkRunId = checkRunIdOf(job);
+            if (checkRunId == null) return;
+
+            if (job.status === "completed" && annotationCache.has(checkRunId)) {
+                out.set(job.id, annotationCache.get(checkRunId)!);
+                return;
+            }
+            try {
+                const raw = await octokit.paginate(octokit.rest.checks.listAnnotations, {
+                    owner,
+                    repo,
+                    check_run_id: checkRunId,
+                    per_page: 100,
+                });
+                const anns: Annotation[] = raw.map((a) => ({
+                    level: normalizeLevel(a.annotation_level),
+                    title: a.title || "",
+                    message: a.message || "",
+                    path: a.path || null,
+                    startLine: a.start_line ?? null,
+                    endLine: a.end_line ?? null,
+                    rawDetails: a.raw_details || null,
+                    blobHref: a.blob_href || null,
+                    jobName: job.name,
+                }));
+                out.set(job.id, anns);
+                if (job.status === "completed") cacheAnnotations(checkRunId, anns);
+            } catch {
+                // Annotations are best-effort enrichment — never fail the poll.
+            }
+        }),
+    );
+    return out;
+}
 
 // Accepts "owner/repo" + run id, or a full run URL like
 // https://github.com/owner/repo/actions/runs/123456789
@@ -148,7 +227,8 @@ export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> 
         }
     }
 
-    const graph = buildGraph(parsed, liveJobs);
+    const annotationsByJob = await fetchAnnotationsByJob(octokit, owner, name, liveJobs);
+    const graph = buildGraph(parsed, liveJobs, annotationsByJob);
 
     return {
         ...run,
@@ -164,7 +244,10 @@ export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> 
 export function buildGraph(
     parsed: ParsedJobs,
     liveJobs: LiveJob[],
+    annotationsByJob: Map<number, Annotation[]> = new Map(),
 ): { nodes: GraphNode[]; edges: GraphEdge[]; flat: boolean } {
+    const annotationsFor = (legs: LiveJob[]): Annotation[] =>
+        legs.flatMap((j) => annotationsByJob.get(j.id) ?? []);
     const jobIds = parsed.order;
     const hasStructure = jobIds.length > 0;
 
@@ -178,6 +261,7 @@ export function buildGraph(
                 status,
                 conclusion,
                 legs: [j],
+                annotations: annotationsFor([j]),
                 started_at: j.started_at,
                 completed_at: j.completed_at,
                 html_url: j.html_url,
@@ -265,6 +349,7 @@ export function buildGraph(
             conclusion,
             legs,
             matrix: parsed.jobs[id].matrix || legs.length > 1,
+            annotations: annotationsFor(legs),
             started_at: minDate(legs.map((l) => l.started_at)),
             completed_at: maxDate(legs.map((l) => l.completed_at)),
             html_url: legs[0]?.html_url || null,
@@ -282,6 +367,7 @@ export function buildGraph(
             conclusion,
             legs: [j],
             unmatched: true,
+            annotations: annotationsFor([j]),
             started_at: j.started_at,
             completed_at: j.completed_at,
             html_url: j.html_url,
