@@ -55,19 +55,19 @@ export interface GraphEdge {
 
 export interface RunGraph {
     repo: string;
-    runId: number;
+    runId: WorkflowRunData["id"];
     runName: string;
-    runNumber: number | null;
-    workflowName: string | null;
-    status: string; // run-level status is loosely typed by the API
+    runNumber: WorkflowRunData["run_number"];
+    workflowName: WorkflowRunData["name"];
+    status: WorkflowRunData["status"];
     conclusion: WorkflowRunData["conclusion"];
-    event: string | null;
-    headBranch: string | null;
-    headSha: string | null;
-    htmlUrl: string | null;
-    runStartedAt: string | null;
-    updatedAt: string | null;
-    actor: string | null;
+    event: WorkflowRunData["event"];
+    headBranch: WorkflowRunData["head_branch"];
+    headSha: string | null; // computed: short SHA
+    htmlUrl: WorkflowRunData["html_url"];
+    runStartedAt: WorkflowRunData["run_started_at"];
+    updatedAt: WorkflowRunData["updated_at"];
+    actor: string | null; // computed: actor.login
     nodes: GraphNode[];
     edges: GraphEdge[];
     flat: boolean;
