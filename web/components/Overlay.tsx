@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button } from "@primer/react";
+import { SyncIcon } from "@primer/octicons-react";
 import type { CanvasState, RunSummary } from "../types";
 import { summaryPill, relTime } from "../format";
 import { useAction } from "../hooks";
@@ -76,14 +78,15 @@ function RunPickerView({ state }: { state: CanvasState }) {
                     <div className="big">Recent runs</div>
                     {picker.repo && <div className="muted">{picker.repo}</div>}
                 </div>
-                <button
-                    type="button"
-                    className="h-back"
+                <Button
+                    size="small"
+                    variant="invisible"
+                    leadingVisual={SyncIcon}
                     onClick={refresh}
                     disabled={refreshing || picker.loading}
                 >
-                    {refreshing ? "Refreshing…" : "↻ Refresh"}
-                </button>
+                    {refreshing ? "Refreshing…" : "Refresh"}
+                </Button>
             </div>
 
             {picker.loading ? (

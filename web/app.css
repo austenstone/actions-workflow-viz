@@ -398,18 +398,6 @@ svg.edges {
 .dot.run { background: var(--run); animation: awv-pulse 1.1s ease-in-out infinite; }
 .dot.wait, .dot.skip { background: var(--wait); }
 .pill.skip { color: var(--wait); background: var(--wait-bg); }
-.h-back {
-    flex: 0 0 auto;
-    font: inherit; font-size: 12px;
-    padding: 3px 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--fg);
-    cursor: pointer;
-}
-.h-back:hover { background: var(--wait-bg); }
-.h-back:disabled { opacity: 0.6; cursor: default; }
 @keyframes awv-march { to { stroke-dashoffset: -18; } }
 @keyframes awv-flow { to { background-position: -200% 0; } }
 @keyframes awv-ring {
