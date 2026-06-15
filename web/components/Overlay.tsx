@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "@primer/react";
+import { Button, Spinner, Label, ActionList } from "@primer/react";
 import { SyncIcon } from "@primer/octicons-react";
 import type { CanvasState, RunSummary } from "../types";
-import { summaryPill, relTime } from "../format";
+import { summaryPill, relTime, labelVariant } from "../format";
 import { useAction } from "../hooks";
 
 // One selectable run in the picker. Clicking loads it via the existing load_run
@@ -33,27 +33,27 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
             });
     };
 
+    const meta = [
+        run.runNumber != null ? `#${run.runNumber}` : null,
+        run.branch ? `⏎ ${run.branch}` : null,
+        run.event || null,
+        run.createdAt ? relTime(run.createdAt) : null,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+
     return (
-        <button
-            type="button"
-            className="run-row"
-            onClick={pick}
-            disabled={busy}
-            title={run.title || run.name}
-        >
-            <span className={"dot " + pill.cls} />
-            <span className="run-row-main">
-                <span className="run-row-title">{run.title || run.name}</span>
-                <span className="run-row-meta">
-                    {run.runNumber != null && <span>#{run.runNumber}</span>}
-                    {run.branch && <span>⏎ {run.branch}</span>}
-                    {run.event && <span>{run.event}</span>}
-                    {run.createdAt && <span>{relTime(run.createdAt)}</span>}
-                </span>
-                {err && <span className="run-row-err">{err}</span>}
-            </span>
-            <span className={"pill " + pill.cls}>{pill.text}</span>
-        </button>
+        <ActionList.Item onSelect={pick} disabled={busy} title={run.title || run.name}>
+            <ActionList.LeadingVisual>
+                <span className={"dot " + pill.cls} />
+            </ActionList.LeadingVisual>
+            {run.title || run.name}
+            <ActionList.Description variant="block">{meta}</ActionList.Description>
+            {err && <span className="run-row-err">{err}</span>}
+            <ActionList.TrailingVisual>
+                <Label variant={labelVariant(pill.cls)}>{pill.text}</Label>
+            </ActionList.TrailingVisual>
+        </ActionList.Item>
     );
 }
 
@@ -91,7 +91,7 @@ function RunPickerView({ state }: { state: CanvasState }) {
 
             {picker.loading ? (
                 <div className="picker-state">
-                    <div className="spin" />
+                    <Spinner size="small" />
                     <div>Loading runs…</div>
                 </div>
             ) : picker.error ? (
@@ -105,9 +105,11 @@ function RunPickerView({ state }: { state: CanvasState }) {
                 </div>
             ) : (
                 <div className="run-list">
-                    {picker.runs.map((run) => (
-                        <RunRow key={run.id} run={run} repo={picker.repo} />
-                    ))}
+                    <ActionList>
+                        {picker.runs.map((run) => (
+                            <RunRow key={run.id} run={run} repo={picker.repo} />
+                        ))}
+                    </ActionList>
                 </div>
             )}
         </div>
@@ -120,7 +122,7 @@ export function Overlay({ state }: { state: CanvasState }) {
     if (state.status === "loading") {
         return (
             <div className="overlay">
-                <div className="spin" />
+                <Spinner size="medium" />
                 <div className="big">Loading run…</div>
                 {state.message && <div>{state.message}</div>}
             </div>

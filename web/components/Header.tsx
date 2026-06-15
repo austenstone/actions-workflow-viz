@@ -109,9 +109,8 @@ export function Header({ run }: { run: RunGraph }) {
                 <h1 className="h-title" title={title}>
                     {title}
                 </h1>
-                <span className={"pill " + pill.cls} ref={pillRef}>
-                    <span className="dot" />
-                    {pill.text}
+                <span className="h-pill" ref={pillRef}>
+                    <Label variant={labelVariant(pill.cls)}>{pill.text}</Label>
                 </span>
                 <Toolbar run={run} />
             </div>

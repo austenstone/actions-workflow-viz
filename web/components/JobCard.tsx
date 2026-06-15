@@ -1,7 +1,7 @@
 import type { SyntheticEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ActionList, ActionMenu, IconButton } from "@primer/react";
+import { ActionList, ActionMenu, IconButton, Label } from "@primer/react";
 import { KebabHorizontalIcon, SyncIcon } from "@primer/octicons-react";
 import type { GraphNode } from "../types";
 import {
@@ -220,7 +220,7 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
                         {queueTxt} queued
                     </span>
                 )}
-                {tagTxt && <span className="tag">{tagTxt}</span>}
+                {tagTxt && <Label variant="secondary">{tagTxt}</Label>}
                 {ctx.show && <span className="ctx">{ctx.text}</span>}
             </div>
             {inProgress && (
