@@ -2,8 +2,9 @@
 //
 //   1. src/extension.ts → extension.mjs — the Node entry the CLI loads. The
 //      Copilot SDK is marked external (CLI auto-resolves it; never bundle).
-//      Octokit + yaml are bundled in so the extension is a single self-contained
-//      ESM file with no runtime node_modules dependency.
+//      Octokit + @actions/workflow-parser (which pulls in yaml) are bundled in
+//      so the extension is a single self-contained ESM file with no runtime
+//      node_modules dependency.
 //   2. web/anim.ts → web/anim.js — the browser-side Motion animation layer,
 //      served by the loopback server at /anim.js and imported by index.html.
 //      Motion is bundled in (local asset, no CDN).
