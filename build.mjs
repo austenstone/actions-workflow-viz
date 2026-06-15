@@ -15,6 +15,21 @@
 //        `npm run watch`   (rebuild both on change — live dev)
 
 import * as esbuild from "esbuild";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// copilot-canvas-kit is a symlinked file: dep with its OWN node_modules/react.
+// esbuild follows the symlink and would otherwise bundle a SECOND copy of React,
+// leaving two independent dispatchers — the kit's hooks then read a null
+// dispatcher and the app crashes on mount with
+// "Cannot read properties of null (reading 'useSyncExternalStore')".
+// Pin every react/react-dom import (app + kit) to this package's single copy.
+const reactAlias = {
+    react: path.resolve(__dirname, "node_modules/react"),
+    "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+};
 
 /** @type {import("esbuild").BuildOptions} */
 const nodeConfig = {
@@ -48,6 +63,7 @@ const webConfig = {
     format: "esm",
     target: "es2020",
     jsx: "automatic",
+    alias: reactAlias,
     loader: { ".css": "css" },
     define: { "process.env.NODE_ENV": '"production"' },
     minify: true,

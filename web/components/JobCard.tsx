@@ -1,5 +1,7 @@
 import type { SyntheticEvent } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ActionBar } from "@primer/react/experimental";
+import { SyncIcon } from "@primer/octicons-react";
 import type { GraphNode } from "../types";
 import {
     durOf,

@@ -9899,10 +9899,7 @@ import { readFile } from "node:fs/promises";
 
 // ../../../source/copilot-canvas-kit/dist/server/agent.js
 async function notifyAgent(session2, message) {
-  if (typeof message === "string") {
-    return session2.send(message);
-  }
-  return session2.send(message);
+  return typeof message === "string" ? session2.send(message) : session2.send(message);
 }
 
 // ../../../source/copilot-canvas-kit/dist/server/index.js
@@ -9978,6 +9975,7 @@ function createCanvasHost(options) {
       actionName: action,
       input,
       notifyAgent: notifyAgent2,
+      agent: agent ?? null,
       ...access(inst)
     });
   }
@@ -10123,6 +10121,7 @@ function createCanvasHost(options) {
         const extra = await opts.onOpen({
           ...ctx,
           notifyAgent: notifyAgent2,
+          agent: agent ?? null,
           ...access(getInstance(ctx.instanceId))
         });
         return { url, ...extra ?? {} };
