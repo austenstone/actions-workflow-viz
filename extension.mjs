@@ -19139,20 +19139,8 @@ async function fetchRunGraph({ repo, runId }) {
   }
   const graph = buildGraph(parsed, liveJobs);
   return {
+    ...run,
     repo,
-    runId,
-    runName: run.name || run.display_title || `Run #${run.run_number}`,
-    runNumber: run.run_number,
-    workflowName: run.name || null,
-    status: run.status ?? "queued",
-    conclusion: run.conclusion,
-    event: run.event,
-    headBranch: run.head_branch ?? null,
-    headSha: run.head_sha ? run.head_sha.slice(0, 7) : null,
-    htmlUrl: run.html_url,
-    runStartedAt: run.run_started_at,
-    updatedAt: run.updated_at,
-    actor: run.actor?.login || run.triggering_actor?.login || null,
     nodes: graph.nodes,
     edges: graph.edges,
     flat: graph.flat,
@@ -19171,10 +19159,10 @@ function buildGraph(parsed, liveJobs) {
         label: j.name,
         status,
         conclusion,
-        legs: [legOf(j)],
-        startedAt: j.started_at,
-        completedAt: j.completed_at,
-        url: j.html_url
+        legs: [j],
+        started_at: j.started_at,
+        completed_at: j.completed_at,
+        html_url: j.html_url
       };
     });
     return { nodes: nodes2, edges: [], flat: true };
@@ -19196,7 +19184,7 @@ function buildGraph(parsed, liveJobs) {
         break;
       }
     }
-    if (target) legsById.get(target).push(legOf(j));
+    if (target) legsById.get(target).push(j);
     else unmatched.push(j);
   }
   const emptyJobIds = jobIds.filter((id) => legsById.get(id).length === 0);
@@ -19204,21 +19192,21 @@ function buildGraph(parsed, liveJobs) {
   if (unmatched.length > 0) {
     if (emptyMatrixJobs.length === 1) {
       const target = emptyMatrixJobs[0];
-      for (const j of unmatched) legsById.get(target).push(legOf(j));
+      for (const j of unmatched) legsById.get(target).push(j);
       unmatched.length = 0;
     } else if (emptyMatrixJobs.length > 1) {
       const prefixed = emptyMatrixJobs.map((id) => ({ id, prefix: namePrefix(parsed.jobs[id].name) })).filter((p) => Boolean(p.prefix));
       const leftover = [];
       for (const j of unmatched) {
         const hits = prefixed.filter((p) => j.name.startsWith(p.prefix));
-        if (hits.length === 1) legsById.get(hits[0].id).push(legOf(j));
+        if (hits.length === 1) legsById.get(hits[0].id).push(j);
         else leftover.push(j);
       }
       unmatched.length = 0;
       unmatched.push(...leftover);
     } else if (emptyJobIds.length === 1) {
       const target = emptyJobIds[0];
-      for (const j of unmatched) legsById.get(target).push(legOf(j));
+      for (const j of unmatched) legsById.get(target).push(j);
       unmatched.length = 0;
     }
   }
@@ -19234,9 +19222,9 @@ function buildGraph(parsed, liveJobs) {
       conclusion,
       legs,
       matrix: parsed.jobs[id].matrix || legs.length > 1,
-      startedAt: minDate(legs.map((l) => l.startedAt)),
-      completedAt: maxDate(legs.map((l) => l.completedAt)),
-      url: legs[0]?.url || null
+      started_at: minDate(legs.map((l) => l.started_at)),
+      completed_at: maxDate(legs.map((l) => l.completed_at)),
+      html_url: legs[0]?.html_url || null
     };
   });
   for (const j of unmatched) {
@@ -19246,11 +19234,11 @@ function buildGraph(parsed, liveJobs) {
       label: j.name,
       status,
       conclusion,
-      legs: [legOf(j)],
+      legs: [j],
       unmatched: true,
-      startedAt: j.started_at,
-      completedAt: j.completed_at,
-      url: j.html_url
+      started_at: j.started_at,
+      completed_at: j.completed_at,
+      html_url: j.html_url
     });
   }
   const nodeIds = new Set(nodes.map((n) => n.id));
@@ -19261,17 +19249,6 @@ function buildGraph(parsed, liveJobs) {
     }
   }
   return { nodes, edges, flat: false };
-}
-function legOf(j) {
-  return {
-    name: j.name,
-    status: j.status,
-    conclusion: j.conclusion,
-    startedAt: j.started_at,
-    completedAt: j.completed_at,
-    url: j.html_url,
-    steps: Array.isArray(j.steps) ? j.steps.map((s) => ({ name: s.name, status: s.status, conclusion: s.conclusion })) : []
-  };
 }
 function minDate(dates) {
   const valid = dates.filter((d) => Boolean(d)).sort();
@@ -19479,12 +19456,9 @@ async function loadRun(instanceId, input, log) {
 var FAIL_CONCLUSIONS = /* @__PURE__ */ new Set(["failure", "timed_out"]);
 function allJobIds(node) {
   const ids = /* @__PURE__ */ new Set();
-  for (const leg of node.legs) {
-    const id = leg.url?.match(/job\/(\d+)/)?.[1];
-    if (id) ids.add(id);
-  }
+  for (const leg of node.legs) ids.add(String(leg.id));
   if (!ids.size) {
-    const id = node.url?.match(/job\/(\d+)/)?.[1];
+    const id = node.html_url?.match(/job\/(\d+)/)?.[1];
     if (id) ids.add(id);
   }
   return [...ids];
@@ -19555,9 +19529,9 @@ async function addJobContext(entry, input) {
     name: a.type === "blob" ? a.displayName : "",
     text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : ""
   }));
-  const workflow = run.workflowName ?? run.runName;
-  const runLabel = run.runNumber != null ? `#${run.runNumber}` : `run ${run.runId}`;
-  const steps = node.legs.flatMap((leg) => leg.steps).map((s) => ({
+  const workflow = run.name ?? run.display_title;
+  const runLabel = run.run_number != null ? `#${run.run_number}` : `run ${run.id}`;
+  const steps = node.legs.flatMap((leg) => leg.steps ?? []).map((s) => ({
     name: s.name,
     status: s.status,
     conclusion: s.conclusion,
@@ -19569,9 +19543,9 @@ async function addJobContext(entry, input) {
     conclusion: node.conclusion ?? null,
     workflow,
     run: `${workflow} ${runLabel}`,
-    runId: run.runId,
+    runId: run.id,
     repo: run.repo,
-    url: node.url ?? null,
+    url: node.html_url ?? null,
     steps,
     logs
   };
@@ -19656,7 +19630,7 @@ var canvas = createCanvas({
     const run = entry.state.run;
     return {
       url: entry.url,
-      title: run ? `${run.runName} \xB7 ${run.repo}` : "Actions Workflow Run",
+      title: run ? `${run.display_title} \xB7 ${run.repo}` : "Actions Workflow Run",
       status: run ? `${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}` : "Waiting for a run"
     };
   },

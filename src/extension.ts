@@ -261,12 +261,9 @@ const FAIL_CONCLUSIONS = new Set(["failure", "timed_out"]);
 // falling back to the node's own url.
 function allJobIds(node: GraphNode): string[] {
     const ids = new Set<string>();
-    for (const leg of node.legs) {
-        const id = leg.url?.match(/job\/(\d+)/)?.[1];
-        if (id) ids.add(id);
-    }
+    for (const leg of node.legs) ids.add(String(leg.id));
     if (!ids.size) {
-        const id = node.url?.match(/job\/(\d+)/)?.[1];
+        const id = node.html_url?.match(/job\/(\d+)/)?.[1];
         if (id) ids.add(id);
     }
     return [...ids];
@@ -361,10 +358,10 @@ async function addJobContext(entry: Instance, input: ContextInput | undefined) {
         name: a.type === "blob" ? a.displayName : "",
         text: a.type === "blob" ? Buffer.from(a.data, "base64").toString("utf8") : "",
     }));
-    const workflow = run.workflowName ?? run.runName;
-    const runLabel = run.runNumber != null ? `#${run.runNumber}` : `run ${run.runId}`;
+    const workflow = run.name ?? run.display_title;
+    const runLabel = run.run_number != null ? `#${run.run_number}` : `run ${run.id}`;
     const steps = node.legs
-        .flatMap((leg) => leg.steps)
+        .flatMap((leg) => leg.steps ?? [])
         .map((s) => ({
             name: s.name,
             status: s.status,
@@ -377,9 +374,9 @@ async function addJobContext(entry: Instance, input: ContextInput | undefined) {
         conclusion: node.conclusion ?? null,
         workflow,
         run: `${workflow} ${runLabel}`,
-        runId: run.runId,
+        runId: run.id,
         repo: run.repo,
-        url: node.url ?? null,
+        url: node.html_url ?? null,
         steps,
         logs,
     };
@@ -472,7 +469,7 @@ const canvas = createCanvas({
         const run = entry.state.run;
         return {
             url: entry.url,
-            title: run ? `${run.runName} · ${run.repo}` : "Actions Workflow Run",
+            title: run ? `${run.display_title} · ${run.repo}` : "Actions Workflow Run",
             status: run
                 ? `${run.status}${run.conclusion ? ` (${run.conclusion})` : ""}`
                 : "Waiting for a run",

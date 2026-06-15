@@ -43,7 +43,7 @@ export function parseRunRef({
 
 // Normalize the GitHub job status/conclusion into a small status set the
 // renderer colors by.
-function nodeStatusFromLegs(legs: Array<Pick<LiveJob, "status" | "conclusion"> | Leg>): {
+function nodeStatusFromLegs(legs: Array<Pick<LiveJob, "status" | "conclusion">>): {
     status: NodeStatus;
     conclusion: Conclusion;
 } {
@@ -151,20 +151,8 @@ export async function fetchRunGraph({ repo, runId }: RunRef): Promise<RunGraph> 
     const graph = buildGraph(parsed, liveJobs);
 
     return {
+        ...run,
         repo,
-        runId,
-        runName: run.name || run.display_title || `Run #${run.run_number}`,
-        runNumber: run.run_number,
-        workflowName: run.name || null,
-        status: run.status ?? "queued",
-        conclusion: run.conclusion,
-        event: run.event,
-        headBranch: run.head_branch ?? null,
-        headSha: run.head_sha ? run.head_sha.slice(0, 7) : null,
-        htmlUrl: run.html_url,
-        runStartedAt: run.run_started_at,
-        updatedAt: run.updated_at,
-        actor: run.actor?.login || run.triggering_actor?.login || null,
         nodes: graph.nodes,
         edges: graph.edges,
         flat: graph.flat,
@@ -189,10 +177,10 @@ export function buildGraph(
                 label: j.name,
                 status,
                 conclusion,
-                legs: [legOf(j)],
-                startedAt: j.started_at,
-                completedAt: j.completed_at,
-                url: j.html_url,
+                legs: [j],
+                started_at: j.started_at,
+                completed_at: j.completed_at,
+                html_url: j.html_url,
             };
         });
         return { nodes, edges: [], flat: true };
@@ -218,7 +206,7 @@ export function buildGraph(
                 break;
             }
         }
-        if (target) legsById.get(target)!.push(legOf(j));
+        if (target) legsById.get(target)!.push(j);
         else unmatched.push(j);
     }
 
@@ -236,7 +224,7 @@ export function buildGraph(
     if (unmatched.length > 0) {
         if (emptyMatrixJobs.length === 1) {
             const target = emptyMatrixJobs[0];
-            for (const j of unmatched) legsById.get(target)!.push(legOf(j));
+            for (const j of unmatched) legsById.get(target)!.push(j);
             unmatched.length = 0;
         } else if (emptyMatrixJobs.length > 1) {
             // Multiple dynamic matrices: assign each leg to the matrix job whose
@@ -248,7 +236,7 @@ export function buildGraph(
             const leftover: LiveJob[] = [];
             for (const j of unmatched) {
                 const hits = prefixed.filter((p) => j.name.startsWith(p.prefix));
-                if (hits.length === 1) legsById.get(hits[0].id)!.push(legOf(j));
+                if (hits.length === 1) legsById.get(hits[0].id)!.push(j);
                 else leftover.push(j);
             }
             unmatched.length = 0;
@@ -258,7 +246,7 @@ export function buildGraph(
             // preserve the original heuristic so YAML the parser couldn't flag as
             // a matrix still folds rather than scattering.
             const target = emptyJobIds[0];
-            for (const j of unmatched) legsById.get(target)!.push(legOf(j));
+            for (const j of unmatched) legsById.get(target)!.push(j);
             unmatched.length = 0;
         }
     }
@@ -277,9 +265,9 @@ export function buildGraph(
             conclusion,
             legs,
             matrix: parsed.jobs[id].matrix || legs.length > 1,
-            startedAt: minDate(legs.map((l) => l.startedAt)),
-            completedAt: maxDate(legs.map((l) => l.completedAt)),
-            url: legs[0]?.url || null,
+            started_at: minDate(legs.map((l) => l.started_at)),
+            completed_at: maxDate(legs.map((l) => l.completed_at)),
+            html_url: legs[0]?.html_url || null,
         };
     });
 
@@ -292,11 +280,11 @@ export function buildGraph(
             label: j.name,
             status,
             conclusion,
-            legs: [legOf(j)],
+            legs: [j],
             unmatched: true,
-            startedAt: j.started_at,
-            completedAt: j.completed_at,
-            url: j.html_url,
+            started_at: j.started_at,
+            completed_at: j.completed_at,
+            html_url: j.html_url,
         });
     }
 
@@ -309,20 +297,6 @@ export function buildGraph(
     }
 
     return { nodes, edges, flat: false };
-}
-
-function legOf(j: LiveJob): Leg {
-    return {
-        name: j.name,
-        status: j.status,
-        conclusion: j.conclusion,
-        startedAt: j.started_at,
-        completedAt: j.completed_at,
-        url: j.html_url,
-        steps: Array.isArray(j.steps)
-            ? j.steps.map((s) => ({ name: s.name, status: s.status, conclusion: s.conclusion }))
-            : [],
-    };
 }
 
 function minDate(dates: Array<string | null>): string | null {

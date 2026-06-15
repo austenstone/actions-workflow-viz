@@ -376,16 +376,16 @@
                 return `${h}h ${m % 60}m`;
             }
             function durOf(node, now) {
-                if (!node.startedAt) return "";
-                const start = new Date(node.startedAt).getTime();
-                const end = node.completedAt ? new Date(node.completedAt).getTime() : now;
+                if (!node.started_at) return "";
+                const start = new Date(node.started_at).getTime();
+                const end = node.completed_at ? new Date(node.completed_at).getTime() : now;
                 return fmtDur(end - start);
             }
             function elapsedOf(run, now) {
-                if (!run.runStartedAt) return "";
-                const start = new Date(run.runStartedAt).getTime();
-                const end = run.status === "completed" && run.updatedAt
-                    ? new Date(run.updatedAt).getTime()
+                if (!run.run_started_at) return "";
+                const start = new Date(run.run_started_at).getTime();
+                const end = run.status === "completed" && run.updated_at
+                    ? new Date(run.updated_at).getTime()
                     : now;
                 return fmtDur(end - start);
             }
@@ -590,7 +590,7 @@
                 document.getElementById("overlay").classList.remove("show");
 
                 // header (idempotent — only write when changed)
-                setText("title", run.workflowName || run.runName || "Workflow Run");
+                setText("title", run.name || run.display_title || "Workflow Run");
                 const pill = document.getElementById("pill");
                 let pc = "wait", ptxt = run.status;
                 if (run.status === "completed") {
@@ -609,18 +609,18 @@
                     href ? `<a href="${href}" target="_blank" rel="noopener"${cls ? ` class="${cls}"` : ""}>${inner}</a>` : inner;
                 const bits = [];
                 if (run.repo) {
-                    const runUrl = run.htmlUrl || (run.runId ? `${ghBase}/actions/runs/${run.runId}` : null);
-                    bits.push(`${a(ghBase, run.repo)} ${a(runUrl, `#${run.runNumber}`)}`);
+                    const runUrl = run.html_url || (run.id ? `${ghBase}/actions/runs/${run.id}` : null);
+                    bits.push(`${a(ghBase, run.repo)} ${a(runUrl, `#${run.run_number}`)}`);
                 }
-                if (run.headBranch)
-                    bits.push(`⎇ ${a(`${ghBase}/tree/${encodeURIComponent(run.headBranch)}`, run.headBranch)}`);
-                if (run.headSha)
-                    bits.push(a(`${ghBase}/commit/${run.headSha}`, `<code>${run.headSha}</code>`));
+                if (run.head_branch)
+                    bits.push(`⏎ ${a(`${ghBase}/tree/${encodeURIComponent(run.head_branch)}`, run.head_branch)}`);
+                if (run.head_sha)
+                    bits.push(a(`${ghBase}/commit/${run.head_sha}`, `<code>${run.head_sha.slice(0, 7)}</code>`));
                 if (run.event)
                     bits.push(a(`https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#${run.event}`, run.event));
                 if (run.actor)
-                    bits.push(a(`https://github.com/${run.actor}`,
-                        `<img class="avatar" src="https://github.com/${run.actor}.png?size=32" alt="" width="16" height="16">${run.actor}`,
+                    bits.push(a(`https://github.com/${run.actor.login}`,
+                        `<img class="avatar" src="https://github.com/${run.actor.login}.png?size=32" alt="" width="16" height="16">${run.actor.login}`,
                         "actor"));
                 const metaHtml = bits.map((b) => `<span>${b}</span>`).join("");
                 if (meta._html !== metaHtml) { meta.innerHTML = metaHtml; meta._html = metaHtml; }

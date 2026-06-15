@@ -1,9 +1,8 @@
-// Shared shapes for the run graph envelope. The renderer (index.html) reads
-// these field names directly, so the names here are load-bearing — keep them in
-// sync with the DOM-binding code in index.html.
-//
-// The raw Actions API payloads and their lifecycle enums are reused straight
-// from Octokit's REST typings rather than redeclared, so they track the API.
+// Shared shapes for the run graph envelope. The renderer (index.html) and the
+// extension read these field names directly, so they're load-bearing. The
+// envelope mirrors the Actions REST API: run/job/step fields are reused verbatim
+// from Octokit (snake_case), and only the graph rollup concepts (nodes, edges,
+// layered status) are ours.
 
 import type { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 
@@ -14,27 +13,16 @@ export type WorkflowJob =
     RestEndpointMethodTypes["actions"]["listJobsForWorkflowRun"]["response"]["data"]["jobs"][number];
 export type WorkflowStep = NonNullable<WorkflowJob["steps"]>[number];
 
-// Job-level lifecycle enums, reused from the job schema (strict unions). Note
-// the run schema types its own status/conclusion loosely (`string | null`), so
-// run-level fields below intentionally don't reuse these.
-export type LegStatus = WorkflowJob["status"];
+// A leg is a live job; a step is one of its steps. Reused as-is from the API.
+export type Leg = WorkflowJob;
+export type Step = WorkflowStep;
 export type Conclusion = WorkflowJob["conclusion"];
 
-export type Step = Pick<WorkflowStep, "name" | "status" | "conclusion">;
-
-export interface Leg {
-    name: string;
-    status: LegStatus;
-    conclusion: Conclusion;
-    startedAt: string | null;
-    completedAt: string | null;
-    url: string | null;
-    steps: Step[];
-}
-
-// Rolled-up status the renderer colors by.
+// Rolled-up status the renderer colors by (no API equivalent).
 export type NodeStatus = "pending" | "queued" | "in_progress" | "completed";
 
+// A DAG node: one workflow job, or a matrix rollup of its legs. Field names
+// follow the Actions API casing where they mirror it.
 export interface GraphNode {
     id: string;
     label: string;
@@ -43,9 +31,9 @@ export interface GraphNode {
     legs: Leg[];
     matrix?: boolean;
     unmatched?: boolean;
-    startedAt: string | null;
-    completedAt: string | null;
-    url: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    html_url: string | null;
 }
 
 export interface GraphEdge {
@@ -53,27 +41,16 @@ export interface GraphEdge {
     to: string;
 }
 
-export interface RunGraph {
+// The run envelope: the full Actions run (reused verbatim) plus our graph and
+// bookkeeping additions.
+export type RunGraph = WorkflowRunData & {
     repo: string;
-    runId: WorkflowRunData["id"];
-    runName: string;
-    runNumber: WorkflowRunData["run_number"];
-    workflowName: WorkflowRunData["name"];
-    status: WorkflowRunData["status"];
-    conclusion: WorkflowRunData["conclusion"];
-    event: WorkflowRunData["event"];
-    headBranch: WorkflowRunData["head_branch"];
-    headSha: string | null; // computed: short SHA
-    htmlUrl: WorkflowRunData["html_url"];
-    runStartedAt: WorkflowRunData["run_started_at"];
-    updatedAt: WorkflowRunData["updated_at"];
-    actor: string | null; // computed: actor.login
     nodes: GraphNode[];
     edges: GraphEdge[];
     flat: boolean;
     yamlError: string | null;
     fetchedAt: number;
-}
+};
 
 export interface RunRef {
     repo: string;
