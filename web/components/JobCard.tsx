@@ -1,5 +1,6 @@
 import type { SyntheticEvent } from "react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { ActionList, ActionMenu, IconButton } from "@primer/react";
 import { KebabHorizontalIcon, SyncIcon } from "@primer/octicons-react";
 import type { GraphNode } from "../types";
@@ -10,7 +11,16 @@ import {
     statusOf,
     stepProgress,
 } from "../format";
-import { enterCard, flipStatus, shakeStatus, tweenWidth } from "../anim";
+import {
+    ENTER_TRANSITION,
+    enterDelay,
+    POP,
+    POP_KEYS,
+    SHAKE,
+    SHAKE_KEYS,
+    WIDTH_SPRING,
+    useChangeFx,
+} from "../anim";
 import { useAction } from "../hooks";
 import { useToast } from "./Toast";
 
@@ -29,10 +39,7 @@ interface JobCardProps {
 export function JobCard({ node, index, now, runCompleted, registerCard }: JobCardProps) {
     const callAction = useAction();
     const showToast = useToast();
-    const cardRef = useRef<HTMLAnchorElement | null>(null);
-    const icoRef = useRef<HTMLSpanElement>(null);
-    const fillRef = useRef<HTMLElement>(null);
-    const prevCls = useRef<string | undefined>(undefined);
+    const reduce = useReducedMotion();
 
     const st = statusOf(node);
     const lp = legProgress(node);
@@ -41,26 +48,17 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
 
     const setCardRef = useCallback(
         (el: HTMLAnchorElement | null) => {
-            cardRef.current = el;
             registerCard(node.id, el);
         },
         [node.id, registerCard],
     );
 
-    // Enter animation, once, before paint so there's no flash at full opacity.
-    useLayoutEffect(() => {
-        if (cardRef.current) enterCard(cardRef.current, index);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     // Pop (or shake, on failure) the glyph when the status class changes.
-    useEffect(() => {
-        const was = prevCls.current;
-        if (was && was !== st.cls && icoRef.current) {
-            (st.cls === "fail" ? shakeStatus : flipStatus)(icoRef.current);
-        }
-        prevCls.current = st.cls;
-    }, [st.cls]);
+    const icoRef = useChangeFx<HTMLSpanElement>(st.cls, (next) =>
+        next === "fail"
+            ? { keys: SHAKE_KEYS, transition: SHAKE }
+            : { keys: POP_KEYS, transition: POP },
+    );
 
     // Step / leg progress bar.
     const sp = inProgress ? stepProgress(node) : null;
@@ -80,10 +78,6 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
             : node.matrix && lp.total
               ? `${lp.done}/${lp.total} legs done`
               : "running…";
-
-    useEffect(() => {
-        if (inProgress && fillRef.current) tweenWidth(fillRef.current, wpct);
-    }, [wpct, inProgress]);
 
     // Add-to-context pill (debounced per card).
     const [ctx, setCtx] = useState<{ text: string; show: boolean }>({ text: "", show: false });
@@ -134,12 +128,20 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
 
     return (
         // eslint-disable-next-line jsx-a11y/anchor-is-valid
-        <a
+        <motion.a
             ref={setCardRef}
             className={"card s-" + st.cls}
             data-id={node.id}
             role="button"
             tabIndex={0}
+            initial={reduce ? false : { opacity: 0, y: 6, scale: 0.975 }}
+            animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                transition: { ...ENTER_TRANSITION, delay: enterDelay(index) },
+            }}
+            whileHover={{ y: -1, transition: { duration: 0.12, ease: "easeOut" } }}
             onClick={onActivate}
             onContextMenu={(e) => {
                 if (!canRerun) return;
@@ -202,11 +204,15 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
             {inProgress && (
                 <div className="c-step">
                     <div className="sbar">
-                        <i ref={fillRef} />
+                        <motion.i
+                            initial={reduce ? false : { width: 0 }}
+                            animate={{ width: wpct + "%" }}
+                            transition={reduce ? { duration: 0 } : WIDTH_SPRING}
+                        />
                     </div>
                     <div className="lbl">{stepLabel}</div>
                 </div>
             )}
-        </a>
+        </motion.a>
     );
 }

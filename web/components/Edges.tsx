@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef } from "react";
-import { enterEdge } from "../anim";
+import { motion, useReducedMotion } from "motion/react";
+import { EDGE_FADE } from "../anim";
 
 export interface EdgeGeom {
     key: string;
@@ -8,32 +8,20 @@ export interface EdgeGeom {
 }
 
 // SVG dependency edges. Geometry is measured by Graph (it owns the card rects);
-// this just renders the paths and fades in any that are new this commit.
+// this just renders the paths. A stable `key` keeps the same motion element
+// mounted (no re-fade); a new key mounts fresh and fades in via `initial`.
 export function Edges({ edges }: { edges: EdgeGeom[] }) {
-    const paths = useRef<Map<string, SVGPathElement>>(new Map());
-    const prevKeys = useRef<Set<string>>(new Set());
-
-    useLayoutEffect(() => {
-        for (const e of edges) {
-            if (!prevKeys.current.has(e.key)) {
-                const el = paths.current.get(e.key);
-                if (el) enterEdge(el);
-            }
-        }
-        prevKeys.current = new Set(edges.map((e) => e.key));
-    }, [edges]);
-
+    const reduce = useReducedMotion();
     return (
         <svg className="edges">
             {edges.map((e) => (
-                <path
+                <motion.path
                     key={e.key}
-                    ref={(el) => {
-                        if (el) paths.current.set(e.key, el);
-                        else paths.current.delete(e.key);
-                    }}
                     className={"edge" + (e.active ? " active" : "")}
                     d={e.d}
+                    initial={reduce ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={EDGE_FADE}
                 />
             ))}
         </svg>

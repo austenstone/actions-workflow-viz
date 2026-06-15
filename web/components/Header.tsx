@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
 import type { RunGraph } from "../types";
 import { runPill } from "../format";
-import { popPill } from "../anim";
+import { useChangeFx, PILL_POP, PILL_POP_KEYS } from "../anim";
 import { useAction } from "../hooks";
 import { Toolbar } from "./Toolbar";
 
@@ -63,10 +62,10 @@ function MetaLinks({ run }: { run: RunGraph }) {
     if (run.actor) {
         bits.push(
             <span key="actor">
-                <a href={`https://github.com/${run.actor.login}`} className="actor" {...ext}>
+                <a href={run.actor.html_url ?? `https://github.com/${run.actor.login}`} className="actor" {...ext}>
                     <img
                         className="avatar"
-                        src={`https://github.com/${run.actor.login}.png?size=32`}
+                        src={run.actor.avatar_url ?? `https://github.com/${run.actor.login}.png?size=32`}
                         alt=""
                         width={16}
                         height={16}
@@ -82,15 +81,10 @@ function MetaLinks({ run }: { run: RunGraph }) {
 export function Header({ run }: { run: RunGraph }) {
     const callAction = useAction();
     const pill = runPill(run);
-    const pillRef = useRef<HTMLSpanElement>(null);
-    const prevCls = useRef<string | undefined>(undefined);
-
-    useEffect(() => {
-        if (prevCls.current && prevCls.current !== pill.cls && pillRef.current) {
-            popPill(pillRef.current);
-        }
-        prevCls.current = pill.cls;
-    }, [pill.cls]);
+    const pillRef = useChangeFx<HTMLSpanElement>(pill.cls, () => ({
+        keys: PILL_POP_KEYS,
+        transition: PILL_POP,
+    }));
 
     const title = run.name || run.display_title || "Workflow Run";
 
@@ -112,8 +106,8 @@ export function Header({ run }: { run: RunGraph }) {
                     <span className="dot" />
                     {pill.text}
                 </span>
+                <Toolbar run={run} />
             </div>
-            <Toolbar run={run} />
             <div className="h-meta">
                 <MetaLinks run={run} />
             </div>

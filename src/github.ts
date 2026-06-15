@@ -5,6 +5,9 @@
 // the old gh-shelling layer carried.
 
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { Octokit } from "@octokit/rest";
@@ -47,9 +50,29 @@ function repoFromRemote(url: string): string | null {
     return m ? m[1] : null;
 }
 
-// Best-effort "what repo am I in" for the no-input picker. Asks gh first (honors
-// the active gh context), then falls back to the origin remote.
+// The extension host runs with cwd set to ~/.copilot, NOT the user's project, so
+// shelling out to gh/git self-detects the wrong repo. The host does pass SESSION_ID,
+// and the desktop app writes the real project metadata to
+// ~/.copilot/session-state/<id>/workspace.yaml, so read the repo from there first.
+async function repoFromSession(): Promise<string | null> {
+    const sessionId = process.env.SESSION_ID;
+    if (!sessionId) return null;
+    const path = join(homedir(), ".copilot", "session-state", sessionId, "workspace.yaml");
+    try {
+        const text = await readFile(path, "utf8");
+        const m = text.match(/^repository:\s*(\S+)\s*$/m);
+        const slug = m?.[1];
+        return slug && slug.includes("/") ? slug : null;
+    } catch {
+        return null;
+    }
+}
+
+// Best-effort "what repo am I in" for the no-input picker. Prefers the session's
+// recorded project, then asks gh (honors the active gh context), then the origin remote.
 export async function detectRepo(): Promise<string | null> {
+    const fromSession = await repoFromSession();
+    if (fromSession) return fromSession;
     try {
         const { stdout } = await pExecFile(
             "gh",

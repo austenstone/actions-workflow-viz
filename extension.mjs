@@ -9890,7 +9890,7 @@ var require_cronstrue = __commonJS({
 });
 
 // src/extension.ts
-import { dirname, join as join2 } from "node:path";
+import { dirname, join as join3 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // ../../../source/copilot-canvas-kit/dist/server/index.js
@@ -10171,6 +10171,9 @@ import {
 
 // src/github.ts
 import { execFile } from "node:child_process";
+import { readFile as readFile2 } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 // node_modules/universal-user-agent/index.js
@@ -13909,7 +13912,22 @@ function repoFromRemote(url) {
   const m = url.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/);
   return m ? m[1] : null;
 }
+async function repoFromSession() {
+  const sessionId = process.env.SESSION_ID;
+  if (!sessionId) return null;
+  const path = join(homedir(), ".copilot", "session-state", sessionId, "workspace.yaml");
+  try {
+    const text = await readFile2(path, "utf8");
+    const m = text.match(/^repository:\s*(\S+)\s*$/m);
+    const slug = m?.[1];
+    return slug && slug.includes("/") ? slug : null;
+  } catch {
+    return null;
+  }
+}
 async function detectRepo() {
+  const fromSession = await repoFromSession();
+  if (fromSession) return fromSession;
   try {
     const { stdout } = await pExecFile(
       "gh",
@@ -15600,7 +15618,7 @@ var fromjson = {
 };
 
 // node_modules/@actions/expressions/dist/funcs/join.js
-var join = {
+var join2 = {
   name: "join",
   description: "`join( array, optionalSeparator )`\n\nThe value for `array` can be an array or a string. All values in `array` are concatenated into a string. If you provide `optionalSeparator`, it is inserted between the concatenated values. Otherwise, the default separator `,` is used. Casts values to a string.",
   minArgs: 1,
@@ -15659,7 +15677,7 @@ var wellKnownFunctions = {
   endswith,
   format,
   fromjson,
-  join,
+  join: join2,
   startswith,
   tojson
 };
@@ -20062,19 +20080,19 @@ var loadInputSchema = {
 var sessionLog;
 var sessionPushAttachments;
 var assets = {
-  "/": { contentType: "text/html; charset=utf-8", file: join2(__dirname, "index.html") },
+  "/": { contentType: "text/html; charset=utf-8", file: join3(__dirname, "index.html") },
   "/index.html": {
     contentType: "text/html; charset=utf-8",
-    file: join2(__dirname, "index.html")
+    file: join3(__dirname, "index.html")
   },
   "/main.js": {
     contentType: "text/javascript; charset=utf-8",
-    file: join2(__dirname, "web", "main.js"),
+    file: join3(__dirname, "web", "main.js"),
     cacheControl: "max-age=3600"
   },
   "/main.css": {
     contentType: "text/css; charset=utf-8",
-    file: join2(__dirname, "web", "main.css"),
+    file: join3(__dirname, "web", "main.css"),
     cacheControl: "max-age=3600"
   },
   "/favicon.svg": {

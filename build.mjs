@@ -7,7 +7,7 @@
 //      node_modules dependency.
 //   2. web/main.tsx → web/main.js (+ web/main.css) — the React + Primer app,
 //      served by the loopback server at /main.js and /main.css. React, Primer,
-//      the primitives theme CSS, and the Motion helpers (web/anim.ts) are all
+//      the primitives theme CSS, and Motion (motion/react) are all
 //      bundled in (local assets, no CDN). esbuild emits the sibling main.css
 //      automatically because main.tsx imports CSS.
 //

@@ -1,91 +1,74 @@
-// Motion-powered animation layer for the renderer.
+// Motion-powered animation layer for the renderer, built on the React API
+// (`motion/react`) rather than the standalone imperative `animate()`.
 //
-// Bundled by build.mjs (web/anim.ts → web/anim.js) and served from the loopback
-// server at /anim.js, so Motion ships as a local asset — no CDN, no runtime
-// node_modules. index.html imports the intent-named helpers below and the Motion
-// specifics stay centralized and typed here.
+// Enter/state animations live as declarative `<motion.* />` props directly in the
+// components (card lift, edge fade, progress fill). This module holds the shared
+// transition presets so the timing stays centralized and typed, plus one hook —
+// `useChangeFx` — for the fire-and-forget glyph/pill pops.
 //
-// Why Motion instead of the old CSS keyframes: status-change pops were triggered
-// by toggling a class plus a forced-reflow hack (`void el.offsetWidth`), which
-// drops frames and sometimes fails to restart. Motion's animate() interrupts and
-// restarts cleanly on the same element, so repeated polls never stack or stutter.
+// Why a hook for the pops: a pop is a keyframe burst that returns to rest
+// (1 → 1.34 → 1), not an A→B state change, so it doesn't map onto a declarative
+// `animate` target — the target never changes, so Motion would never replay it.
+// `useAnimate()` is Motion's React-native tool for exactly this: a scoped,
+// ref-safe trigger that interrupts and restarts cleanly on every status change.
+//
+// Reduced motion is read via Motion's `useReducedMotion()` hook (reactive — it
+// updates if the OS setting changes mid-session), replacing the old module-load
+// matchMedia snapshot.
 
-import { animate } from "motion";
+import { useEffect, useRef } from "react";
+import { useAnimate, useReducedMotion } from "motion/react";
+import type { DOMKeyframesDefinition, AnimationOptions } from "motion/react";
 
-const prefersReduced =
-    typeof matchMedia === "function" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Card enter: fade + rise + scale. `enterDelay` staggers the initial batch.
+export const ENTER_TRANSITION: AnimationOptions = {
+    duration: 0.34,
+    ease: [0.16, 1, 0.3, 1],
+};
+export const enterDelay = (index: number): number => Math.min(index * 0.04, 0.24);
 
-// Motion commits the final transform inline. `.card` has a `:hover` transform,
-// and an inline transform would win over `:hover`, so clear it once settled.
-function clearTransformOnFinish(controls: { finished: Promise<unknown> }, el: HTMLElement): void {
-    controls.finished.then(() => { el.style.transform = ""; }).catch(() => {});
-}
+// Success: spring-bounce pop. Failure: side-to-side shake (reads as "wrong" at a
+// glance instead of the celebratory bounce).
+export const POP: AnimationOptions = { type: "spring", stiffness: 540, damping: 16, mass: 0.7 };
+export const SHAKE: AnimationOptions = { duration: 0.44, ease: "easeInOut" };
+export const POP_KEYS: DOMKeyframesDefinition = { scale: [1, 1.34, 1] };
+export const SHAKE_KEYS: DOMKeyframesDefinition = { x: [0, -3, 3, -2.5, 2.5, -1.5, 0] };
 
-// A card entering the graph for the first time. `index` staggers the initial batch.
-// Motion fully owns `opacity` here (the renderer pre-hides new cards at opacity 0);
-// dimming for wait/skip states is expressed via CSS `filter: opacity()`, so the
-// fade never fights the resting dim level. On settle we hand `opacity` and the
-// committed `transform` back to the stylesheet — clearing on interruption too, so a
-// card that re-renders mid-fade can never get stranded invisible.
-export function enterCard(el: HTMLElement, index = 0): void {
-    if (prefersReduced) { el.style.opacity = ""; return; }
-    const controls = animate(
-        el,
-        { opacity: [0, 1], y: [6, 0], scale: [0.975, 1] },
-        { duration: 0.34, delay: Math.min(index * 0.04, 0.24), ease: [0.16, 1, 0.3, 1] },
-    );
-    const settle = () => { el.style.transform = ""; el.style.opacity = ""; };
-    controls.finished.then(settle).catch(settle);
-}
+// Header status pill: subtle pop to draw the eye on a status change.
+export const PILL_POP: AnimationOptions = { duration: 0.4, ease: "easeOut" };
+export const PILL_POP_KEYS: DOMKeyframesDefinition = { scale: [1, 1.08, 1] };
 
-// A job changed status — spring-bounce its status glyph. The icon has no :hover
-// transform, so this composes cleanly with the card's CSS hover lift.
-export function flipStatus(ico: HTMLElement): void {
-    if (prefersReduced) return;
-    const controls = animate(
-        ico,
-        { scale: [1, 1.34, 1] },
-        { type: "spring", stiffness: 540, damping: 16, mass: 0.7 },
-    );
-    clearTransformOnFinish(controls, ico);
-}
+// Progress / step bar fill: spring to the new width.
+export const WIDTH_SPRING: AnimationOptions = {
+    type: "spring",
+    stiffness: 210,
+    damping: 30,
+    mass: 0.9,
+};
 
-// A job failed — shake its status glyph side to side. Distinct from the success
-// pop (flipStatus) so a failure reads as "something's wrong" at a glance instead
-// of the same celebratory bounce. x translateX composes cleanly with the card's
-// CSS :hover lift; we hand the committed transform back to the stylesheet on
-// settle (and on interruption) so a re-render mid-shake can't strand it offset.
-export function shakeStatus(ico: HTMLElement): void {
-    if (prefersReduced) return;
-    const controls = animate(
-        ico,
-        { x: [0, -3, 3, -2.5, 2.5, -1.5, 0] },
-        { duration: 0.44, ease: "easeInOut" },
-    );
-    clearTransformOnFinish(controls, ico);
-}
+// Dependency edge appearing for the first time: fade in instead of snapping.
+export const EDGE_FADE: AnimationOptions = { duration: 0.45, ease: "easeOut" };
 
-// Spring a progress-bar / step-bar fill to a new width (pct: 0–100).
-export function tweenWidth(el: HTMLElement, pct: number): void {
-    const target = Math.max(0, Math.min(100, pct)) + "%";
-    if (prefersReduced) { el.style.width = target; return; }
-    animate(el, { width: target }, { type: "spring", stiffness: 210, damping: 30, mass: 0.9 });
-}
+// Fire a one-shot keyframe burst on an element whenever `value` changes — but not
+// on first render, and never under reduced motion. `build` maps the new value to
+// the keyframes + transition to play (return null to skip). Attach the returned
+// ref to the element you want to animate.
+export function useChangeFx<T extends Element = HTMLElement>(
+    value: string,
+    build: (next: string) => { keys: DOMKeyframesDefinition; transition: AnimationOptions } | null,
+) {
+    const [scope, animate] = useAnimate<T>();
+    const reduce = useReducedMotion();
+    const prev = useRef<string | undefined>(undefined);
 
-// A dependency edge appearing for the first time — fade in instead of snapping.
-// Edges have no dim states, so resting opacity is always 1; settle to "" on finish
-// or interruption so the path is never left stranded at the inline opacity:0.
-export function enterEdge(path: SVGPathElement): void {
-    if (prefersReduced) { path.style.opacity = ""; return; }
-    const controls = animate(path, { opacity: [0, 1] }, { duration: 0.45, ease: "easeOut" });
-    const settle = () => { path.style.opacity = ""; };
-    controls.finished.then(settle).catch(settle);
-}
+    useEffect(() => {
+        const was = prev.current;
+        prev.current = value;
+        if (!was || was === value || reduce || !scope.current) return;
+        const fx = build(value);
+        if (fx) animate(scope.current, fx.keys, fx.transition);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value]);
 
-// The header status pill changed — subtle pop to draw the eye.
-export function popPill(el: HTMLElement): void {
-    if (prefersReduced) return;
-    const controls = animate(el, { scale: [1, 1.08, 1] }, { duration: 0.4, ease: "easeOut" });
-    clearTransformOnFinish(controls, el);
+    return scope;
 }
