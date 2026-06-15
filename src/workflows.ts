@@ -7,6 +7,7 @@
 import { getOctokit } from "./github.js";
 import type {
     RunListStatus,
+    RunSummary,
     WorkflowDef,
     WorkflowRunData,
     WorkflowsTree,
@@ -50,7 +51,33 @@ export async function fetchRepoRuns(repo: string, query: RunQuery = {}): Promise
     return data.workflow_runs;
 }
 
-// Recent runs for one workflow.
+// Flatten a raw run into the compact row the picker renders. Keeps the Octokit
+// payload out of the browser bundle.
+export function toRunSummary(run: WorkflowRunData): RunSummary {
+    return {
+        id: run.id,
+        runNumber: run.run_number ?? null,
+        name: run.name ?? run.display_title ?? "Workflow run",
+        title: run.display_title ?? run.name ?? "",
+        status: run.status ?? null,
+        conclusion: run.conclusion ?? null,
+        branch: run.head_branch ?? null,
+        event: run.event ?? null,
+        createdAt: run.created_at ?? null,
+        htmlUrl: run.html_url ?? null,
+        actor: run.actor?.login ?? null,
+    };
+}
+
+// Recent runs as picker rows (newest first).
+export async function fetchRunSummaries(
+    repo: string,
+    query: RunQuery = {},
+): Promise<RunSummary[]> {
+    const runs = await fetchRepoRuns(repo, query);
+    return runs.map(toRunSummary);
+}
+
 export async function fetchWorkflowRuns(
     repo: string,
     workflowId: number,

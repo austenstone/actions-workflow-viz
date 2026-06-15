@@ -10,5 +10,7 @@ export type {
     Leg,
     NodeStatus,
     RunGraph,
+    RunPicker,
+    RunSummary,
     Step,
 } from "../src/types";

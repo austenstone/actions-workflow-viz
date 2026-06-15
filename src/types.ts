@@ -79,6 +79,30 @@ export interface WorkflowsTree {
     fetchedAt: number;
 }
 
+// A compact run row for the empty-state picker. Mapped from WorkflowRunData so
+// the browser bundle never sees the raw Octokit payload.
+export interface RunSummary {
+    id: number;
+    runNumber: number | null;
+    name: string;
+    title: string;
+    status: string | null;
+    conclusion: string | null;
+    branch: string | null;
+    event: string | null;
+    createdAt: string | null;
+    htmlUrl: string | null;
+    actor: string | null;
+}
+
+// Browse-mode model: the recent runs to pick from when no run is loaded.
+export interface RunPicker {
+    repo: string | null;
+    runs: RunSummary[];
+    loading: boolean;
+    error: string | null;
+}
+
 export type CanvasStatus = "idle" | "loading" | "ok" | "error";
 
 export interface CanvasState {
@@ -86,4 +110,5 @@ export interface CanvasState {
     message: string | null;
     run: RunGraph | null;
     updatedAt: number | null;
+    picker?: RunPicker | null;
 }

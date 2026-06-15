@@ -41,3 +41,32 @@ export function getOctokit(): Promise<Octokit> {
     }
     return clientPromise;
 }
+
+function repoFromRemote(url: string): string | null {
+    const m = url.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/);
+    return m ? m[1] : null;
+}
+
+// Best-effort "what repo am I in" for the no-input picker. Asks gh first (honors
+// the active gh context), then falls back to the origin remote.
+export async function detectRepo(): Promise<string | null> {
+    try {
+        const { stdout } = await pExecFile(
+            "gh",
+            ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+            { timeout: 5000 },
+        );
+        const slug = stdout.trim();
+        if (slug.includes("/")) return slug;
+    } catch {
+        /* fall through to git remote */
+    }
+    try {
+        const { stdout } = await pExecFile("git", ["remote", "get-url", "origin"], {
+            timeout: 5000,
+        });
+        return repoFromRemote(stdout.trim());
+    } catch {
+        return null;
+    }
+}

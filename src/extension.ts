@@ -36,8 +36,9 @@ import {
     reRunFailedJobs,
     reRunJob,
 } from "./run-data.js";
-import { getOctokit } from "./github.js";
-import type { CanvasState, GraphNode, RunGraph, RunRef } from "./types.js";
+import { getOctokit, detectRepo } from "./github.js";
+import { fetchRunSummaries } from "./workflows.js";
+import type { CanvasState, GraphNode, RunGraph, RunPicker, RunRef } from "./types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -59,6 +60,20 @@ interface LoadInput {
 }
 
 const polls = new Map<string, Poll>();
+
+// Browse-mode picker list, kept beside the canvas state so it survives the
+// idle/loading/error transitions the run poller drives. Cleared on a successful
+// run load and on close.
+const pickers = new Map<string, RunPicker>();
+
+function currentPicker(instanceId: string): RunPicker | null {
+    return pickers.get(instanceId) ?? null;
+}
+
+function setPicker(instanceId: string, picker: RunPicker | null): void {
+    if (picker) pickers.set(instanceId, picker);
+    else pickers.delete(instanceId);
+}
 
 function pollFor(instanceId: string): Poll {
     let poll = polls.get(instanceId);
@@ -86,7 +101,7 @@ function getState(instanceId: string): CanvasState | null {
 const POLL_MS = 1200;
 
 function emptyState(): CanvasState {
-    return { status: "idle", message: "Open a run to begin.", run: null, updatedAt: null };
+    return { status: "idle", message: "Open a run to begin.", run: null, updatedAt: null, picker: null };
 }
 
 const FAVICON_SVG =
@@ -109,6 +124,7 @@ async function pollOnce(instanceId: string, log: LogFn | undefined, gen: number)
         const run = await fetchRunGraph(ref);
         // A newer load_run superseded this poll while it was in flight — discard.
         if (poll.gen !== gen) return;
+        setPicker(instanceId, null);
         setState(instanceId, { status: "ok", message: null, run, updatedAt: Date.now() });
 
         // Keep polling only while the run is still active.
@@ -125,6 +141,7 @@ async function pollOnce(instanceId: string, log: LogFn | undefined, gen: number)
             message,
             run: prev?.run ?? null,
             updatedAt: Date.now(),
+            picker: currentPicker(instanceId),
         });
         log?.(`workflow-viz poll error: ${message}`, { level: "warn" });
         // Back off but keep trying on transient failures while a run is active.
@@ -166,6 +183,85 @@ async function loadRun(instanceId: string, input: LoadInput | undefined, log?: L
         nodes: st?.run?.nodes?.length ?? 0,
         error: st?.status === "error" ? st.message : undefined,
     };
+}
+
+interface ListInput {
+    repo?: string;
+    branch?: string;
+}
+
+const PICKER_RUNS = 30;
+
+// Browse mode: stop any run polling and show a clickable list of recent runs.
+// Used when the canvas opens with no run, and by the "‹ Runs" back button.
+async function listRuns(instanceId: string, input?: ListInput, log?: LogFn) {
+    // Stop run polling so a stale poll can't flip state back to "ok".
+    const poll = pollFor(instanceId);
+    poll.ref = null;
+    poll.gen++;
+    stopPolling(poll);
+    poll.polling = false;
+
+    let repo = input?.repo?.includes("/") ? input.repo : null;
+    if (!repo) repo = await detectRepo();
+
+    const base: RunPicker = { repo, runs: [], loading: true, error: null };
+    setPicker(instanceId, base);
+    setState(instanceId, {
+        status: "idle",
+        message: null,
+        run: null,
+        updatedAt: Date.now(),
+        picker: base,
+    });
+
+    if (!repo) {
+        const picker: RunPicker = {
+            repo: null,
+            runs: [],
+            loading: false,
+            error: "Couldn't detect a repository. Open with { repo } or pass repo to list_runs.",
+        };
+        setPicker(instanceId, picker);
+        setState(instanceId, {
+            status: "idle",
+            message: null,
+            run: null,
+            updatedAt: Date.now(),
+            picker,
+        });
+        return { repo: null, count: 0, error: picker.error };
+    }
+
+    try {
+        const runs = await fetchRunSummaries(repo, {
+            branch: input?.branch,
+            perPage: PICKER_RUNS,
+        });
+        const picker: RunPicker = { repo, runs, loading: false, error: null };
+        setPicker(instanceId, picker);
+        setState(instanceId, {
+            status: "idle",
+            message: null,
+            run: null,
+            updatedAt: Date.now(),
+            picker,
+        });
+        return { repo, count: runs.length };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const picker: RunPicker = { repo, runs: [], loading: false, error: message };
+        setPicker(instanceId, picker);
+        setState(instanceId, {
+            status: "idle",
+            message: null,
+            run: null,
+            updatedAt: Date.now(),
+            picker,
+        });
+        log?.(`workflow-viz list error: ${message}`, { level: "warn" });
+        return { repo, count: 0, error: message };
+    }
 }
 
 // Force an immediate repaint of the loaded run by superseding the current poll
