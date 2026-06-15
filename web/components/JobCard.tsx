@@ -1,7 +1,7 @@
 import type { SyntheticEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ActionList, ActionMenu, IconButton, Label } from "@primer/react";
+import { ActionList, ActionMenu, IconButton } from "@primer/react";
 import {
     KebabHorizontalIcon,
     SyncIcon,
@@ -10,7 +10,9 @@ import {
     StopIcon,
     InfoIcon,
 } from "@primer/octicons-react";
-import type { GraphNode } from "../types";
+import type { GraphNode, Leg } from "../types";
+import type { StatusKind } from "./StatusIcon";
+import type { StatusClass } from "../format";
 import {
     annotationCounts,
     durOf,
@@ -18,6 +20,7 @@ import {
     queueMsOf,
     QUEUE_NOISE_MS,
     RERUNNABLE_CLS,
+    FAIL_CONCLUSIONS,
     runnerOf,
     statusOf,
     stepProgress,
@@ -50,6 +53,36 @@ interface JobCardProps {
 // status glyph pops/shakes on transitions; an in-progress job shows a step bar.
 // Layout/animation effects intentionally exclude `now` so the 1s tick only
 // updates duration text, never restarts animations.
+
+function legStatus(leg: Leg): { cls: StatusClass; kind: StatusKind; label: string } {
+    if (leg.status === "in_progress") return { cls: "run", kind: "in_progress", label: "Running" };
+    if (leg.status === "queued") return { cls: "wait", kind: "queued", label: "Queued" };
+    const c = leg.conclusion;
+    if (c === "success") return { cls: "ok", kind: "success", label: "Passed" };
+    if (c === "skipped") return { cls: "skip", kind: "skipped", label: "Skipped" };
+    if (c === "cancelled") return { cls: "skip", kind: "cancelled", label: "Cancelled" };
+    if (FAIL_CONCLUSIONS.includes(c || ""))
+        return { cls: "fail", kind: "failure", label: c === "timed_out" ? "Timed out" : "Failed" };
+    return { cls: "wait", kind: "pending", label: "Pending" };
+}
+
+function legDuration(leg: Leg, now: number): string {
+    if (!leg.started_at) return "";
+    const start = new Date(leg.started_at).getTime();
+    const end = leg.completed_at ? new Date(leg.completed_at).getTime() : now;
+    return fmtDur(end - start);
+}
+
+function legShortName(legName: string, parentLabel: string): string {
+    if (legName.startsWith(parentLabel + " (")) {
+        return legName.slice(parentLabel.length + 2, -1);
+    }
+    if (legName.startsWith(parentLabel)) {
+        return legName.slice(parentLabel.length).replace(/^\s*[(\-–—]\s*/, "").replace(/\)$/, "");
+    }
+    return legName;
+}
+
 export function JobCard({
     node,
     index,
@@ -138,22 +171,20 @@ export function JobCard({
     };
 
     const durTxt = durOf(node, now) || st.label;
-    let tagTxt: string | null = null;
-    if (node.matrix && node.legs.length) tagTxt = `${lp.done}/${lp.total} legs`;
-    else if (node.status === "completed") tagTxt = st.label;
 
-    // Runner labels (runs-on) and queue latency — pulled from the live legs but
-    // never surfaced before. Runner shows the union across matrix legs; queue is
-    // hidden when it's just scheduling noise.
+    // Build a rich native tooltip with runner, queue, conclusion — all the
+    // secondary metadata that doesn't need to live inline.
     const runners = runnerOf(node);
-    const runnerTxt = runners.length ? runners.join(", ") : null;
     const queueMs = queueMsOf(node);
-    const queueTxt = queueMs != null && queueMs >= QUEUE_NOISE_MS ? fmtDur(queueMs) : null;
-
-    const mtxTxt = node.legs.length ? `matrix · ${node.legs.length}` : "matrix";
-    const mtxTip = node.legs.length
-        ? node.legs.map((l) => `${l.name} — ${l.conclusion || l.status}`).join("\n")
-        : "waiting for matrix legs…";
+    const tipParts: string[] = [];
+    if (node.status === "completed") tipParts.push(`Status: ${st.label}`);
+    if (runners.length) tipParts.push(`Runner: ${runners.join(", ")}`);
+    if (queueMs != null && queueMs >= QUEUE_NOISE_MS) tipParts.push(`Queued: ${fmtDur(queueMs)}`);
+    if (node.matrix && node.legs.length)
+        tipParts.push(
+            ...node.legs.map((l) => `  ${l.name} — ${l.conclusion || l.status}`),
+        );
+    const cardTitle = tipParts.length ? tipParts.join("\n") : undefined;
 
     // Annotation rollup (notice/warning/failure) surfaced as compact badges so a
     // flagged job is visible without opening it.
@@ -167,10 +198,11 @@ export function JobCard({
         // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <motion.a
             ref={setCardRef}
-            className={"card s-" + st.cls}
+            className={"card s-" + st.cls + (node.matrix ? " card-matrix" : "")}
             data-id={node.id}
             role="button"
             tabIndex={0}
+            title={cardTitle}
             initial={reduce ? false : { opacity: 0, y: 6, scale: 0.975 }}
             animate={{
                 opacity: 1,
@@ -193,15 +225,8 @@ export function JobCard({
                 <span className="ico" ref={icoRef}>
                     <StatusIcon kind={st.kind} title={st.label} />
                 </span>
-                <span className="c-name-wrap">
-                    <span className="c-name" title={node.label}>
-                        {node.label}
-                    </span>
-                    {node.matrix && (
-                        <span className="mtx" title={mtxTip}>
-                            {mtxTxt}
-                        </span>
-                    )}
+                <span className="c-name" title={node.label}>
+                    {node.label}
                 </span>
                 <span
                     className="rerun-bar"
@@ -240,17 +265,6 @@ export function JobCard({
             </div>
             <div className="c-sub">
                 <span className="dur">{durTxt}</span>
-                {runnerTxt && (
-                    <span className="runner" title={"runs-on: " + runnerTxt}>
-                        {runnerTxt}
-                    </span>
-                )}
-                {queueTxt && (
-                    <span className="queue" title="Queued before a runner started">
-                        {queueTxt} queued
-                    </span>
-                )}
-                {tagTxt && <Label variant="secondary">{tagTxt}</Label>}
                 {ann.failure > 0 && (
                     <span className="ann l-failure" title={annTip}>
                         <StopIcon size={12} /> {ann.failure}
@@ -268,7 +282,22 @@ export function JobCard({
                 )}
                 {ctx.show && <span className="ctx">{ctx.text}</span>}
             </div>
-            {inProgress && (
+            {node.matrix && node.legs.length > 0 && (
+                <div className="c-legs">
+                    {node.legs.map((leg) => {
+                        const legSt = legStatus(leg);
+                        const legDur = legDuration(leg, now);
+                        return (
+                            <div key={leg.id} className={"leg-row s-" + legSt.cls} title={leg.name}>
+                                <StatusIcon kind={legSt.kind} title={legSt.label} />
+                                <span className="leg-name">{legShortName(leg.name, node.label)}</span>
+                                {legDur && <span className="leg-dur">{legDur}</span>}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+            {inProgress && !node.matrix && (
                 <div className="c-step">
                     <div className="sbar">
                         <motion.i
