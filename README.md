@@ -9,6 +9,16 @@ A [GitHub Copilot CLI canvas extension](https://github.com/github/copilot-cli) t
 - **Matrix rollup** — matrix legs (e.g. `test (18)`, `test (20)`) roll up into their parent job node, including matrix jobs with expression `name:` values.
 - **Graceful degradation** — if the YAML can't be parsed it falls back to a flat board of jobs (no edges) rather than failing.
 
+## Live logs & the step-event feed
+
+Click a job node to open its logs. Two things happen depending on whether the job is still running:
+
+- **While the job runs** — a **live step-event feed** streams what's happening *now*: completed steps land as finalized lines (timestamp + duration), the running step ticks live with a pulsing indicator, and queued steps trail with a count. This is synthesized from the per-step status + timing the jobs API reports in real time (polled at 1.2s).
+- **On completion** — the feed swaps to the real per-step logs, bucketed by step and tailed in place.
+
+**Why not just stream the raw log text?** Because you can't. GitHub only publishes the REST job-log blob when the *whole job completes* — while a job is in progress, `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs` returns `404 BlobNotFound`. There is no token- or PAT-accessible endpoint for live in-progress log *text*; the web UI's live tail rides a cookie-authenticated WebSocket that an extension can't reach. [vscode-github-actions](https://github.com/github/vscode-github-actions) doesn't stream either — it does a one-shot fetch on completion. The step-event feed is how we surface live progress within that hard constraint.
+
+
 ## Inspiration
 
 The workflow parsing borrows from [github/vscode-github-actions](https://github.com/github/vscode-github-actions). Rather than hand-rolling a YAML walk, this extension uses GitHub's official [`@actions/workflow-parser`](https://github.com/actions/languageservices) (the same engine behind that extension's language server) to read the job graph, giving it schema awareness and expression handling for free.
@@ -40,5 +50,6 @@ TypeScript in `src/` and `web/` is bundled by `build.mjs` (esbuild) into `extens
 | `src/github.ts` | Octokit client backed by the authenticated `gh` token. |
 | `src/types.ts` | Shared graph/envelope types consumed by `index.html`. |
 | `web/anim.ts` | Canvas-side animation helpers. Bundled to `web/anim.js`. |
+| `web/components/StepActivityFeed.tsx` | Live step-event feed: synthesizes a streaming activity log from per-step transitions while a job runs. |
 | `index.html` | SVG DAG renderer + SSE client. |
 | `.github/workflows/demo.yml` | A rich demo pipeline (fan-out, 3-leg matrix, fan-in, conditional skip, `always()` notifier) for exercising the visualizer end-to-end. |
