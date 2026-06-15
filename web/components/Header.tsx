@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import type { RunGraph } from "../types";
 import { runPill } from "../format";
 import { popPill } from "../anim";
+import { useAction } from "../hooks";
 import { Toolbar } from "./Toolbar";
 
 // Build the meta line links (repo, run number, branch, sha, event, actor).
@@ -79,6 +80,7 @@ function MetaLinks({ run }: { run: RunGraph }) {
 }
 
 export function Header({ run }: { run: RunGraph }) {
+    const callAction = useAction();
     const pill = runPill(run);
     const pillRef = useRef<HTMLSpanElement>(null);
     const prevCls = useRef<string | undefined>(undefined);
@@ -95,6 +97,14 @@ export function Header({ run }: { run: RunGraph }) {
     return (
         <header>
             <div className="h-top">
+                <button
+                    type="button"
+                    className="h-back"
+                    title="Browse recent runs"
+                    onClick={() => callAction("list_runs", run.repo ? { repo: run.repo } : {})}
+                >
+                    ‹ Runs
+                </button>
                 <h1 className="h-title" title={title}>
                     {title}
                 </h1>

@@ -626,7 +626,7 @@ const canvas = host.toCanvas({
                 await listRuns(instanceId, { repo: loadInput?.repo }, sessionLog);
             } catch (e) {
                 const message = e instanceof Error ? e.message : String(e);
-                log?.(`workflow-viz list error: ${message}`, { level: "warn" });
+                sessionLog?.(`workflow-viz list error: ${message}`, { level: "warn" });
             }
         }
         const run = getState(instanceId)?.run ?? null;

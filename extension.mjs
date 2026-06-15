@@ -13905,6 +13905,30 @@ function getOctokit() {
   }
   return clientPromise;
 }
+function repoFromRemote(url) {
+  const m = url.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?\/?$/);
+  return m ? m[1] : null;
+}
+async function detectRepo() {
+  try {
+    const { stdout } = await pExecFile(
+      "gh",
+      ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+      { timeout: 5e3 }
+    );
+    const slug = stdout.trim();
+    if (slug.includes("/")) return slug;
+  } catch {
+  }
+  try {
+    const { stdout } = await pExecFile("git", ["remote", "get-url", "origin"], {
+      timeout: 5e3
+    });
+    return repoFromRemote(stdout.trim());
+  } catch {
+    return null;
+  }
+}
 
 // node_modules/@actions/expressions/dist/features.js
 var allFeatureKeys = [
@@ -19656,9 +19680,52 @@ function maxDate(dates) {
   return valid[valid.length - 1] || null;
 }
 
+// src/workflows.ts
+var DEFAULT_RUNS_PER_PAGE = 20;
+async function fetchRepoRuns(repo, query = {}) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  const { data } = await octokit.rest.actions.listWorkflowRunsForRepo({
+    owner,
+    repo: name,
+    branch: query.branch,
+    event: query.event,
+    status: query.status,
+    per_page: query.perPage ?? DEFAULT_RUNS_PER_PAGE
+  });
+  return data.workflow_runs;
+}
+function toRunSummary(run) {
+  return {
+    id: run.id,
+    runNumber: run.run_number ?? null,
+    name: run.name ?? run.display_title ?? "Workflow run",
+    title: run.display_title ?? run.name ?? "",
+    status: run.status ?? null,
+    conclusion: run.conclusion ?? null,
+    branch: run.head_branch ?? null,
+    event: run.event ?? null,
+    createdAt: run.created_at ?? null,
+    htmlUrl: run.html_url ?? null,
+    actor: run.actor?.login ?? null
+  };
+}
+async function fetchRunSummaries(repo, query = {}) {
+  const runs = await fetchRepoRuns(repo, query);
+  return runs.map(toRunSummary);
+}
+
 // src/extension.ts
 var __dirname = dirname(fileURLToPath(import.meta.url));
 var polls = /* @__PURE__ */ new Map();
+var pickers = /* @__PURE__ */ new Map();
+function currentPicker(instanceId) {
+  return pickers.get(instanceId) ?? null;
+}
+function setPicker(instanceId, picker) {
+  if (picker) pickers.set(instanceId, picker);
+  else pickers.delete(instanceId);
+}
 function pollFor(instanceId) {
   let poll = polls.get(instanceId);
   if (!poll) {
@@ -19676,7 +19743,7 @@ function getState(instanceId) {
 }
 var POLL_MS = 1200;
 function emptyState() {
-  return { status: "idle", message: "Open a run to begin.", run: null, updatedAt: null };
+  return { status: "idle", message: "Open a run to begin.", run: null, updatedAt: null, picker: null };
 }
 var FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2da44e"/><path d="M6.8 10.4 4.6 8.2l1-1 1.2 1.2 3-3 1 1z" fill="#fff"/></svg>`;
 function stopPolling(poll) {
@@ -19693,6 +19760,7 @@ async function pollOnce(instanceId, log, gen) {
   try {
     const run = await fetchRunGraph(ref);
     if (poll.gen !== gen) return;
+    setPicker(instanceId, null);
     setState(instanceId, { status: "ok", message: null, run, updatedAt: Date.now() });
     stopPolling(poll);
     if (run.status !== "completed" && host.has(instanceId)) {
@@ -19706,7 +19774,8 @@ async function pollOnce(instanceId, log, gen) {
       status: "error",
       message,
       run: prev?.run ?? null,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      picker: currentPicker(instanceId)
     });
     log?.(`workflow-viz poll error: ${message}`, { level: "warn" });
     stopPolling(poll);
@@ -19746,6 +19815,71 @@ async function loadRun(instanceId, input, log) {
     nodes: st?.run?.nodes?.length ?? 0,
     error: st?.status === "error" ? st.message : void 0
   };
+}
+var PICKER_RUNS = 30;
+async function listRuns(instanceId, input, log) {
+  const poll = pollFor(instanceId);
+  poll.ref = null;
+  poll.gen++;
+  stopPolling(poll);
+  poll.polling = false;
+  let repo = input?.repo?.includes("/") ? input.repo : null;
+  if (!repo) repo = await detectRepo();
+  const base = { repo, runs: [], loading: true, error: null };
+  setPicker(instanceId, base);
+  setState(instanceId, {
+    status: "idle",
+    message: null,
+    run: null,
+    updatedAt: Date.now(),
+    picker: base
+  });
+  if (!repo) {
+    const picker = {
+      repo: null,
+      runs: [],
+      loading: false,
+      error: "Couldn't detect a repository. Open with { repo } or pass repo to list_runs."
+    };
+    setPicker(instanceId, picker);
+    setState(instanceId, {
+      status: "idle",
+      message: null,
+      run: null,
+      updatedAt: Date.now(),
+      picker
+    });
+    return { repo: null, count: 0, error: picker.error };
+  }
+  try {
+    const runs = await fetchRunSummaries(repo, {
+      branch: input?.branch,
+      perPage: PICKER_RUNS
+    });
+    const picker = { repo, runs, loading: false, error: null };
+    setPicker(instanceId, picker);
+    setState(instanceId, {
+      status: "idle",
+      message: null,
+      run: null,
+      updatedAt: Date.now(),
+      picker
+    });
+    return { repo, count: runs.length };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const picker = { repo, runs: [], loading: false, error: message };
+    setPicker(instanceId, picker);
+    setState(instanceId, {
+      status: "idle",
+      message: null,
+      run: null,
+      updatedAt: Date.now(),
+      picker
+    });
+    log?.(`workflow-viz list error: ${message}`, { level: "warn" });
+    return { repo, count: 0, error: message };
+  }
 }
 async function refresh(instanceId, log) {
   const poll = pollFor(instanceId);
@@ -19961,6 +20095,18 @@ var actions = {
     agent: true,
     handler: ({ instanceId }) => refresh(instanceId, sessionLog)
   },
+  list_runs: {
+    description: "Show a clickable list of recent workflow runs to pick from (browse mode). Repo is auto-detected if omitted. Accepts { repo?, branch? }.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in 'owner/repo' form." },
+        branch: { type: "string", description: "Limit to runs on this branch." }
+      }
+    },
+    agent: true,
+    handler: ({ instanceId, input }) => listRuns(instanceId, input, sessionLog)
+  },
   rerun_all: {
     description: "Re-run all jobs in the currently loaded run.",
     agent: true,
@@ -20012,7 +20158,10 @@ var canvas = host.toCanvas({
   inputSchema: loadInputSchema,
   onOpen: async ({ instanceId, input }) => {
     const loadInput = input;
-    if (loadInput && (loadInput.repo || loadInput.runUrl)) {
+    const canLoad = Boolean(
+      loadInput && (loadInput.runUrl || loadInput.repo && loadInput.runId != null)
+    );
+    if (canLoad) {
       try {
         await loadRun(instanceId, loadInput, sessionLog);
       } catch (e) {
@@ -20021,8 +20170,16 @@ var canvas = host.toCanvas({
           status: "error",
           message,
           run: null,
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          picker: currentPicker(instanceId)
         });
+      }
+    } else {
+      try {
+        await listRuns(instanceId, { repo: loadInput?.repo }, sessionLog);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        sessionLog?.(`workflow-viz list error: ${message}`, { level: "warn" });
       }
     }
     const run = getState(instanceId)?.run ?? null;
@@ -20037,6 +20194,7 @@ var canvas = host.toCanvas({
       stopPolling(poll);
       polls.delete(instanceId);
     }
+    pickers.delete(instanceId);
   }
 });
 var session = await joinSession({ canvases: [canvas] });

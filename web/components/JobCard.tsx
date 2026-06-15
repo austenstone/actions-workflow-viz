@@ -1,7 +1,7 @@
 import type { SyntheticEvent } from "react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ActionBar } from "@primer/react/experimental";
-import { SyncIcon } from "@primer/octicons-react";
+import { ActionList, ActionMenu, IconButton } from "@primer/react";
+import { KebabHorizontalIcon, SyncIcon } from "@primer/octicons-react";
 import type { GraphNode } from "../types";
 import {
     durOf,
@@ -110,6 +110,7 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
 
     // Per-card re-run.
     const [rerunBusy, setRerunBusy] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const fireRerun = (e: SyntheticEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -140,6 +141,12 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
             role="button"
             tabIndex={0}
             onClick={onActivate}
+            onContextMenu={(e) => {
+                if (!canRerun) return;
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuOpen(true);
+            }}
             onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") onActivate(e);
             }}
@@ -159,14 +166,32 @@ export function JobCard({ node, index, now, runCompleted, registerCard }: JobCar
                     )}
                 </span>
                 {canRerun && (
-                    <ActionBar className="rerun-bar" size="small" aria-label={"Actions for " + node.label}>
-                        <ActionBar.IconButton
-                            icon={SyncIcon}
-                            aria-label={"Re-run job " + node.label}
-                            loading={rerunBusy}
-                            onClick={fireRerun}
-                        />
-                    </ActionBar>
+                    <span
+                        className="rerun-bar"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                    >
+                        <ActionMenu open={menuOpen} onOpenChange={setMenuOpen}>
+                            <ActionMenu.Anchor>
+                                <IconButton
+                                    icon={KebabHorizontalIcon}
+                                    size="small"
+                                    variant="invisible"
+                                    aria-label={"Actions for " + node.label}
+                                />
+                            </ActionMenu.Anchor>
+                            <ActionMenu.Overlay width="small">
+                                <ActionList>
+                                    <ActionList.Item disabled={rerunBusy} onSelect={fireRerun}>
+                                        <ActionList.LeadingVisual>
+                                            <SyncIcon />
+                                        </ActionList.LeadingVisual>
+                                        Re-run job
+                                    </ActionList.Item>
+                                </ActionList>
+                            </ActionMenu.Overlay>
+                        </ActionMenu>
+                    </span>
                 )}
             </div>
             <div className="c-sub">

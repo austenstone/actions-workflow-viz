@@ -10,6 +10,7 @@ const IDLE: CanvasState = {
     message: "Open a run to begin.",
     run: null,
     updatedAt: null,
+    picker: null,
 };
 
 export const useCanvasState = (): CanvasState => useKitCanvasState<CanvasState>(IDLE);
