@@ -95,8 +95,7 @@ export interface RunSummary {
     createdAt: string | null;
     runStartedAt: string | null;
     htmlUrl: string | null;
-    actor: string | null;
-    actorAvatarUrl: string | null;
+    actor: { login: string; avatar_url: string | null; html_url: string | null } | null;
 }
 
 // Browse-mode model: the recent runs to pick from when no run is loaded.

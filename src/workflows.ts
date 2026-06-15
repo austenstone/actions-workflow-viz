@@ -68,8 +68,13 @@ export function toRunSummary(run: WorkflowRunData): RunSummary {
         createdAt: run.created_at ?? null,
         runStartedAt: run.run_started_at ?? null,
         htmlUrl: run.html_url ?? null,
-        actor: run.actor?.login ?? null,
-        actorAvatarUrl: run.actor?.avatar_url ?? null,
+        actor: run.actor
+            ? {
+                  login: run.actor.login,
+                  avatar_url: run.actor.avatar_url ?? null,
+                  html_url: run.actor.html_url ?? null,
+              }
+            : null,
     };
 }
 

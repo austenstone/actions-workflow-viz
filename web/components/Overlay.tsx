@@ -36,8 +36,8 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
     };
 
     const avatarUrl =
-        run.actorAvatarUrl ??
-        (run.actor ? `https://github.com/${run.actor}.png?size=40` : null);
+        run.actor?.avatar_url ??
+        (run.actor ? `https://github.com/${run.actor.login}.png?size=40` : null);
 
     // PR runs flow head -> base; everything else is just the one branch.
     const refFlow =
@@ -54,7 +54,7 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
         <ActionList.Item onSelect={pick} disabled={busy} title={run.title || run.name}>
             <ActionList.LeadingVisual>
                 {avatarUrl ? (
-                    <Avatar src={avatarUrl} alt={run.actor ?? "actor"} size={20} />
+                    <Avatar src={avatarUrl} alt={run.actor?.login ?? "actor"} size={20} />
                 ) : (
                     <span className={"dot " + pill.cls} />
                 )}
