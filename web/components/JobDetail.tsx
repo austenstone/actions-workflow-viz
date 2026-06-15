@@ -162,7 +162,9 @@ function StepRow({
                 <div className="jd-step-body">
                     {!hasLog ? (
                         <div className="jd-step-empty">
-                            {step.status === "completed" ? "No log output." : "Waiting for logs…"}
+                            {step.status === "completed"
+                                ? "No log output."
+                                : "Logs publish when the job finishes."}
                         </div>
                     ) : mode === "formatted" ? (
                         <LogTerminal text={formatted} />
@@ -276,19 +278,24 @@ export function JobDetail({
             });
     }, [callAction, leg]);
 
-    // Reset + load whenever the selected leg changes (mount or matrix switch).
+    // Reset view state whenever the selected leg changes (mount or matrix switch).
     useEffect(() => {
         if (!leg) return;
         setLogSteps(new Map());
         setOpen(defaultOpen(leg.steps ?? []));
-        fetchLog();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [leg?.id]);
 
-    // Live-tail running jobs.
+    // Fetch on mount, on leg switch, and on every status change. GitHub only
+    // publishes the REST log blob when the whole job completes (in-progress jobs
+    // return BlobNotFound), so the status->completed transition is exactly when
+    // logs first become available — fetching here guarantees we load them then.
+    // While the job runs we also poll as a fallback in case GitHub flushes early.
     useEffect(() => {
-        if (!leg || leg.status === "completed") return;
-        const t = setInterval(fetchLog, 2000);
+        if (!leg) return;
+        fetchLog();
+        if (leg.status === "completed") return;
+        const t = setInterval(fetchLog, 5000);
         return () => clearInterval(t);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [leg?.id, leg?.status]);
