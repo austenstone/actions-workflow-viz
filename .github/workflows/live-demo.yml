@@ -1,0 +1,100 @@
+name: Live Log Demo
+
+# A multi-step "CI pipeline" that exists purely to show off the live step-event
+# feed in actions-workflow-viz. Each step has a distinct name and duration, so
+# while the job runs the feed streams a cascade of finalized steps (with real
+# durations), one live ticking step, and a shrinking queue. On completion the
+# per-step logs (grouped via ::group::) fill in.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pace:
+        description: Seconds to wait per simulated unit of work (lower = faster)
+        required: false
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+    env:
+      PACE: ${{ inputs.pace }}
+    steps:
+      - name: Install dependencies
+        run: |
+          p="${PACE:-1}"
+          echo "::group::npm ci"
+          for i in $(seq 1 8); do
+            echo "added $((i * 137)) packages in $(date -u +%H:%M:%S)"
+            sleep "$p"
+          done
+          echo "::endgroup::"
+          echo "dependencies installed"
+
+      - name: Lint
+        run: |
+          p="${PACE:-1}"
+          for f in eslint prettier stylelint markdownlint; do
+            echo "✓ $f — no problems"
+            sleep "$p"
+          done
+
+      - name: Typecheck
+        run: |
+          p="${PACE:-1}"
+          for proj in tsconfig.json tsconfig.web.json tsconfig.test.json; do
+            echo "tsc -p $proj — 0 errors"
+            sleep "$p"
+          done
+          echo "type coverage 99.4%"
+          sleep "$p"
+
+      - name: Unit tests
+        run: |
+          p="${PACE:-1}"
+          for n in $(seq 1 10); do
+            echo "PASS  src/feature-$n.test.ts ($((RANDOM % 40 + 5)) ms)"
+            sleep "$p"
+          done
+          echo "Tests: 10 passed, 10 total"
+
+      - name: Build bundle
+        run: |
+          p="${PACE:-1}"
+          echo "::group::esbuild"
+          for chunk in runtime vendor app styles assets sourcemap manifest; do
+            echo "  dist/$chunk.js  $((RANDOM % 900 + 100)).${RANDOM:0:1}kb"
+            sleep "$p"
+          done
+          echo "::endgroup::"
+          echo "build complete"
+
+      - name: Integration tests
+        run: |
+          p="${PACE:-1}"
+          for n in $(seq 1 12); do
+            echo "✓ scenario $n/12 — ok in $((RANDOM % 200 + 50))ms"
+            sleep "$p"
+          done
+          echo "12 scenarios passed"
+
+      - name: Package artifact
+        run: |
+          p="${PACE:-1}"
+          for step in "collecting files" "compressing" "writing manifest"; do
+            echo "$step..."
+            sleep "$p"
+          done
+          echo "packaged app-$(date -u +%Y%m%d).tar.gz"
+
+      - name: Publish
+        run: |
+          p="${PACE:-1}"
+          echo "uploading..."
+          sleep "$p"
+          echo "published ✓ — https://example.com/releases/latest"
+          sleep "$p"
