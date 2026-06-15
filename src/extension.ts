@@ -534,6 +534,19 @@ const actions: Record<string, CanvasActionConfig<CanvasState>> = {
         agent: true,
         handler: ({ instanceId }) => refresh(instanceId, sessionLog),
     },
+    list_runs: {
+        description:
+            "Show a clickable list of recent workflow runs to pick from (browse mode). Repo is auto-detected if omitted. Accepts { repo?, branch? }.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                repo: { type: "string", description: "Repository in 'owner/repo' form." },
+                branch: { type: "string", description: "Limit to runs on this branch." },
+            },
+        },
+        agent: true,
+        handler: ({ instanceId, input }) => listRuns(instanceId, input as ListInput, sessionLog),
+    },
     rerun_all: {
         description: "Re-run all jobs in the currently loaded run.",
         agent: true,
@@ -590,8 +603,12 @@ const canvas = host.toCanvas({
     inputSchema: loadInputSchema,
     onOpen: async ({ instanceId, input }) => {
         const loadInput = input as LoadInput | undefined;
-        // Idempotent: a run passed on open (or rehydrate) loads immediately.
-        if (loadInput && (loadInput.repo || loadInput.runUrl)) {
+        // A run needs repo+runId (or a runUrl) to load; repo alone can't. When we
+        // can load, do so; otherwise fall into browse mode and list recent runs.
+        const canLoad = Boolean(
+            loadInput && (loadInput.runUrl || (loadInput.repo && loadInput.runId != null)),
+        );
+        if (canLoad) {
             try {
                 await loadRun(instanceId, loadInput, sessionLog);
             } catch (e) {
@@ -601,7 +618,15 @@ const canvas = host.toCanvas({
                     message,
                     run: null,
                     updatedAt: Date.now(),
+                    picker: currentPicker(instanceId),
                 });
+            }
+        } else {
+            try {
+                await listRuns(instanceId, { repo: loadInput?.repo }, sessionLog);
+            } catch (e) {
+                const message = e instanceof Error ? e.message : String(e);
+                log?.(`workflow-viz list error: ${message}`, { level: "warn" });
             }
         }
         const run = getState(instanceId)?.run ?? null;
@@ -620,6 +645,7 @@ const canvas = host.toCanvas({
             stopPolling(poll);
             polls.delete(instanceId);
         }
+        pickers.delete(instanceId);
     },
 });
 
