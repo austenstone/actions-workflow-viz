@@ -6,7 +6,7 @@ import { defineConfig } from "vitest/config";
 // transpile config is needed.
 export default defineConfig({
     test: {
-        include: ["src/**/*.test.ts"],
+        include: ["src/**/*.test.ts", "web/**/*.test.ts"],
         // @actions/workflow-parser imports a bundled .json without an import
         // attribute, which Node's native ESM loader rejects. Inlining routes it
         // through Vite's transform pipeline (like esbuild does at build time).

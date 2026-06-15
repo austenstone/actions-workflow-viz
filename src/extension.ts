@@ -94,13 +94,22 @@ async function startServer(instanceId: string): Promise<Instance> {
                 res.end(html);
                 return;
             }
-            if (req.method === "GET" && req.url === "/anim.js") {
-                const js = await readFile(join(__dirname, "web", "anim.js"));
+            if (req.method === "GET" && req.url === "/main.js") {
+                const js = await readFile(join(__dirname, "web", "main.js"));
                 res.writeHead(200, {
                     "Content-Type": "text/javascript; charset=utf-8",
                     "Cache-Control": "max-age=3600",
                 });
                 res.end(js);
+                return;
+            }
+            if (req.method === "GET" && req.url === "/main.css") {
+                const css = await readFile(join(__dirname, "web", "main.css"));
+                res.writeHead(200, {
+                    "Content-Type": "text/css; charset=utf-8",
+                    "Cache-Control": "max-age=3600",
+                });
+                res.end(css);
                 return;
             }
             if (req.method === "GET" && req.url === "/state") {

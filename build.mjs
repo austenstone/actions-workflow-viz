@@ -5,12 +5,14 @@
 //      Octokit + @actions/workflow-parser (which pulls in yaml) are bundled in
 //      so the extension is a single self-contained ESM file with no runtime
 //      node_modules dependency.
-//   2. web/anim.ts → web/anim.js — the browser-side Motion animation layer,
-//      served by the loopback server at /anim.js and imported by index.html.
-//      Motion is bundled in (local asset, no CDN).
+//   2. web/main.tsx → web/main.js (+ web/main.css) — the React + Primer app,
+//      served by the loopback server at /main.js and /main.css. React, Primer,
+//      the primitives theme CSS, and the Motion helpers (web/anim.ts) are all
+//      bundled in (local assets, no CDN). esbuild emits the sibling main.css
+//      automatically because main.tsx imports CSS.
 //
 // Usage: `npm run build`   (one-shot, both bundles)
-//        `npm run watch`   (rebuild both on change)
+//        `npm run watch`   (rebuild both on change — live dev)
 
 import * as esbuild from "esbuild";
 
@@ -39,15 +41,17 @@ const nodeConfig = {
 
 /** @type {import("esbuild").BuildOptions} */
 const webConfig = {
-    entryPoints: ["web/anim.ts"],
-    outfile: "web/anim.js",
+    entryPoints: ["web/main.tsx"],
+    outfile: "web/main.js",
     bundle: true,
     platform: "browser",
     format: "esm",
     target: "es2020",
+    jsx: "automatic",
+    loader: { ".css": "css" },
+    define: { "process.env.NODE_ENV": '"production"' },
     minify: true,
     legalComments: "none",
-    banner: { js: "// AUTO-GENERATED from web/anim.ts by build.mjs — do not edit directly." },
     logLevel: "info",
 };
 
