@@ -113,6 +113,7 @@ export interface RunSummary {
     runStartedAt: string | null;
     htmlUrl: string | null;
     actor: { login: string; avatar_url: string | null; html_url: string | null } | null;
+    annotations?: { warning: number; failure: number };
 }
 
 // Browse-mode model: the recent runs to pick from when no run is loaded.

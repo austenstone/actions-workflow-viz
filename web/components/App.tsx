@@ -34,8 +34,10 @@ function RunView({ run }: { run: RunGraph }) {
         <>
             <Header run={run} />
             <ProgressBand run={run} now={now} />
-            <AnnotationsBand run={run} onOpenDetail={(node) => setSelectedJobId(node.id)} />
-            <Graph run={run} now={now} onOpenDetail={(node) => setSelectedJobId(node.id)} />
+            <div className="graph-wrap">
+                <AnnotationsBand run={run} onOpenDetail={(node) => setSelectedJobId(node.id)} />
+                <Graph run={run} now={now} onOpenDetail={(node) => setSelectedJobId(node.id)} />
+            </div>
             <Footer run={run} />
             {selected && (
                 <JobDetail run={run} node={selected} onClose={() => setSelectedJobId(null)} />

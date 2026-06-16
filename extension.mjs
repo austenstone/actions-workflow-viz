@@ -19793,9 +19793,54 @@ function toRunSummary(run) {
     } : null
   };
 }
+var annCountCache = /* @__PURE__ */ new Map();
+var FAIL_CONCLUSIONS = /* @__PURE__ */ new Set(["failure", "timed_out", "action_required", "startup_failure"]);
+async function fetchRunAnnotationCounts(repo, runs) {
+  const [owner, name] = repo.split("/");
+  const octokit = await getOctokit();
+  const out = /* @__PURE__ */ new Map();
+  await Promise.all(
+    runs.map(async (run) => {
+      const suiteId = run.check_suite_id;
+      if (suiteId == null) return;
+      const done = run.status === "completed";
+      if (done && annCountCache.has(suiteId)) {
+        out.set(run.id, annCountCache.get(suiteId));
+        return;
+      }
+      try {
+        const checks = await octokit.paginate(octokit.rest.checks.listForSuite, {
+          owner,
+          repo: name,
+          check_suite_id: suiteId,
+          per_page: 100
+        });
+        let warning = 0;
+        let failure = 0;
+        for (const c of checks) {
+          const n = c.output?.annotations_count ?? 0;
+          if (n === 0) continue;
+          if (c.conclusion && FAIL_CONCLUSIONS.has(c.conclusion)) failure += n;
+          else warning += n;
+        }
+        const counts = { warning, failure };
+        out.set(run.id, counts);
+        if (done) annCountCache.set(suiteId, counts);
+      } catch {
+      }
+    })
+  );
+  return out;
+}
 async function fetchRunSummaries(repo, query = {}) {
   const runs = await fetchRepoRuns(repo, query);
-  return runs.map(toRunSummary);
+  const counts = await fetchRunAnnotationCounts(repo, runs);
+  return runs.map((run) => {
+    const summary = toRunSummary(run);
+    const c = counts.get(run.id);
+    if (c && (c.warning > 0 || c.failure > 0)) summary.annotations = c;
+    return summary;
+  });
 }
 
 // src/canvas.ts
@@ -19980,7 +20025,7 @@ async function refresh(instanceId, log) {
     conclusion: st?.run?.conclusion ?? null
   };
 }
-var FAIL_CONCLUSIONS = /* @__PURE__ */ new Set(["failure", "timed_out"]);
+var FAIL_CONCLUSIONS2 = /* @__PURE__ */ new Set(["failure", "timed_out"]);
 function allJobIds(node) {
   const ids = /* @__PURE__ */ new Set();
   for (const leg of node.legs) ids.add(String(leg.id));
@@ -20040,7 +20085,7 @@ function fetchJobLogs(run, node, log) {
 }
 function stepIcon(s) {
   if (s.status !== "completed") return "\u2022";
-  return FAIL_CONCLUSIONS.has(s.conclusion ?? "") ? "\u2717" : "\u2713";
+  return FAIL_CONCLUSIONS2.has(s.conclusion ?? "") ? "\u2717" : "\u2713";
 }
 async function addJobContext(instanceId, input, notifyAgent2) {
   const run = getState(instanceId)?.run;

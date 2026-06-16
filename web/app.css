@@ -375,6 +375,31 @@ svg.edges {
     color: var(--muted);
     font-variant-numeric: tabular-nums;
 }
+.run-row-trail-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.run-row-status {
+    width: 16px;
+    height: 16px;
+}
+.run-row-anns {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.ann-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.ann-count.l-warning { color: var(--run); }
+.ann-count.l-failure { color: var(--fail); }
 .dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--wait); }
 .dot.ok { background: var(--ok); }
 .dot.fail { background: var(--fail); }
@@ -667,13 +692,27 @@ svg.edges {
 /* --- Annotations ------------------------------------------------------- */
 
 /* Run-level strip under the progress band. */
+.graph-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
 .ann-band {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 6;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 0 16px 8px;
+    padding: 10px 16px 8px;
+    background: transparent;
+    pointer-events: none;
 }
 .ann-pill {
+    pointer-events: auto;
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -708,12 +747,13 @@ svg.edges {
 .c-sub .ann.l-notice { background: var(--wait-bg); color: var(--muted); }
 
 /* Annotation list at the top of the job detail steps panel. */
-.jd-anns { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.jd-anns { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .jd-ann {
     display: flex;
     gap: 8px;
     padding: 8px 10px;
     border-radius: 6px;
+    border: 1px solid var(--line);
     border-left: 3px solid var(--line);
     background: var(--wait-bg);
     font-size: 12px;
@@ -728,6 +768,24 @@ svg.edges {
 .jd-ann-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .jd-ann-title { font-weight: 600; }
 .jd-ann-msg { color: var(--fg); white-space: pre-wrap; word-break: break-word; }
+.jd-ann-msg.clamped {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.jd-ann-toggle {
+    align-self: flex-start;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-top: 1px;
+    color: var(--fgColor-accent, #0969da);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.jd-ann-toggle:hover { text-decoration: underline; }
 .jd-ann-loc {
     font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

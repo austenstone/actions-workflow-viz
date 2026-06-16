@@ -198,40 +198,88 @@ const ANN_ICON = {
     notice: <InfoIcon />,
 } as const;
 
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+function linkify(text: string): ReactNode[] {
+    const out: ReactNode[] = [];
+    let last = 0;
+    for (const m of text.matchAll(URL_RE)) {
+        const idx = m.index ?? 0;
+        if (idx > last) out.push(text.slice(last, idx));
+        let href = m[0];
+        let trail = "";
+        while (/[.,);:\]]$/.test(href)) {
+            trail = href.slice(-1) + trail;
+            href = href.slice(0, -1);
+        }
+        out.push(
+            <Link key={idx} href={href} target="_blank" rel="noopener">
+                {href}
+            </Link>,
+        );
+        if (trail) out.push(trail);
+        last = idx + m[0].length;
+    }
+    if (last < text.length) out.push(text.slice(last));
+    return out;
+}
+
+function AnnRow({ a }: { a: Annotation }) {
+    const [expanded, setExpanded] = useState(false);
+    const loc = a.path && a.path !== ".github" ? a.path : "";
+    const line = a.startLine ? `:${a.startLine}` : "";
+    const longMsg = a.message.length > 100 || a.message.includes("\n");
+    const clamped = longMsg && !expanded;
+
+    return (
+        <div className={"jd-ann l-" + a.level}>
+            <span className="jd-ann-ico">{ANN_ICON[a.level]}</span>
+            <div className="jd-ann-body">
+                {a.title && <div className="jd-ann-title">{a.title}</div>}
+                {a.message && (
+                    <div className={"jd-ann-msg" + (clamped ? " clamped" : "")}>
+                        {clamped ? a.message : linkify(a.message)}
+                    </div>
+                )}
+                {longMsg && (
+                    <button
+                        type="button"
+                        className="jd-ann-toggle"
+                        onClick={() => setExpanded((v) => !v)}
+                        aria-expanded={expanded}
+                    >
+                        {expanded ? "Show less" : "Show more"}
+                    </button>
+                )}
+                {loc &&
+                    (a.blobHref ? (
+                        <Link
+                            muted
+                            href={a.blobHref}
+                            target="_blank"
+                            rel="noopener"
+                            className="jd-ann-loc"
+                        >
+                            {loc}
+                            {line} <LinkExternalIcon size={12} />
+                        </Link>
+                    ) : (
+                        <span className="jd-ann-loc">
+                            {loc}
+                            {line}
+                        </span>
+                    ))}
+            </div>
+        </div>
+    );
+}
+
 function JobAnnotations({ anns }: { anns: Annotation[] }) {
     return (
         <div className="jd-anns">
-            {anns.map((a, i) => {
-                const loc = a.path && a.path !== ".github" ? a.path : "";
-                const line = a.startLine ? `:${a.startLine}` : "";
-                return (
-                    <div key={i} className={"jd-ann l-" + a.level}>
-                        <span className="jd-ann-ico">{ANN_ICON[a.level]}</span>
-                        <div className="jd-ann-body">
-                            {a.title && <div className="jd-ann-title">{a.title}</div>}
-                            {a.message && <div className="jd-ann-msg">{a.message}</div>}
-                            {loc &&
-                                (a.blobHref ? (
-                                    <Link
-                                        muted
-                                        href={a.blobHref}
-                                        target="_blank"
-                                        rel="noopener"
-                                        className="jd-ann-loc"
-                                    >
-                                        {loc}
-                                        {line} <LinkExternalIcon size={12} />
-                                    </Link>
-                                ) : (
-                                    <span className="jd-ann-loc">
-                                        {loc}
-                                        {line}
-                                    </span>
-                                ))}
-                        </div>
-                    </div>
-                );
-            })}
+            {anns.map((a, i) => (
+                <AnnRow key={i} a={a} />
+            ))}
         </div>
     );
 }

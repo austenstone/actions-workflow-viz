@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Button, Spinner, Label, ActionList, Avatar } from "@primer/react";
-import { SyncIcon } from "@primer/octicons-react";
+import { Button, Spinner, ActionList, Avatar } from "@primer/react";
+import { SyncIcon, AlertIcon, StopIcon } from "@primer/octicons-react";
 import type { CanvasState, RunSummary } from "../types";
-import { summaryPill, relTime, runElapsed, labelVariant } from "../format";
+import { summaryStatus, relTime, runElapsed } from "../format";
 import { useAction, useNow } from "../hooks";
+import { StatusIcon } from "./StatusIcon";
 
 // One selectable run in the picker. Clicking loads it via the existing load_run
 // action; a per-row busy flag keeps the rest of the list interactive.
@@ -11,7 +12,7 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
     const callAction = useAction();
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState<string | null>(null);
-    const pill = summaryPill(run);
+    const status = summaryStatus(run);
     const running = run.status !== "completed";
     const now = useNow(running);
 
@@ -56,7 +57,7 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
                 {avatarUrl ? (
                     <Avatar src={avatarUrl} alt={run.actor?.login ?? "actor"} size={20} />
                 ) : (
-                    <span className={"dot " + pill.cls} />
+                    <StatusIcon kind={status.kind} title={status.label} />
                 )}
             </ActionList.LeadingVisual>
             {run.title || run.name}
@@ -71,7 +72,31 @@ function RunRow({ run, repo }: { run: RunSummary; repo: string | null }) {
             </ActionList.Description>
             <ActionList.TrailingVisual>
                 <span className="run-row-trail">
-                    <Label variant={labelVariant(pill.cls)}>{pill.text}</Label>
+                    <span className="run-row-trail-top">
+                        {run.annotations && (
+                            <span className="run-row-anns">
+                                {run.annotations.failure > 0 && (
+                                    <span
+                                        className="ann-count l-failure"
+                                        title={`${run.annotations.failure} error${run.annotations.failure === 1 ? "" : "s"}`}
+                                    >
+                                        <StopIcon size={12} />
+                                        {run.annotations.failure}
+                                    </span>
+                                )}
+                                {run.annotations.warning > 0 && (
+                                    <span
+                                        className="ann-count l-warning"
+                                        title={`${run.annotations.warning} warning${run.annotations.warning === 1 ? "" : "s"}`}
+                                    >
+                                        <AlertIcon size={12} />
+                                        {run.annotations.warning}
+                                    </span>
+                                )}
+                            </span>
+                        )}
+                        <StatusIcon kind={status.kind} title={status.label} className="run-row-status" />
+                    </span>
                     {time && <span className="run-row-time">{time}</span>}
                 </span>
             </ActionList.TrailingVisual>

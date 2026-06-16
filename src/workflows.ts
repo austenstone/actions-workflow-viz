@@ -78,13 +78,68 @@ export function toRunSummary(run: WorkflowRunData): RunSummary {
     };
 }
 
+// Annotation counts for a run, derived from its check suite. annotations_count
+// on each check run is a total; we split warning vs failure by the check run's
+// own conclusion (a failed check's annotations are errors, otherwise warnings).
+// Cached per completed check suite since those counts never change.
+const annCountCache = new Map<number, { warning: number; failure: number }>();
+const FAIL_CONCLUSIONS = new Set(["failure", "timed_out", "action_required", "startup_failure"]);
+
+async function fetchRunAnnotationCounts(
+    repo: string,
+    runs: WorkflowRunData[],
+): Promise<Map<number, { warning: number; failure: number }>> {
+    const [owner, name] = repo.split("/");
+    const octokit = await getOctokit();
+    const out = new Map<number, { warning: number; failure: number }>();
+    await Promise.all(
+        runs.map(async (run) => {
+            const suiteId = run.check_suite_id;
+            if (suiteId == null) return;
+            const done = run.status === "completed";
+            if (done && annCountCache.has(suiteId)) {
+                out.set(run.id, annCountCache.get(suiteId)!);
+                return;
+            }
+            try {
+                const checks = await octokit.paginate(octokit.rest.checks.listForSuite, {
+                    owner,
+                    repo: name,
+                    check_suite_id: suiteId,
+                    per_page: 100,
+                });
+                let warning = 0;
+                let failure = 0;
+                for (const c of checks) {
+                    const n = c.output?.annotations_count ?? 0;
+                    if (n === 0) continue;
+                    if (c.conclusion && FAIL_CONCLUSIONS.has(c.conclusion)) failure += n;
+                    else warning += n;
+                }
+                const counts = { warning, failure };
+                out.set(run.id, counts);
+                if (done) annCountCache.set(suiteId, counts);
+            } catch {
+                // Best-effort enrichment — never fail the list over annotations.
+            }
+        }),
+    );
+    return out;
+}
+
 // Recent runs as picker rows (newest first).
 export async function fetchRunSummaries(
     repo: string,
     query: RunQuery = {},
 ): Promise<RunSummary[]> {
     const runs = await fetchRepoRuns(repo, query);
-    return runs.map(toRunSummary);
+    const counts = await fetchRunAnnotationCounts(repo, runs);
+    return runs.map((run) => {
+        const summary = toRunSummary(run);
+        const c = counts.get(run.id);
+        if (c && (c.warning > 0 || c.failure > 0)) summary.annotations = c;
+        return summary;
+    });
 }
 
 export async function fetchWorkflowRuns(

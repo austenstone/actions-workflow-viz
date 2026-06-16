@@ -145,6 +145,23 @@ export function summaryPill(run: RunSummary): { cls: StatusClass; text: string }
     return { cls: "wait", text: run.status ?? "queued" };
 }
 
+// Maps a run summary's status/conclusion to the same StatusKind glyph jobs use.
+export function summaryStatus(run: RunSummary): { kind: StatusKind; label: string } {
+    if (run.status === "completed") {
+        const c = run.conclusion;
+        if (c === "success") return { kind: "success", label: "Passed" };
+        if (c === "skipped") return { kind: "skipped", label: "Skipped" };
+        if (c === "cancelled") return { kind: "cancelled", label: "Cancelled" };
+        if (c === "neutral" || c === "stale" || c === "action_required")
+            return { kind: "neutral", label: c };
+        return { kind: "failure", label: c === "timed_out" ? "Timed out" : "Failed" };
+    }
+    if (run.status === "in_progress") return { kind: "in_progress", label: "Running" };
+    if (run.status === "queued") return { kind: "queued", label: "Queued" };
+    if (run.status === "waiting") return { kind: "waiting", label: "Waiting" };
+    return { kind: "pending", label: run.status ?? "Pending" };
+}
+
 // Compact "5m", "3h", "2d" style relative age for list rows.
 export function relTime(iso: string | null): string {
     if (!iso) return "";
