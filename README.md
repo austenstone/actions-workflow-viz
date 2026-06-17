@@ -1,5 +1,9 @@
 # actions-workflow-viz
 
+
+https://github.com/user-attachments/assets/4731b62c-ef29-4a80-9393-9ee0a2f5477e
+
+
 A [GitHub Copilot CLI canvas extension](https://github.com/github/copilot-cli) that visualizes a GitHub Actions workflow run as a live job-dependency graph. Point it at a run and it renders the jobs as a DAG (edges parsed from each job's `needs:`), colored by live status, and polls the Actions API until the run completes — so you watch the run animate from queued → in_progress → completed in real time.
 
 ## What it does
